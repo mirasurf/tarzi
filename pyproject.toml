@@ -1,0 +1,26 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "tarsier"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+version = "0.0.1"
+description = "Rust-native lite search for AI applications"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "xmingc", email = "chenxm35@gmail.com"},
+]
+
+[project.urls]
+Homepage = "https://github.com/mirasurf/tarsier"
+Repository = "https://github.com/mirasurf/tarsier"
+
+[tool.maturin]
+features = ["pyo3/extension-module"] 

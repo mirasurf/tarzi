@@ -1,0 +1,16 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+You're working on **Tarsier**—a rust-native lite search for AI applications.
+
+## Implementation Considerations
+
+- We want to build a project that is still runnable after 10 years.
+- **Minimize external dependencies**: Use only well-maintained, stable crates with a strong community or institutional backing. Prefer the Rust standard library for core functionality like file I/O, threading, and networking.
+- **Audit dependencies**: Use cargo tree or cargo audit to review dependencies and their transitive dependencies. Avoid crates with excessive dependencies or those that haven’t been updated recently.
+- **Use stable Rust features**: Avoid experimental or nightly-only features (e.g., unstable APIs or #![feature(...)]). Stick to the stable Rust release channel to ensure compatibility with future Rust versions.
+- **Lock Rust Version and Toolchain**: For example, pin the Rust toolchain, document toolchain installation, consider vendoring the toolchain with `cargo vendor`, and regularly update vendored dependencies
+- **Write Robust, Portable Code**: Write code that avoids platform-specific assumptions, avoids external system dependencies. For platform-specific code, use #[cfg(...)] to handle differences gracefully.
