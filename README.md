@@ -16,3 +16,11 @@ Rust-native lite search for AI applications.
 
 - [ ] Capture screenshots of web pages.  
 - [ ] Define and execute custom workflows for interacting with web pages and crawling structured content.
+
+# Dependencies
+
+* chromiumoxide: support chrome browser instance
+* HTML → Markdown: html2md
+* Markdown → JSON: use pulldown-cmark to produce JSON
+* JSON → YAML: serde_yaml
+* mistral.rs: run local LLM
