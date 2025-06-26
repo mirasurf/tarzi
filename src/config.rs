@@ -8,11 +8,7 @@ pub struct Config {
     #[serde(default)]
     pub general: GeneralConfig,
     #[serde(default)]
-    pub converter: ConverterConfig,
-    #[serde(default)]
     pub fetcher: FetcherConfig,
-    #[serde(default)]
-    pub browser: BrowserConfig,
     #[serde(default)]
     pub search: SearchConfig,
 }
@@ -26,47 +22,34 @@ pub struct GeneralConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConverterConfig {
-    #[serde(default = "default_output_format")]
-    pub default_format: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FetcherConfig {
+    #[serde(default = "default_fetcher_mode")]
+    pub mode: String,
+    #[serde(default = "default_fetcher_format")]
+    pub format: String,
     #[serde(default = "default_user_agent")]
     pub user_agent: String,
     #[serde(default = "default_fetch_timeout")]
     pub timeout: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BrowserConfig {
-    #[serde(default = "default_browser_mode")]
-    pub browser_mode: String,
-    #[serde(default = "default_browser_timeout")]
-    pub timeout: u64,
+    pub proxy: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchConfig {
     #[serde(default = "default_search_mode")]
-    pub search_mode: String,
+    pub mode: String,
     #[serde(default = "default_search_engine")]
-    pub search_engine: String,
+    pub engine: String,
     #[serde(default = "default_result_limit")]
-    pub result_limit: usize,
-    pub google_search_api_key: Option<String>,
-    pub bing_search_api_key: Option<String>,
-    pub duckduckgo_api_key: Option<String>,
+    pub limit: usize,
+    pub api_key: Option<String>,
 }
 
 impl Config {
     pub fn new() -> Self {
         Self {
             general: GeneralConfig::default(),
-            converter: ConverterConfig::default(),
             fetcher: FetcherConfig::default(),
-            browser: BrowserConfig::default(),
             search: SearchConfig::default(),
         }
     }
@@ -173,28 +156,14 @@ impl Default for GeneralConfig {
     }
 }
 
-impl Default for ConverterConfig {
-    fn default() -> Self {
-        Self {
-            default_format: default_output_format(),
-        }
-    }
-}
-
 impl Default for FetcherConfig {
     fn default() -> Self {
         Self {
+            mode: default_fetcher_mode(),
+            format: default_fetcher_format(),
             user_agent: default_user_agent(),
             timeout: default_fetch_timeout(),
-        }
-    }
-}
-
-impl Default for BrowserConfig {
-    fn default() -> Self {
-        Self {
-            browser_mode: default_browser_mode(),
-            timeout: default_browser_timeout(),
+            proxy: None,
         }
     }
 }
@@ -202,12 +171,10 @@ impl Default for BrowserConfig {
 impl Default for SearchConfig {
     fn default() -> Self {
         Self {
-            search_mode: default_search_mode(),
-            search_engine: default_search_engine(),
-            result_limit: default_result_limit(),
-            google_search_api_key: None,
-            bing_search_api_key: None,
-            duckduckgo_api_key: None,
+            mode: default_search_mode(),
+            engine: default_search_engine(),
+            limit: default_result_limit(),
+            api_key: None,
         }
     }
 }
@@ -227,7 +194,11 @@ fn default_timeout() -> u64 {
     30
 }
 
-fn default_output_format() -> String {
+fn default_fetcher_mode() -> String {
+    "browser_headless".to_string()
+}
+
+fn default_fetcher_format() -> String {
     "markdown".to_string()
 }
 
@@ -239,24 +210,16 @@ fn default_fetch_timeout() -> u64 {
     30
 }
 
-fn default_browser_mode() -> String {
-    "headless".to_string()
-}
-
-fn default_browser_timeout() -> u64 {
-    60
-}
-
 fn default_search_mode() -> String {
-    "browser".to_string()
+    "webquery".to_string()
 }
 
 fn default_search_engine() -> String {
-    "bing.com".to_string()
+    "google".to_string()
 }
 
 fn default_result_limit() -> usize {
-    3
+    5
 }
 
 #[cfg(test)]
@@ -271,38 +234,35 @@ mod tests {
 
         assert_eq!(config.general.log_level, "info");
         assert_eq!(config.general.timeout, 30);
-        assert_eq!(config.converter.default_format, "markdown");
+        assert_eq!(config.fetcher.mode, "browser_headless");
+        assert_eq!(config.fetcher.format, "markdown");
         assert_eq!(
             config.fetcher.user_agent,
             "Mozilla/5.0 (compatible; Tarzi/1.0)"
         );
         assert_eq!(config.fetcher.timeout, 30);
-        assert_eq!(config.browser.browser_mode, "headless");
-        assert_eq!(config.browser.timeout, 60);
-        assert_eq!(config.search.search_mode, "browser");
-        assert_eq!(config.search.search_engine, "bing.com");
-        assert_eq!(config.search.result_limit, 3);
-        assert!(config.search.google_search_api_key.is_none());
-        assert!(config.search.bing_search_api_key.is_none());
-        assert!(config.search.duckduckgo_api_key.is_none());
+        assert_eq!(config.search.mode, "webquery");
+        assert_eq!(config.search.engine, "google");
+        assert_eq!(config.search.limit, 5);
+        assert!(config.search.api_key.is_none());
     }
 
     #[test]
     fn test_config_serialization() {
         let mut config = Config::new();
-        config.search.google_search_api_key = Some("test_key".to_string());
-        config.search.result_limit = 5;
-        config.browser.browser_mode = "head".to_string();
+        config.search.api_key = Some("test_key".to_string());
+        config.search.limit = 5;
+        config.fetcher.mode = "head".to_string();
 
         let toml_str = toml::to_string_pretty(&config).unwrap();
         let parsed_config: Config = toml::from_str(&toml_str).unwrap();
 
         assert_eq!(
-            parsed_config.search.google_search_api_key,
+            parsed_config.search.api_key,
             Some("test_key".to_string())
         );
-        assert_eq!(parsed_config.search.result_limit, 5);
-        assert_eq!(parsed_config.browser.browser_mode, "head");
+        assert_eq!(parsed_config.search.limit, 5);
+        assert_eq!(parsed_config.fetcher.mode, "head");
     }
 
     #[test]
@@ -312,8 +272,8 @@ mod tests {
 
         // Create a test config
         let mut config = Config::new();
-        config.search.google_search_api_key = Some("test_api_key".to_string());
-        config.search.result_limit = 10;
+        config.search.api_key = Some("test_api_key".to_string());
+        config.search.limit = 10;
         config.general.log_level = "debug".to_string();
 
         // Save config to temporary file
@@ -325,10 +285,10 @@ mod tests {
         let loaded_config: Config = toml::from_str(&content).unwrap();
 
         assert_eq!(
-            loaded_config.search.google_search_api_key,
+            loaded_config.search.api_key,
             Some("test_api_key".to_string())
         );
-        assert_eq!(loaded_config.search.result_limit, 10);
+        assert_eq!(loaded_config.search.limit, 10);
         assert_eq!(loaded_config.general.log_level, "debug");
     }
 
@@ -345,49 +305,57 @@ mod tests {
 log_level = "debug"
 timeout = 60
 
-[converter]
-default_format = "json"
-
 [fetcher]
+mode = "head"
+format = "json"
 user_agent = "Custom User Agent"
 timeout = 45
-
-[browser]
-browser_mode = "head"
-timeout = 90
+proxy = "http://example.com:8080"
 
 [search]
-search_mode = "api"
-search_engine = "google.com"
-result_limit = 5
-google_search_api_key = "google_key_123"
-bing_search_api_key = "bing_key_456"
-duckduckgo_api_key = "ddg_key_789"
+mode = "api"
+engine = "google.com"
+limit = 5
+api_key = "google_key_123"
 "#;
 
         let config: Config = toml::from_str(config_str).unwrap();
 
         assert_eq!(config.general.log_level, "debug");
         assert_eq!(config.general.timeout, 60);
-        assert_eq!(config.converter.default_format, "json");
+        assert_eq!(config.fetcher.mode, "head");
+        assert_eq!(config.fetcher.format, "json");
         assert_eq!(config.fetcher.user_agent, "Custom User Agent");
         assert_eq!(config.fetcher.timeout, 45);
-        assert_eq!(config.browser.browser_mode, "head");
-        assert_eq!(config.browser.timeout, 90);
-        assert_eq!(config.search.search_mode, "api");
-        assert_eq!(config.search.search_engine, "google.com");
-        assert_eq!(config.search.result_limit, 5);
+        assert_eq!(config.fetcher.proxy, Some("http://example.com:8080".to_string()));
+        assert_eq!(config.search.mode, "api");
+        assert_eq!(config.search.engine, "google.com");
+        assert_eq!(config.search.limit, 5);
         assert_eq!(
-            config.search.google_search_api_key,
+            config.search.api_key,
             Some("google_key_123".to_string())
         );
-        assert_eq!(
-            config.search.bing_search_api_key,
-            Some("bing_key_456".to_string())
-        );
-        assert_eq!(
-            config.search.duckduckgo_api_key,
-            Some("ddg_key_789".to_string())
-        );
+    }
+
+    #[test]
+    fn test_load_actual_tarzi_toml() {
+        // Test loading the actual tarzi.toml file
+        let config = Config::load_dev();
+        assert!(config.is_ok(), "Failed to load tarzi.toml: {:?}", config.err());
+        
+        let config = config.unwrap();
+        
+        // Verify the structure matches our expectations
+        assert_eq!(config.general.log_level, "info");
+        assert_eq!(config.general.timeout, 30);
+        assert_eq!(config.fetcher.mode, "browser_headless");
+        assert_eq!(config.fetcher.format, "markdown");
+        assert_eq!(config.fetcher.user_agent, "Mozilla/5.0 (compatible; Tarzi/1.0)");
+        assert_eq!(config.fetcher.timeout, 30);
+        assert_eq!(config.fetcher.proxy, Some("http://127.0.0.1:7890".to_string()));
+        assert_eq!(config.search.mode, "webquery");
+        assert_eq!(config.search.engine, "google");
+        assert_eq!(config.search.limit, 5);
+        assert_eq!(config.search.api_key, Some("your-api-key-for-apiquery-mode".to_string()));
     }
 }

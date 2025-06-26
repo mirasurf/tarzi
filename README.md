@@ -1,6 +1,43 @@
-# Tarzi
+<div align="center">Add commentMore actions
+  <img src="tarsier.png" alt="Tarsier Logo" width="200" height="200">
+</div>
 
-Rust-native lite search for AI applications with improved modular architecture.
+<h1 align="center">tarzi.rs</h1>
+<div align="center">
+
+<div align="center">
+  Rust-native lite search for your AI applications.
+</div>
+
+<p align="center">
+  <!-- Rust crate: version and download count -->
+  <a href="https://crates.io/crates/tarzi">
+    <img src="https://img.shields.io/crates/v/tarzi.svg?style=flat-square" alt="Crate Version" />
+  </a>
+  <a href="https://crates.io/crates/tarzi">
+    <img src="https://img.shields.io/crates/d/tarzi.svg?style=flat-square" alt="Crate Downloads" />
+  </a>
+  <!-- PyPI package: version and monthly downloads -->
+  <a href="https://pypi.org/project/tarzi/">
+    <img src="https://img.shields.io/pypi/v/tarzi.svg?style=flat-square" alt="PyPI Version" />
+  </a>
+  <a href="https://pypistats.org/packages/tarzi">
+    <img src="https://img.shields.io/pypi/dm/tarzi.svg?style=flat-square" alt="PyPI Downloads" />
+  </a>
+  <!-- License -->
+  <a href="https://www.apache.org/licenses/LICENSE-2.0">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square" alt="License" />
+  </a>
+  <!-- X (formerly Twitter) -->
+  <a href="https://x.com/mirasurf_ai">
+    <img src="https://img.shields.io/twitter/follow/mirasurf_ai?label=@mirasurf_ai&style=flat-square" alt="X Follow" />
+  </a>
+  <!-- DeepWiki badge -->
+  <a href="https://deepwiki.com/mirasurf/tarzi.rs">
+    <img src="https://devin.ai/assets/deepwiki-badge.png" style="height: 18px; vertical-align: middle;" alt="Ask DeepWiki" />
+  </a>
+</p>
+
 
 ## Architecture Overview
 

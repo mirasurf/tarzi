@@ -2,18 +2,15 @@
 log_level = "info"
 timeout = 30
 
-[converter]
-default_format = "markdown"
-
 [fetcher]
+mode = "browser_headless"
+format = "markdown"
 user_agent = "Mozilla/5.0 (compatible; Tarzi/1.0)"
 timeout = 30
-
-[browser]
-browser_mode = "headless"
-timeout = 60
+proxy = "http://127.0.0.1:7890"
 
 [search]
-search_mode = "browser"
-search_engine = "google"
-result_limit = 5
+mode = "webquery"
+engine = "google"
+limit = 5
+api_key = "your-api-key-for-apiquery-mode"
