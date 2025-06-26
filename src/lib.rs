@@ -7,7 +7,7 @@ pub mod config;
 #[cfg(feature = "pyo3")]
 pub mod python;
 
-pub use error::{TarsierError, Result};
+pub use error::{TarziError, Result};
 
 // Re-export main types for convenience
 pub use converter::{Converter, Format};

@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Error, Debug)]
-pub enum TarsierError {
+pub enum TarziError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
     
@@ -36,4 +36,4 @@ pub enum TarsierError {
     Config(String),
 }
 
-pub type Result<T> = std::result::Result<T, TarsierError>; 
+pub type Result<T> = std::result::Result<T, TarziError>; 

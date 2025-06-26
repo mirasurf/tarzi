@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[pymodule]
-fn tarsier(_py: Python, m: &PyModule) -> PyResult<()> {
+fn tarzi(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PyConverter>()?;
     m.add_class::<PyWebFetcher>()?;
     m.add_class::<PySearchEngine>()?;

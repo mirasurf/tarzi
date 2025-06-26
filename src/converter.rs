@@ -1,4 +1,4 @@
-use crate::{error::TarsierError, Result};
+use crate::{error::TarziError, Result};
 use pulldown_cmark::{Event, Parser as MarkdownParser, Tag, HeadingLevel};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -12,7 +12,7 @@ pub enum Format {
 }
 
 impl FromStr for Format {
-    type Err = TarsierError;
+    type Err = TarziError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
@@ -20,7 +20,7 @@ impl FromStr for Format {
             "markdown" | "md" => Ok(Format::Markdown),
             "json" => Ok(Format::Json),
             "yaml" | "yml" => Ok(Format::Yaml),
-            _ => Err(TarsierError::InvalidFormat(s.to_string())),
+            _ => Err(TarziError::InvalidFormat(s.to_string())),
         }
     }
 }
@@ -135,7 +135,7 @@ pub fn convert_search_results(results: &[crate::search::SearchResult], format: F
             let yaml_results = serde_yaml::to_string(results)?;
             Ok(yaml_results)
         }
-        _ => Err(TarsierError::InvalidFormat("Only JSON and YAML formats supported for search results".to_string())),
+        _ => Err(TarziError::InvalidFormat("Only JSON and YAML formats supported for search results".to_string())),
     }
 }
 

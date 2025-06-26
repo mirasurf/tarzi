@@ -1,7 +1,7 @@
-use tarsier::config::Config;
+use tarzi::config::Config;
 
-fn main() -> tarsier::Result<()> {
-    println!("=== Tarsier Configuration Test ===\n");
+fn main() -> tarzi::Result<()> {
+    println!("=== Tarzi Configuration Test ===\n");
 
     // Test loading default config
     println!("1. Loading default configuration:");

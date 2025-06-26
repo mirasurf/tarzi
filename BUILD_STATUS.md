@@ -1,4 +1,4 @@
-# Tarsier Build Status - Modular Architecture Implementation
+# Tarzi Build Status - Modular Architecture Implementation
 
 ## ✅ Completed Improvements
 

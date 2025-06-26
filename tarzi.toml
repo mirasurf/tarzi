@@ -6,7 +6,7 @@ timeout = 30
 default_format = "markdown"
 
 [fetcher]
-user_agent = "Mozilla/5.0 (compatible; Tarsier/1.0)"
+user_agent = "Mozilla/5.0 (compatible; Tarzi/1.0)"
 timeout = 30
 
 [browser]

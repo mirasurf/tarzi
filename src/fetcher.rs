@@ -1,4 +1,4 @@
-use crate::{error::TarsierError, Result, converter::{Converter, Format}};
+use crate::{error::TarziError, Result, converter::{Converter, Format}};
 use chromiumoxide::{
     browser::{Browser, BrowserConfig, HeadlessMode},
     handler::Handler,
@@ -16,14 +16,14 @@ pub enum FetchMode {
 }
 
 impl std::str::FromStr for FetchMode {
-    type Err = TarsierError;
+    type Err = TarziError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "plain_request" | "plain" => Ok(FetchMode::PlainRequest),
             "browser_head" | "head" => Ok(FetchMode::BrowserHead),
             "browser_headless" | "headless" => Ok(FetchMode::BrowserHeadless),
-            _ => Err(TarsierError::InvalidMode(s.to_string())),
+            _ => Err(TarziError::InvalidMode(s.to_string())),
         }
     }
 }
@@ -40,7 +40,7 @@ impl WebFetcher {
         info!("Initializing WebFetcher");
         let http_client = Client::builder()
             .timeout(Duration::from_secs(30))
-            .user_agent("Mozilla/5.0 (compatible; Tarsier/1.0)")
+            .user_agent("Mozilla/5.0 (compatible; Tarzi/1.0)")
             .build()
             .expect("Failed to create HTTP client");
 
@@ -113,11 +113,11 @@ impl WebFetcher {
             }
             Ok(Err(e)) => {
                 error!("Failed to create page: {}", e);
-                return Err(TarsierError::Browser(format!("Failed to create page: {}", e)));
+                return Err(TarziError::Browser(format!("Failed to create page: {}", e)));
             }
             Err(_) => {
                 error!("Timeout while creating new page (30 seconds)");
-                return Err(TarsierError::Browser("Timeout while creating new page".to_string()));
+                return Err(TarziError::Browser("Timeout while creating new page".to_string()));
             }
         };
 
@@ -134,11 +134,11 @@ impl WebFetcher {
             }
             Ok(Err(e)) => {
                 error!("Failed to navigate to URL: {}", e);
-                return Err(TarsierError::Browser(format!("Failed to navigate: {}", e)));
+                return Err(TarziError::Browser(format!("Failed to navigate: {}", e)));
             }
             Err(_) => {
                 error!("Timeout while navigating to URL (30 seconds)");
-                return Err(TarsierError::Browser("Timeout while navigating to URL".to_string()));
+                return Err(TarziError::Browser("Timeout while navigating to URL".to_string()));
             }
         }
 
@@ -161,11 +161,11 @@ impl WebFetcher {
             }
             Ok(Err(e)) => {
                 error!("Failed to get page content: {}", e);
-                return Err(TarsierError::Browser(format!("Failed to get content: {}", e)));
+                return Err(TarziError::Browser(format!("Failed to get content: {}", e)));
             }
             Err(_) => {
                 error!("Timeout while extracting page content (30 seconds)");
-                return Err(TarsierError::Browser("Timeout while extracting page content".to_string()));
+                return Err(TarziError::Browser("Timeout while extracting page content".to_string()));
             }
         };
 
@@ -182,7 +182,7 @@ impl WebFetcher {
                 .build()
                 .map_err(|e| {
                     error!("Failed to create browser config: {}", e);
-                    TarsierError::Browser(format!("Failed to create browser config: {}", e))
+                    TarziError::Browser(format!("Failed to create browser config: {}", e))
                 })?;
             info!("Browser config created successfully");
 
@@ -199,11 +199,11 @@ impl WebFetcher {
                 }
                 Ok(Err(e)) => {
                     error!("Failed to create browser: {}", e);
-                    return Err(TarsierError::Browser(format!("Failed to create browser: {}", e)));
+                    return Err(TarziError::Browser(format!("Failed to create browser: {}", e)));
                 }
                 Err(_) => {
                     error!("Timeout while launching browser (60 seconds)");
-                    return Err(TarsierError::Browser("Timeout while launching browser".to_string()));
+                    return Err(TarziError::Browser("Timeout while launching browser".to_string()));
                 }
             };
 
@@ -225,10 +225,10 @@ impl WebFetcher {
             FetchMode::PlainRequest => {
                 let proxy_client = Client::builder()
                     .timeout(Duration::from_secs(30))
-                    .user_agent("Mozilla/5.0 (compatible; Tarsier/1.0)")
+                    .user_agent("Mozilla/5.0 (compatible; Tarzi/1.0)")
                     .proxy(reqwest::Proxy::http(proxy)?)
                     .build()
-                    .map_err(|e| TarsierError::Config(format!("Failed to create proxy client: {}", e)))?;
+                    .map_err(|e| TarziError::Config(format!("Failed to create proxy client: {}", e)))?;
 
                 let url = Url::parse(url)?;
                 let response = proxy_client.get(url).send().await?;

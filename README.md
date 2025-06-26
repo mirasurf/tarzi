@@ -1,4 +1,4 @@
-# Tarsier
+# Tarzi
 
 Rust-native lite search for AI applications with improved modular architecture.
 
@@ -79,7 +79,7 @@ cargo run -- search-and-fetch \
 
 ### Direct Module Usage
 ```rust
-use tarsier::{WebFetcher, FetchMode, SearchEngine, SearchMode, Format};
+use tarzi::{WebFetcher, FetchMode, SearchEngine, SearchMode, Format};
 
 // Fetch content with conversion
 let mut fetcher = WebFetcher::new();
@@ -147,4 +147,4 @@ MIT License - see LICENSE file for details.
 
 Thank you ❤ all human contributors, and Cursor.
 
-[![tarsier contributors](https://contrib.rocks/image?repo=mirasurf/tarsier "tarsier contributors")](https://github.com/mirasurf/tarsier/graphs/contributors)
+[![tarzi contributors](https://contrib.rocks/image?repo=mirasurf/tarzi "tarzi contributors")](https://github.com/mirasurf/tarzi/graphs/contributors)

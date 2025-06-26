@@ -1,4 +1,4 @@
-use crate::{error::TarsierError, Result};
+use crate::{error::TarziError, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -76,10 +76,10 @@ impl Config {
         
         if config_path.exists() {
             let content = fs::read_to_string(&config_path)
-                .map_err(|e| TarsierError::Config(format!("Failed to read config file: {}", e)))?;
+                .map_err(|e| TarziError::Config(format!("Failed to read config file: {}", e)))?;
             
             let config: Config = toml::from_str(&content)
-                .map_err(|e| TarsierError::Config(format!("Failed to parse config file: {}", e)))?;
+                .map_err(|e| TarziError::Config(format!("Failed to parse config file: {}", e)))?;
             
             Ok(config)
         } else {
@@ -107,27 +107,27 @@ impl Config {
         // Create parent directory if it doesn't exist
         if let Some(parent) = config_path.parent() {
             fs::create_dir_all(parent)
-                .map_err(|e| TarsierError::Config(format!("Failed to create config directory: {}", e)))?;
+                .map_err(|e| TarziError::Config(format!("Failed to create config directory: {}", e)))?;
         }
         
         let content = toml::to_string_pretty(self)
-            .map_err(|e| TarsierError::Config(format!("Failed to serialize config: {}", e)))?;
+            .map_err(|e| TarziError::Config(format!("Failed to serialize config: {}", e)))?;
         
         fs::write(&config_path, content)
-            .map_err(|e| TarsierError::Config(format!("Failed to write config file: {}", e)))?;
+            .map_err(|e| TarziError::Config(format!("Failed to write config file: {}", e)))?;
         
         Ok(())
     }
 
     fn get_config_path() -> Result<PathBuf> {
         let home_dir = std::env::var("HOME")
-            .map_err(|_| TarsierError::Config("HOME environment variable not set".to_string()))?;
+            .map_err(|_| TarziError::Config("HOME environment variable not set".to_string()))?;
         
-        Ok(PathBuf::from(home_dir).join(".tarsier.toml"))
+        Ok(PathBuf::from(home_dir).join(".tarzi.toml"))
     }
 
     pub fn get_dev_config_path() -> PathBuf {
-        PathBuf::from("tarsier.toml")
+        PathBuf::from("tarzi.toml")
     }
 
     pub fn load_dev() -> Result<Self> {
@@ -135,10 +135,10 @@ impl Config {
         
         if config_path.exists() {
             let content = fs::read_to_string(&config_path)
-                .map_err(|e| TarsierError::Config(format!("Failed to read dev config file: {}", e)))?;
+                .map_err(|e| TarziError::Config(format!("Failed to read dev config file: {}", e)))?;
             
             let config: Config = toml::from_str(&content)
-                .map_err(|e| TarsierError::Config(format!("Failed to parse dev config file: {}", e)))?;
+                .map_err(|e| TarziError::Config(format!("Failed to parse dev config file: {}", e)))?;
             
             Ok(config)
         } else {
@@ -151,10 +151,10 @@ impl Config {
         let config_path = Self::get_dev_config_path();
         
         let content = toml::to_string_pretty(self)
-            .map_err(|e| TarsierError::Config(format!("Failed to serialize dev config: {}", e)))?;
+            .map_err(|e| TarziError::Config(format!("Failed to serialize dev config: {}", e)))?;
         
         fs::write(&config_path, content)
-            .map_err(|e| TarsierError::Config(format!("Failed to write dev config file: {}", e)))?;
+            .map_err(|e| TarziError::Config(format!("Failed to write dev config file: {}", e)))?;
         
         Ok(())
     }
@@ -223,7 +223,7 @@ fn default_output_format() -> String {
 }
 
 fn default_user_agent() -> String {
-    "Mozilla/5.0 (compatible; Tarsier/1.0)".to_string()
+    "Mozilla/5.0 (compatible; Tarzi/1.0)".to_string()
 }
 
 fn default_fetch_timeout() -> u64 {
@@ -263,7 +263,7 @@ mod tests {
         assert_eq!(config.general.log_level, "info");
         assert_eq!(config.general.timeout, 30);
         assert_eq!(config.converter.default_format, "markdown");
-        assert_eq!(config.fetcher.user_agent, "Mozilla/5.0 (compatible; Tarsier/1.0)");
+        assert_eq!(config.fetcher.user_agent, "Mozilla/5.0 (compatible; Tarzi/1.0)");
         assert_eq!(config.fetcher.timeout, 30);
         assert_eq!(config.browser.browser_mode, "headless");
         assert_eq!(config.browser.timeout, 60);
@@ -317,7 +317,7 @@ mod tests {
     #[test]
     fn test_dev_config_path() {
         let dev_path = Config::get_dev_config_path();
-        assert_eq!(dev_path, PathBuf::from("tarsier.toml"));
+        assert_eq!(dev_path, PathBuf::from("tarzi.toml"));
     }
 
     #[test]

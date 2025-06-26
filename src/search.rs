@@ -1,4 +1,4 @@
-use crate::{error::TarsierError, Result, fetcher::{WebFetcher, FetchMode}};
+use crate::{error::TarziError, Result, fetcher::{WebFetcher, FetchMode}};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -12,13 +12,13 @@ pub enum SearchMode {
 }
 
 impl FromStr for SearchMode {
-    type Err = TarsierError;
+    type Err = TarziError;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "webquery" => Ok(SearchMode::WebQuery),
             "apiquery" => Ok(SearchMode::ApiQuery),
-            _ => Err(TarsierError::InvalidMode(s.to_string())),
+            _ => Err(TarziError::InvalidMode(s.to_string())),
         }
     }
 }
@@ -115,7 +115,7 @@ impl SearchEngine {
         
         if self.api_key.is_none() {
             warn!("No API key provided for API mode");
-            return Err(TarsierError::Config("API key required for API mode".to_string()));
+            return Err(TarziError::Config("API key required for API mode".to_string()));
         }
 
         info!("Using API key for search");
@@ -186,12 +186,12 @@ impl SearchEngine {
                 // For API mode with proxy, we would use a proxy-enabled HTTP client
                 let _proxy_client = Client::builder()
                     .timeout(Duration::from_secs(30))
-                    .user_agent("Mozilla/5.0 (compatible; Tarsier/1.0)")
+                    .user_agent("Mozilla/5.0 (compatible; Tarzi/1.0)")
                     .proxy(reqwest::Proxy::http(proxy)?)
                     .build()
                     .map_err(|e| {
                         error!("Failed to create proxy client: {}", e);
-                        TarsierError::Config(format!("Failed to create proxy client: {}", e))
+                        TarziError::Config(format!("Failed to create proxy client: {}", e))
                     })?;
 
                 info!("Proxy client created successfully");

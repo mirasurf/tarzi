@@ -1,6 +1,6 @@
-use tarsier::{
+use tarzi::{
     WebFetcher, FetchMode, SearchEngine, SearchMode, Format,
-    Result, TarsierError
+    Result, TarziError
 };
 use std::str::FromStr;
 
@@ -9,7 +9,7 @@ async fn main() -> Result<()> {
     // Initialize tracing
     tracing_subscriber::fmt::init();
     
-    println!("=== Tarsier Modular Example ===\n");
+    println!("=== Tarzi Modular Example ===\n");
     
     // Example 1: Using the fetcher module directly
     println!("1. Fetching content with different modes:");

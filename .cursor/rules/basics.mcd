@@ -4,7 +4,7 @@ globs:
 alwaysApply: true
 ---
 
-You're working on **Tarsier**—a rust-native lite search for AI applications.
+You're working on **Tarzi**—a rust-native lite search for AI applications.
 
 ## Implementation Considerations
 

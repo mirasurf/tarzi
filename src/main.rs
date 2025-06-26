@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use std::str::FromStr;
-use tarsier::{
+use tarzi::{
     Result,
     converter::{Converter, Format, convert_search_results},
     fetcher::{WebFetcher, FetchMode},
@@ -9,7 +9,7 @@ use tarsier::{
 use tracing::{Level, debug, info};
 
 #[derive(Parser)]
-#[command(name = "tarsier")]
+#[command(name = "tarzi")]
 #[command(about = "Rust-native lite search for AI applications")]
 #[command(version)]
 struct Cli {
@@ -114,7 +114,7 @@ async fn main() -> Result<()> {
             let log_level = if verbose { Level::DEBUG } else { Level::INFO };
             tracing_subscriber::fmt().with_max_level(log_level).init();
 
-            info!("Tarsier Convert starting with verbose mode: {}", verbose);
+            info!("Tarzi Convert starting with verbose mode: {}", verbose);
             info!("Converting input to {}", format);
             debug!("Input length: {} characters", input.len());
 
@@ -140,7 +140,7 @@ async fn main() -> Result<()> {
             let log_level = if verbose { Level::DEBUG } else { Level::INFO };
             tracing_subscriber::fmt().with_max_level(log_level).init();
 
-            info!("Tarsier Fetch starting with verbose mode: {}", verbose);
+            info!("Tarzi Fetch starting with verbose mode: {}", verbose);
             info!("Fetching URL: {} with mode: {}", url, mode);
             debug!("Using format: {}", format);
 
@@ -174,7 +174,7 @@ async fn main() -> Result<()> {
             let log_level = if verbose { Level::DEBUG } else { Level::INFO };
             tracing_subscriber::fmt().with_max_level(log_level).init();
 
-            info!("Tarsier Search starting with verbose mode: {}", verbose);
+            info!("Tarzi Search starting with verbose mode: {}", verbose);
             info!("Starting search operation");
             info!("Query: '{}'", query);
             info!("Mode: {}", mode);
@@ -213,7 +213,7 @@ async fn main() -> Result<()> {
             let log_level = if verbose { Level::DEBUG } else { Level::INFO };
             tracing_subscriber::fmt().with_max_level(log_level).init();
 
-            info!("Tarsier SearchAndFetch starting with verbose mode: {}", verbose);
+            info!("Tarzi SearchAndFetch starting with verbose mode: {}", verbose);
             info!("Starting search and fetch operation");
             info!("Query: '{}'", query);
             info!("Search mode: {}", search_mode);

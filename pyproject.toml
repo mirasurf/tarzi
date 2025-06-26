@@ -3,7 +3,7 @@ requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "tarsier"
+name = "tarzi"
 requires-python = ">=3.8"
 classifiers = [
     "Programming Language :: Rust",
@@ -19,8 +19,8 @@ authors = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mirasurf/tarsier"
-Repository = "https://github.com/mirasurf/tarsier"
+Homepage = "https://github.com/mirasurf/tarzi"
+Repository = "https://github.com/mirasurf/tarzi"
 
 [tool.maturin]
 features = ["pyo3/extension-module"] 

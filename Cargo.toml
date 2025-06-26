@@ -1,20 +1,20 @@
 [package]
-name = "tarsier"
+name = "tarzi"
 version = "0.0.1"
 edition = "2024"
 authors = ["xmingc <chenxm35@gmail.com>"]
 description = "Rust-native lite search for AI applications"
 license = "MIT"
-repository = "https://github.com/mirasurf/tarsier"
+repository = "https://github.com/mirasurf/tarzi"
 keywords = ["search", "web-scraping", "ai", "html", "markdown", "json", "yaml"]
 categories = ["web-programming", "api-bindings", "text-processing"]
 
 [[bin]]
-name = "tarsier"
+name = "tarzi"
 path = "src/main.rs"
 
 [lib]
-name = "tarsier"
+name = "tarzi"
 crate-type = ["cdylib", "rlib"]
 
 [features]
