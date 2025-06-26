@@ -1,4 +1,4 @@
-<div align="center">Add commentMore actions
+<div align="center">
   <img src="tarzi.png" alt="Tarzi Logo" width="200" height="200">
 </div>
 
