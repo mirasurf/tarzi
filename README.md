@@ -3,7 +3,6 @@
 </div>
 
 <h1 align="center">tarzi.rs</h1>
-<div align="center">
 
 <div align="center">
   Rust-native lite search for your AI applications.

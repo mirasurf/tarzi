@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::{
     Result,
     error::TarziError,
@@ -53,6 +54,13 @@ impl SearchEngine {
         info!("Setting API key for SearchEngine");
         self.api_key = Some(api_key);
         self
+    }
+
+    pub fn from_config(config: &Config) -> Self {
+        info!("Initializing SearchEngine from config");
+        let fetcher = crate::fetcher::WebFetcher::from_config(config);
+        let api_key = config.search.api_key.clone();
+        Self { fetcher, api_key }
     }
 
     pub async fn search(
@@ -266,5 +274,18 @@ impl Drop for SearchEngine {
     fn drop(&mut self) {
         info!("Cleaning up SearchEngine resources");
         // The fetcher will handle its own cleanup
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_searchengine_from_config() {
+        use crate::config::Config;
+        let mut config = Config::new();
+        config.search.api_key = Some("test-api-key-123".to_string());
+        let engine = SearchEngine::from_config(&config);
+        assert_eq!(engine.api_key, Some("test-api-key-123".to_string()));
     }
 }
