@@ -229,6 +229,25 @@ fn default_result_limit() -> usize {
     5
 }
 
+/// Get proxy configuration with environment variable override
+/// Environment variables checked in order: HTTP_PROXY, HTTPS_PROXY, http_proxy, https_proxy
+/// Falls back to config.proxy if no environment variables are set
+pub fn get_proxy_from_env_or_config(config_proxy: &Option<String>) -> Option<String> {
+    // Check environment variables in order of preference
+    let env_vars = ["HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy"];
+
+    for env_var in &env_vars {
+        if let Ok(proxy) = std::env::var(env_var) {
+            if !proxy.is_empty() {
+                return Some(proxy);
+            }
+        }
+    }
+
+    // Fall back to config proxy
+    config_proxy.clone()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -384,5 +403,64 @@ api_key = "google_key_123"
             config.search.api_key,
             Some("your-api-key-for-apiquery-mode".to_string())
         );
+    }
+
+    #[test]
+    fn test_get_proxy_from_env_or_config() {
+        // Test with no environment variables and no config proxy
+        let result = get_proxy_from_env_or_config(&None);
+        assert_eq!(result, None);
+
+        // Test with config proxy but no environment variables
+        let config_proxy = Some("http://config-proxy:8080".to_string());
+        let result = get_proxy_from_env_or_config(&config_proxy);
+        assert_eq!(result, config_proxy);
+
+        // Test with environment variable (HTTP_PROXY)
+        unsafe {
+            std::env::set_var("HTTP_PROXY", "http://env-proxy:8080");
+        }
+        let result = get_proxy_from_env_or_config(&config_proxy);
+        assert_eq!(result, Some("http://env-proxy:8080".to_string()));
+
+        // Test with HTTPS_PROXY (should take precedence over config)
+        unsafe {
+            std::env::set_var("HTTPS_PROXY", "http://https-proxy:8080");
+        }
+        let result = get_proxy_from_env_or_config(&config_proxy);
+        assert_eq!(result, Some("http://https-proxy:8080".to_string()));
+
+        // Test with lowercase environment variable
+        unsafe {
+            std::env::remove_var("HTTP_PROXY");
+            std::env::remove_var("HTTPS_PROXY");
+            std::env::set_var("http_proxy", "http://lowercase-proxy:8080");
+        }
+        let result = get_proxy_from_env_or_config(&config_proxy);
+        assert_eq!(result, Some("http://lowercase-proxy:8080".to_string()));
+
+        // Clean up environment variables
+        unsafe {
+            std::env::remove_var("HTTP_PROXY");
+            std::env::remove_var("HTTPS_PROXY");
+            std::env::remove_var("http_proxy");
+            std::env::remove_var("https_proxy");
+        }
+    }
+
+    #[test]
+    fn test_get_proxy_from_env_or_config_empty_env() {
+        // Test with empty environment variable (should fall back to config)
+        unsafe {
+            std::env::set_var("HTTP_PROXY", "");
+        }
+        let config_proxy = Some("http://config-proxy:8080".to_string());
+        let result = get_proxy_from_env_or_config(&config_proxy);
+        assert_eq!(result, config_proxy);
+
+        // Clean up
+        unsafe {
+            std::env::remove_var("HTTP_PROXY");
+        }
     }
 }

@@ -293,6 +293,11 @@ impl SearchEngine {
         proxy: &str,
     ) -> Result<Vec<SearchResult>> {
         info!("Starting search with proxy: {}", proxy);
+
+        // Use environment variables for proxy with fallback to provided proxy
+        let effective_proxy = crate::config::get_proxy_from_env_or_config(&Some(proxy.to_string()))
+            .unwrap_or_else(|| proxy.to_string());
+
         match mode {
             SearchMode::WebQuery => {
                 warn!("Proxy support for browser mode is simplified");
@@ -307,14 +312,17 @@ impl SearchEngine {
                 let _proxy_client = Client::builder()
                     .timeout(Duration::from_secs(30))
                     .user_agent(&self.user_agent)
-                    .proxy(reqwest::Proxy::http(proxy)?)
+                    .proxy(reqwest::Proxy::http(&effective_proxy)?)
                     .build()
                     .map_err(|e| {
                         error!("Failed to create proxy client: {}", e);
                         TarziError::Config(format!("Failed to create proxy client: {}", e))
                     })?;
 
-                info!("Proxy client created successfully");
+                info!(
+                    "Proxy client created successfully with proxy: {}",
+                    effective_proxy
+                );
                 // Use the proxy client for API calls
                 // This is a simplified implementation
                 // FIXME (xiaming.cxm): to be implemented.

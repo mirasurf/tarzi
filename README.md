@@ -37,111 +37,106 @@
   </a>
 </p>
 
+## Features
 
-## Architecture Overview
+### Core Capabilities
+- **Dual Implementation**: Native Rust library and Python wrapper with CLI tools
+- **Content Conversion**: Convert raw HTML to Markdown, JSON, or YAML formats
+- **Web Fetching**: Fetch web pages with optional JavaScript rendering support
+- **Search Integration**: Query search engines using browser mode (headless/headed/existing. NO API KEY) or API mode
+- **Multiple Search Engines**: Support for Bing, Google, DuckDuckGo, Brave Search, Tavily, and custom engines
+- **Proxy Support**: Use proxies in both browser-based and API-based operations
+- **End-to-End Pipeline**: Complete workflow from search queries to content extraction for AI applications
 
-The codebase has been restructured into three main modules with clear separation of concerns:
+### Advanced Features (coming soon)
+- **Customizable Browser Controls**: Control screen resolution, viewport, user-agent, and locale to mimic real users.
+- **Automatic CAPTCHA Handling**: Detect and bypass CAPTCHAs using solvers or manual fallback.
+- **Intelligent Query Formulation**: Enhance search queries with prompt rewriting or intent-aware generation.
+- **Stealth & Anti-Bot Evasion**: Use fingerprint spoofing, proxy rotation, and human-like interaction patterns.
+- **Workflow-Oriented Task Automation**: Chain multiple actions like search, click, form fill, and scrape into workflows.
+- **Multi-Channel Processing (MCP) Integration**: Integrate with agent frameworks for context-aware, distributed task execution.
+- **Search Metrics & Observability**: Track success rate, latency, CAPTCHA rate, and export logs to observability tools.
 
-### 1. Converter Module (`src/converter.rs`)
-- **Purpose**: Converts raw web page content to various formats
-- **Input**: Raw HTML string + target format
-- **Output**: Formatted content in the specified format
-- **Supported Formats**: HTML, Markdown, JSON, YAML
+## Architecture
 
-### 2. Fetcher Module (`src/fetcher.rs`)
-- **Purpose**: Fetches web page content from URLs
-- **Input**: URL + fetch mode + target format
-- **Output**: Formatted content in the specified format
-- **Three Fetch Modes**:
-  - `plain_request`: Simple HTTP request (no JS rendering)
-  - `browser_head`: Browser with UI (JS rendering)
-  - `browser_headless`: Headless browser (JS rendering)
+Tarzi is built with a modular architecture consisting of three core components:
 
-### 3. Search Module (`src/search.rs`)
-- **Purpose**: Searches for content and fetches results
-- **Input**: Search query + search mode + fetch mode + format
-- **Output**: Search results with fetched content
-- **Reuses**: Fetcher module interfaces without duplication
+* Converter Module: Converts raw HTML content into structured formats
+* Fetcher Module: Handles web page retrieval with multiple strategies
+* Search Module: Provides search engine integration and result processing
 
-## Search Engine Support
+## Usage Examples
 
-Tarzi supports multiple search engines with configurable query patterns:
-
-### Supported Search Engines
-- **Bing** (default): `https://www.bing.com/search?q={query}`
-- **Google**: `https://www.google.com/search?q={query}`
-- **DuckDuckGo**: `https://duckduckgo.com/?q={query}`
-- **Brave Search**: `https://search.brave.com/search?q={query}`
-- **Tavily**: `https://tavily.com/search?q={query}`
-- **SearchApi**: `https://www.searchapi.io/search?q={query}`
-- **Custom**: User-defined query patterns
-
-### Configuration
-Configure search engines in your `tarzi.toml` file:
-
-```toml
-[search]
-mode = "webquery"
-engine = "bing"  # Default search engine
-query_pattern = "https://www.bing.com/search?q={query}"  # Custom pattern (optional)
-limit = 5
-api_key = "your-api-key-for-apiquery-mode"
-```
-
-### Custom Query Patterns
-You can define custom query patterns for any search engine:
-
-```toml
-[search]
-engine = "google"
-query_pattern = "https://custom-search.com/search?query={query}&lang=en&region=us"
-```
-
-The `{query}` placeholder is automatically replaced with the user's search query.
-
-## Key Improvements
-
-### Modular Design
-- **Clear separation**: Each module has a single responsibility
-- **No duplication**: Search module reuses fetcher interfaces
-- **Format integration**: Fetcher automatically converts to target format
-- **Mode flexibility**: Three distinct fetch modes for different use cases
-
-### Enhanced Fetcher
+### Basic Content Conversion
 ```rust
-// New fetcher interface
+use tarzi::{Converter, Format};
+
+let converter = Converter::new();
+let html = "<h1>Hello World</h1><p>This is content.</p>";
+let markdown = converter.convert(html, Format::Markdown).await?;
+```
+
+### Web Page Fetching
+```rust
+use tarzi::{WebFetcher, FetchMode, Format};
+
 let mut fetcher = WebFetcher::new();
-let content = fetcher.fetch(url, FetchMode::BrowserHeadless, Format::Markdown).await?;
-```
 
-### Improved Search
-```rust
-// Search and fetch content for each result
-let mut search_engine = SearchEngine::new();
-let results_with_content = search_engine.search_and_fetch(
-    query, 
-    SearchMode::Browser, 
-    limit, 
+// Simple HTTP request
+let content = fetcher.fetch(
+    "https://example.com", 
     FetchMode::PlainRequest, 
+    Format::Markdown
+).await?;
+
+// With JavaScript rendering
+let content = fetcher.fetch(
+    "https://example.com", 
+    FetchMode::BrowserHeadless, 
     Format::Json
 ).await?;
 ```
 
-## Usage Examples
+### Search and Content Extraction
+```rust
+use tarzi::{SearchEngine, SearchMode, FetchMode, Format};
 
-### Basic Fetching
-```bash
-# Plain HTTP request
-cargo run -- fetch --url "https://example.com" --mode plain_request --format markdown
+let mut search_engine = SearchEngine::new();
 
-# Browser with JS rendering
-cargo run -- fetch --url "https://example.com" --mode browser_headless --format json
+// Search and fetch content for each result
+let results_with_content = search_engine.search_and_fetch(
+    "rust programming", 
+    SearchMode::WebQuery, 
+    5, 
+    FetchMode::PlainRequest, 
+    Format::Markdown
+).await?;
 ```
 
-### Search and Fetch
+### Python Integration
+```python
+import tarzi
+
+# Convert HTML to Markdown
+markdown = tarzi.convert_html("<h1>Hello</h1>", "markdown")
+
+# Fetch web page
+content = tarzi.fetch_url("https://example.com", js=True)
+
+# Search web
+results = tarzi.search_web("python programming", "browser", 10)
+```
+
+### CLI Usage
 ```bash
-# Search for results and fetch content for each
-cargo run -- search-and-fetch \
+# Convert HTML to Markdown
+tarzi convert --input "<h1>Hello</h1>" --format markdown
+
+# Fetch web page with JavaScript rendering
+tarzi fetch --url "https://example.com" --mode browser_headless --format json
+
+# Search and fetch content
+tarzi search-and-fetch \
   --query "rust programming" \
   --search-mode browser \
   --fetch-mode plain_request \
@@ -149,71 +144,9 @@ cargo run -- search-and-fetch \
   --limit 5
 ```
 
-### Direct Module Usage
-```rust
-use tarzi::{WebFetcher, FetchMode, SearchEngine, SearchMode, Format};
-
-// Fetch content with conversion
-let mut fetcher = WebFetcher::new();
-let content = fetcher.fetch("https://example.com", FetchMode::BrowserHeadless, Format::Markdown).await?;
-
-// Search and fetch
-let mut search_engine = SearchEngine::new();
-let results = search_engine.search_and_fetch(
-    "query", 
-    SearchMode::Browser, 
-    5, 
-    FetchMode::PlainRequest, 
-    Format::Json
-).await?;
-```
-
-## Module Dependencies
-
-```
-Search Module
-    ↓ uses
-Fetcher Module
-    ↓ uses
-Converter Module
-```
-
-- **Search** → **Fetcher**: Reuses fetcher interfaces for content retrieval
-- **Fetcher** → **Converter**: Automatically converts content to target format
-- **No circular dependencies**: Clean, hierarchical structure
-
-## Benefits
-
-1. **Maintainability**: Clear module boundaries make code easier to maintain
-2. **Reusability**: Fetcher interfaces are reused by search module
-3. **Flexibility**: Multiple fetch modes and formats supported
-4. **Simplicity**: No config module dependencies in core functionality
-5. **Extensibility**: Easy to add new formats or fetch modes
-
-## Development
-
-### Building
-```bash
-cargo build
-```
-
-### Running Examples
-```bash
-# Basic usage example
-cargo run --example basic_usage
-
-# CLI usage
-cargo run -- fetch --url "https://httpbin.org/html" --mode plain_request --format markdown
-```
-
-### Testing
-```bash
-cargo test
-```
-
 ## License
 
-MIT License - see LICENSE file for details.
+Apache License 2.0 - see LICENSE file for details.
 
 ## Contributors
 

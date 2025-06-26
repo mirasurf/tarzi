@@ -65,13 +65,20 @@ impl WebFetcher {
         let mut client_builder = Client::builder()
             .timeout(std::time::Duration::from_secs(config.fetcher.timeout))
             .user_agent(&config.fetcher.user_agent);
-        if let Some(proxy) = &config.fetcher.proxy {
+
+        // Use environment variables for proxy with fallback to config
+        let proxy = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
+        if let Some(proxy) = proxy {
             if !proxy.is_empty() {
-                if let Ok(proxy_obj) = reqwest::Proxy::http(proxy) {
+                if let Ok(proxy_obj) = reqwest::Proxy::http(&proxy) {
                     client_builder = client_builder.proxy(proxy_obj);
+                    info!("Using proxy from environment/config: {}", proxy);
+                } else {
+                    warn!("Invalid proxy configuration: {}", proxy);
                 }
             }
         }
+
         let http_client = client_builder
             .build()
             .expect("Failed to create HTTP client from config");
@@ -748,15 +755,32 @@ mod tests {
     #[test]
     fn test_webfetcher_from_config() {
         use crate::config::Config;
-        let mut config = Config::new();
-        config.fetcher.user_agent = "TestAgent/1.0".to_string();
-        config.fetcher.timeout = 42;
-        config.fetcher.proxy = Some("http://localhost:1234".to_string());
+        let config = Config::new();
         let fetcher = WebFetcher::from_config(&config);
         // We can't directly check the http_client internals, but we can check that the struct is created
         assert!(fetcher.browser.is_none());
         assert!(fetcher._handler.is_none());
         assert_eq!(fetcher.converter, Converter::new());
+    }
+
+    #[test]
+    fn test_webfetcher_from_config_with_env_proxy() {
+        use crate::config::Config;
+        // Set environment variable
+        unsafe {
+            std::env::set_var("HTTP_PROXY", "http://test-proxy:8080");
+        }
+
+        let config = Config::new();
+        let _fetcher = WebFetcher::from_config(&config);
+
+        // Note: We can't easily test if the proxy was actually set on the client
+        // without making HTTP requests, but we can verify the function doesn't panic
+
+        // Clean up
+        unsafe {
+            std::env::remove_var("HTTP_PROXY");
+        }
     }
 
     // Integration tests for external browser functionality
