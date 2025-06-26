@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="tarzi.png" alt="Tarzi Logo" width="200" height="200">
+  <img src="tarzi-320.png" alt="Tarzi Logo" width="200" height="200">
 </div>
 
 <h1 align="center">tarzi.rs</h1>
