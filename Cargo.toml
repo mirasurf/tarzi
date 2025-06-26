@@ -52,6 +52,7 @@ pyo3 = { version = "0.19", features = ["extension-module"], optional = true }
 futures = "0.3"
 async-trait = "0.1"
 regex = "1.11"
+toml = "0.8"
 
 [dev-dependencies]
 tokio-test = "0.4"

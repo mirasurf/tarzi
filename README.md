@@ -69,6 +69,8 @@ tarsier search -q "Rust programming" -m browser -l 5
 tarsier search -q "Python programming" -m api -l 3
 ```
 
+**Verbose Mode**: Use the `-v` or `--verbose` flag with any subcommand to enable detailed logging for that specific operation. This is particularly useful for debugging issues with browser-based search operations that might hang or fail silently.
+
 ### Rust Library Usage
 
 ```rust
@@ -208,4 +210,4 @@ MIT License - see LICENSE file for details.
 
 Thank you all contributors ❤
 
-[![tarsier contributors](https://contrib.rocks/image?repo=caesar0301/litesearch "litesearch contributors")](https://github.com/caesar0301/litesearch/graphs/contributors)
+[![tarsier contributors](https://contrib.rocks/image?repo=mirasurf/tarsier "tarsier contributors")](https://github.com/mirasurf/tarsier/graphs/contributors)

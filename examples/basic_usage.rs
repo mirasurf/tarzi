@@ -1,8 +1,8 @@
 use tarsier::{
+    Result,
     converter::{Converter, Format},
     fetcher::WebFetcher,
     search::{SearchEngine, SearchMode},
-    Result,
 };
 
 #[tokio::main]
@@ -21,7 +21,7 @@ async fn main() -> Result<()> {
             </body>
         </html>
     "#;
-    
+
     let converter = Converter::new();
     let markdown = converter.convert(html_input, Format::Markdown).await?;
     println!("Markdown output:\n{}\n", markdown);
@@ -38,8 +38,10 @@ async fn main() -> Result<()> {
         Ok(content) => {
             println!("Successfully fetched page ({} characters)", content.len());
             let markdown = converter.convert(&content, Format::Markdown).await?;
-            println!("Converted to markdown (first 200 chars):\n{}...\n", 
-                    &markdown[..markdown.len().min(200)]);
+            println!(
+                "Converted to markdown (first 200 chars):\n{}...\n",
+                &markdown[..markdown.len().min(200)]
+            );
         }
         Err(e) => {
             println!("Failed to fetch page: {}\n", e);
@@ -49,7 +51,10 @@ async fn main() -> Result<()> {
     // 4. Search functionality (browser mode)
     println!("4. Search functionality (browser mode):");
     let mut search_engine = SearchEngine::new();
-    match search_engine.search("Rust programming", SearchMode::Browser, 3).await {
+    match search_engine
+        .search("Rust programming", SearchMode::Browser, 3)
+        .await
+    {
         Ok(results) => {
             println!("Found {} search results:", results.len());
             for (i, result) in results.iter().enumerate() {
@@ -65,7 +70,10 @@ async fn main() -> Result<()> {
     // 5. Search functionality (API mode)
     println!("5. Search functionality (API mode):");
     let mut api_search_engine = SearchEngine::new().with_api_key("demo_key".to_string());
-    match api_search_engine.search("Python programming", SearchMode::Api, 2).await {
+    match api_search_engine
+        .search("Python programming", SearchMode::Api, 2)
+        .await
+    {
         Ok(results) => {
             println!("Found {} API search results:", results.len());
             for (i, result) in results.iter().enumerate() {
@@ -80,4 +88,4 @@ async fn main() -> Result<()> {
 
     println!("=== Example completed successfully! ===");
     Ok(())
-} 
+}
