@@ -145,6 +145,6 @@ MIT License - see LICENSE file for details.
 
 ## Contributors
 
-Thank you all contributors ❤
+Thank you ❤ all human contributors, and Cursor.
 
 [![tarsier contributors](https://contrib.rocks/image?repo=mirasurf/tarsier "tarsier contributors")](https://github.com/mirasurf/tarsier/graphs/contributors)
