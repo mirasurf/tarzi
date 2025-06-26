@@ -1,0 +1,59 @@
+[package]
+name = "tarzi"
+version = "0.0.3"
+edition = "2024"
+authors = ["xmingc <chenxm35@gmail.com>"]
+description = "Rust-native lite search for AI applications"
+license = "MIT"
+repository = "https://github.com/mirasurf/tarzi"
+keywords = ["search", "web-scraping", "ai", "html", "markdown", "json", "yaml"]
+categories = ["web-programming", "api-bindings", "text-processing"]
+
+[[bin]]
+name = "tarzi"
+path = "src/main.rs"
+
+[lib]
+name = "tarzi"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+pyo3 = ["dep:pyo3"]
+
+[dependencies]  
+# Core dependencies
+tokio = { version = "1.45", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Web scraping and browser automation
+chromiumoxide = "0.7.0"
+reqwest = { version = "0.11", features = ["json", "stream"] }
+url = "2.5"
+urlencoding = "2.1"
+
+# HTML and Markdown processing
+html2md = "0.2.15"
+pulldown-cmark = "0.9"
+
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Python bindings
+pyo3 = { version = "0.19", features = ["extension-module"], optional = true }
+
+# Additional utilities
+futures = "0.3"
+async-trait = "0.1"
+regex = "1.11"
+toml = "0.8"
+
+[dev-dependencies]
+tokio-test = "0.4"
+tempfile = "3.8"
