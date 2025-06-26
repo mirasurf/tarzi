@@ -1,5 +1,12 @@
 # tarsier
-Rust-native lite search for AI applications.
+
+<div align="center">
+  <img src="tarsier.png" alt="Tarsier Logo" width="200" height="200">
+</div>
+
+<div align="center">
+  Rust-native lite search for AI applications.
+</div>
 
 # Features
 
