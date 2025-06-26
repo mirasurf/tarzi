@@ -203,3 +203,9 @@ python examples/basic_usage.py
 ## License
 
 MIT License - see LICENSE file for details.
+
+## Contributors
+
+Thank you all contributors ❤
+
+[![tarsier contributors](https://contrib.rocks/image?repo=caesar0301/litesearch "litesearch contributors")](https://github.com/caesar0301/litesearch/graphs/contributors)
