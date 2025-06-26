@@ -1,258 +1,143 @@
-# tarsier
+# Tarsier
 
-<div align="center">
-  <img src="tarsier.png" alt="Tarsier Logo" width="200" height="200">
-</div>
+Rust-native lite search for AI applications with improved modular architecture.
 
-<div align="center">
-  Rust-native lite search for AI applications.
-</div>
+## Architecture Overview
 
-## Features
+The codebase has been restructured into three main modules with clear separation of concerns:
 
-### Goals 0 ✅
+### 1. Converter Module (`src/converter.rs`)
+- **Purpose**: Converts raw web page content to various formats
+- **Input**: Raw HTML string + target format
+- **Output**: Formatted content in the specified format
+- **Supported Formats**: HTML, Markdown, JSON, YAML
 
-- [x] Provide both a native Rust implementation and a Python wrapper, available as a library and a CLI tool.  
-- [x] Convert raw HTML strings into semi-structured formats such as Markdown, JSON, or YAML.  
-- [x] Fetch individual web pages from URLs, with optional JavaScript rendering support.  
-- [x] Perform search engine queries using either browser mode (headless or headed, no token required) or API mode (token-based).  
-- [x] Support proxy usage in both browser-based and API-based modes.  
-- [x] Implement an end-to-end pipeline for querying search engines, parsing SERPs, and extracting target pages for AI applications.
+### 2. Fetcher Module (`src/fetcher.rs`)
+- **Purpose**: Fetches web page content from URLs
+- **Input**: URL + fetch mode + target format
+- **Output**: Formatted content in the specified format
+- **Three Fetch Modes**:
+  - `plain_request`: Simple HTTP request (no JS rendering)
+  - `browser_head`: Browser with UI (JS rendering)
+  - `browser_headless`: Headless browser (JS rendering)
 
-### Goals 1
+### 3. Search Module (`src/search.rs`)
+- **Purpose**: Searches for content and fetches results
+- **Input**: Search query + search mode + fetch mode + format
+- **Output**: Search results with fetched content
+- **Reuses**: Fetcher module interfaces without duplication
 
-- [ ] Capture screenshots of web pages.  
-- [ ] Define and execute custom workflows for interacting with web pages and crawling structured content.
+## Key Improvements
 
-## Installation
+### Modular Design
+- **Clear separation**: Each module has a single responsibility
+- **No duplication**: Search module reuses fetcher interfaces
+- **Format integration**: Fetcher automatically converts to target format
+- **Mode flexibility**: Three distinct fetch modes for different use cases
 
-### Rust
-
-```bash
-# Clone the repository
-git clone https://github.com/mirasurf/tarsier.git
-cd tarsier
-
-# Build and install
-cargo install --path .
-
-# Or build for development
-cargo build --release
-```
-
-### Python
-
-```bash
-# Install from source (requires Rust toolchain)
-pip install maturin
-maturin develop
-
-# Or install the Python package
-pip install tarsier
-```
-
-## Configuration
-
-Tarsier supports configuration via TOML files:
-
-### Default Configuration Locations
-- **User config**: `$HOME/.tarsier.toml` (for production use)
-- **Development config**: `./tarsier.toml` (in project root)
-
-### Configuration Sections
-
-```toml
-[general]
-log_level = "info"        # Logging level: debug, info, warn, error
-timeout = 30              # General timeout in seconds
-
-[converter]
-default_format = "markdown"  # Default output format: markdown, json, yaml
-
-[fetcher]
-user_agent = "Mozilla/5.0 (compatible; Tarsier/1.0)"  # Custom user agent
-timeout = 30              # HTTP request timeout
-
-[browser]
-browser_mode = "headless" # Browser mode: headless, head
-timeout = 60              # Browser operation timeout
-
-[search]
-search_mode = "browser"   # Search mode: browser, api
-search_engine = "bing.com" # Default search engine
-result_limit = 3          # Default number of results
-# API keys for different search engines (optional)
-# google_search_api_key = "your_google_api_key"
-# bing_search_api_key = "your_bing_api_key"
-# duckduckgo_api_key = "your_duckduckgo_api_key"
-```
-
-### Configuration Management
-
+### Enhanced Fetcher
 ```rust
-use tarsier::config::Config;
-
-// Load user configuration
-let config = Config::load()?;
-
-// Load development configuration
-let dev_config = Config::load_dev()?;
-
-// Save configuration
-config.save()?;
-config.save_dev()?;
+// New fetcher interface
+let mut fetcher = WebFetcher::new();
+let content = fetcher.fetch(url, FetchMode::BrowserHeadless, Format::Markdown).await?;
 ```
 
-## Usage
-
-### CLI Usage
-
-```bash
-# Convert HTML to Markdown
-tarsier convert -i "<h1>Hello World</h1>" -f markdown
-
-# Fetch a web page and convert to JSON
-tarsier fetch -u "https://example.com" -f json
-
-# Search using browser mode
-tarsier search -q "Rust programming" -m browser -l 5
-
-# Search using API mode (requires API key)
-tarsier search -q "Python programming" -m api -l 3
-```
-
-**Verbose Mode**: Use the `-v` or `--verbose` flag with any subcommand to enable detailed logging for that specific operation. This is particularly useful for debugging issues with browser-based search operations that might hang or fail silently.
-
-### Rust Library Usage
-
+### Improved Search
 ```rust
-use tarsier::{
-    converter::{Converter, Format},
-    fetcher::WebFetcher,
-    search::{SearchEngine, SearchMode},
-    Result,
-};
-
-#[tokio::main]
-async fn main() -> Result<()> {
-    // Convert HTML to Markdown
-    let converter = Converter::new();
-    let html = "<h1>Hello World</h1>";
-    let markdown = converter.convert(html, Format::Markdown).await?;
-    println!("{}", markdown);
-
-    // Fetch web page
-    let fetcher = WebFetcher::new();
-    let content = fetcher.fetch("https://example.com").await?;
-    
-    // Search with browser mode
-    let mut search_engine = SearchEngine::new();
-    let results = search_engine.search("Rust programming", SearchMode::Browser, 5).await?;
-    
-    for result in results {
-        println!("{}: {}", result.title, result.url);
-    }
-
-    Ok(())
-}
+// Search and fetch content for each result
+let mut search_engine = SearchEngine::new();
+let results_with_content = search_engine.search_and_fetch(
+    query, 
+    SearchMode::Browser, 
+    limit, 
+    FetchMode::PlainRequest, 
+    Format::Json
+).await?;
 ```
 
-### Python Library Usage
+## Usage Examples
 
-```python
-import tarsier
+### Basic Fetching
+```bash
+# Plain HTTP request
+cargo run -- fetch --url "https://example.com" --mode plain_request --format markdown
 
-# Convert HTML to Markdown
-html = "<h1>Hello World</h1>"
-markdown = tarsier.convert_html(html, "markdown")
-print(markdown)
-
-# Fetch web page
-content = tarsier.fetch_url("https://example.com", js=False)
-
-# Search with browser mode
-results = tarsier.search_web("Rust programming", "browser", 5)
-for result in results:
-    print(f"{result.title}: {result.url}")
-
-# Using class-based API
-converter = tarsier.PyConverter()
-fetcher = tarsier.PyWebFetcher()
-search_engine = tarsier.PySearchEngine()
-
-# Convert to different formats
-json_output = converter.convert(html, "json")
-yaml_output = converter.convert(html, "yaml")
+# Browser with JS rendering
+cargo run -- fetch --url "https://example.com" --mode browser_headless --format json
 ```
 
-## API Reference
+### Search and Fetch
+```bash
+# Search for results and fetch content for each
+cargo run -- search-and-fetch \
+  --query "rust programming" \
+  --search-mode browser \
+  --fetch-mode plain_request \
+  --format markdown \
+  --limit 5
+```
 
-### Converter
+### Direct Module Usage
+```rust
+use tarsier::{WebFetcher, FetchMode, SearchEngine, SearchMode, Format};
 
-The `Converter` class handles HTML to various format conversions:
+// Fetch content with conversion
+let mut fetcher = WebFetcher::new();
+let content = fetcher.fetch("https://example.com", FetchMode::BrowserHeadless, Format::Markdown).await?;
 
-- **HTML → Markdown**: Uses `html2md` crate
-- **HTML → JSON**: Uses `pulldown-cmark` to parse and `serde_json` to serialize
-- **HTML → YAML**: Uses `pulldown-cmark` to parse and `serde_yaml` to serialize
+// Search and fetch
+let mut search_engine = SearchEngine::new();
+let results = search_engine.search_and_fetch(
+    "query", 
+    SearchMode::Browser, 
+    5, 
+    FetchMode::PlainRequest, 
+    Format::Json
+).await?;
+```
 
-### WebFetcher
+## Module Dependencies
 
-The `WebFetcher` class handles web page fetching:
+```
+Search Module
+    ↓ uses
+Fetcher Module
+    ↓ uses
+Converter Module
+```
 
-- **Basic fetching**: Uses `reqwest` for HTTP requests
-- **JavaScript rendering**: Uses `chromiumoxide` for headless browser automation
-- **Proxy support**: Configurable proxy settings for both modes
+- **Search** → **Fetcher**: Reuses fetcher interfaces for content retrieval
+- **Fetcher** → **Converter**: Automatically converts content to target format
+- **No circular dependencies**: Clean, hierarchical structure
 
-### SearchEngine
+## Benefits
 
-The `SearchEngine` class handles search functionality:
-
-- **Browser mode**: Uses `chromiumoxide` to scrape search results from Google
-- **API mode**: Supports token-based search APIs (configurable)
-- **Proxy support**: Works with both browser and API modes
-
-## Dependencies
-
-* Rust edition 2024
-* chromiumoxide: support chrome browser instance
-* HTML → Markdown: html2md
-* Markdown → JSON: use pulldown-cmark to produce JSON
-* JSON → YAML: serde_yaml
-* mistral.rs: run local LLM
-* pyo3: Python bindings
-* reqwest: HTTP client
-* tokio: async runtime
-
-## Examples
-
-See the `examples/` directory for complete usage examples:
-
-- `examples/basic_usage.rs` - Rust library usage
-- `examples/basic_usage.py` - Python library usage
+1. **Maintainability**: Clear module boundaries make code easier to maintain
+2. **Reusability**: Fetcher interfaces are reused by search module
+3. **Flexibility**: Multiple fetch modes and formats supported
+4. **Simplicity**: No config module dependencies in core functionality
+5. **Extensibility**: Easy to add new formats or fetch modes
 
 ## Development
 
+### Building
 ```bash
-# Run tests
-cargo test
-
-# Run examples
-cargo run --example basic_usage
-
-# Build Python bindings
-maturin develop
-
-# Run Python example
-python examples/basic_usage.py
+cargo build
 ```
 
-## Contributing
+### Running Examples
+```bash
+# Basic usage example
+cargo run --example basic_usage
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
+# CLI usage
+cargo run -- fetch --url "https://httpbin.org/html" --mode plain_request --format markdown
+```
+
+### Testing
+```bash
+cargo test
+```
 
 ## License
 

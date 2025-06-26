@@ -1,4 +1,4 @@
-use crate::{error::TarsierError, Result};
+use crate::{error::TarsierError, Result, converter::{Converter, Format}};
 use chromiumoxide::{
     browser::{Browser, BrowserConfig, HeadlessMode},
     handler::Handler,
@@ -6,12 +6,33 @@ use chromiumoxide::{
 use reqwest::Client;
 use std::time::Duration;
 use url::Url;
-use tracing::{info, error, debug};
+use tracing::{info, error, debug, warn};
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum FetchMode {
+    PlainRequest,
+    BrowserHead,
+    BrowserHeadless,
+}
+
+impl std::str::FromStr for FetchMode {
+    type Err = TarsierError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "plain_request" | "plain" => Ok(FetchMode::PlainRequest),
+            "browser_head" | "head" => Ok(FetchMode::BrowserHead),
+            "browser_headless" | "headless" => Ok(FetchMode::BrowserHeadless),
+            _ => Err(TarsierError::InvalidMode(s.to_string())),
+        }
+    }
+}
 
 pub struct WebFetcher {
     http_client: Client,
     browser: Option<Browser>,
     _handler: Option<Handler>,
+    converter: Converter,
 }
 
 impl WebFetcher {
@@ -28,11 +49,32 @@ impl WebFetcher {
             http_client,
             browser: None,
             _handler: None,
+            converter: Converter::new(),
         }
     }
 
-    pub async fn fetch(&self, url: &str) -> Result<String> {
-        info!("Fetching URL: {}", url);
+    /// Fetch content from URL and convert to specified format
+    pub async fn fetch(&mut self, url: &str, mode: FetchMode, format: Format) -> Result<String> {
+        info!("Fetching URL: {} with mode: {:?}, format: {:?}", url, mode, format);
+        
+        // First fetch the raw content
+        let raw_content = match mode {
+            FetchMode::PlainRequest => self.fetch_plain_request(url).await?,
+            FetchMode::BrowserHead => self.fetch_with_browser(url, false).await?,
+            FetchMode::BrowserHeadless => self.fetch_with_browser(url, true).await?,
+        };
+        
+        // Then convert to the specified format
+        info!("Converting content to format: {:?}", format);
+        let converted_content = self.converter.convert(&raw_content, format).await?;
+        
+        info!("Successfully fetched and converted content ({} characters)", converted_content.len());
+        Ok(converted_content)
+    }
+
+    /// Fetch raw content using plain HTTP request (no JS rendering)
+    async fn fetch_plain_request(&self, url: &str) -> Result<String> {
+        info!("Fetching URL with plain request: {}", url);
         let url = Url::parse(url)?;
         debug!("Parsed URL: {:?}", url);
         
@@ -50,11 +92,12 @@ impl WebFetcher {
         Ok(content)
     }
 
-    pub async fn fetch_with_js(&mut self, url: &str) -> Result<String> {
-        info!("Fetching URL with JavaScript rendering: {}", url);
+    /// Fetch content using browser (with or without headless mode)
+    async fn fetch_with_browser(&mut self, url: &str, headless: bool) -> Result<String> {
+        info!("Fetching URL with browser (headless: {}): {}", headless, url);
         
         info!("Getting or creating browser instance...");
-        let browser = self.get_or_create_browser().await?;
+        let browser = self.get_or_create_browser(headless).await?;
         info!("Browser instance ready");
         
         info!("Creating new page...");
@@ -129,9 +172,10 @@ impl WebFetcher {
         Ok(content)
     }
 
-    async fn get_or_create_browser(&mut self) -> Result<&Browser> {
+    async fn get_or_create_browser(&mut self, headless: bool) -> Result<&Browser> {
         if self.browser.is_none() {
-            info!("Creating new browser instance for WebFetcher...");
+            info!("Creating new browser instance for WebFetcher (headless: {})...", headless);
+            // For now, always use headless mode since the non-headless variant is not available
             let config = BrowserConfig::builder()
                 .headless_mode(HeadlessMode::New)
                 .no_sandbox()
@@ -173,20 +217,44 @@ impl WebFetcher {
         Ok(self.browser.as_ref().unwrap())
     }
 
-    pub async fn fetch_with_proxy(&self, url: &str, proxy: &str) -> Result<String> {
-        let proxy_client = Client::builder()
-            .timeout(Duration::from_secs(30))
-            .user_agent("Mozilla/5.0 (compatible; Tarsier/1.0)")
-            .proxy(reqwest::Proxy::http(proxy)?)
-            .build()
-            .map_err(|e| TarsierError::Config(format!("Failed to create proxy client: {}", e)))?;
-
-        let url = Url::parse(url)?;
-        let response = proxy_client.get(url).send().await?;
+    /// Fetch content using proxy
+    pub async fn fetch_with_proxy(&mut self, url: &str, proxy: &str, mode: FetchMode, format: Format) -> Result<String> {
+        info!("Fetching URL with proxy: {} (proxy: {})", url, proxy);
         
-        let response = response.error_for_status()?;
-        let content = response.text().await?;
-        Ok(content)
+        let raw_content = match mode {
+            FetchMode::PlainRequest => {
+                let proxy_client = Client::builder()
+                    .timeout(Duration::from_secs(30))
+                    .user_agent("Mozilla/5.0 (compatible; Tarsier/1.0)")
+                    .proxy(reqwest::Proxy::http(proxy)?)
+                    .build()
+                    .map_err(|e| TarsierError::Config(format!("Failed to create proxy client: {}", e)))?;
+
+                let url = Url::parse(url)?;
+                let response = proxy_client.get(url).send().await?;
+                let response = response.error_for_status()?;
+                response.text().await?
+            }
+            FetchMode::BrowserHead | FetchMode::BrowserHeadless => {
+                // For browser modes with proxy, we would need to configure the browser to use the proxy
+                // This is a simplified implementation - in practice you'd configure browser proxy settings
+                warn!("Proxy not yet implemented for browser modes, falling back to plain request");
+                self.fetch_plain_request(url).await?
+            }
+        };
+        
+        // Convert to specified format
+        let converted_content = self.converter.convert(&raw_content, format).await?;
+        Ok(converted_content)
+    }
+
+    /// Get raw content without conversion (for internal use)
+    pub async fn fetch_raw(&mut self, url: &str, mode: FetchMode) -> Result<String> {
+        match mode {
+            FetchMode::PlainRequest => self.fetch_plain_request(url).await,
+            FetchMode::BrowserHead => self.fetch_with_browser(url, false).await,
+            FetchMode::BrowserHeadless => self.fetch_with_browser(url, true).await,
+        }
     }
 }
 

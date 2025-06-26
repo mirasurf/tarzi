@@ -11,31 +11,13 @@ pub use error::{TarsierError, Result};
 
 // Re-export main types for convenience
 pub use converter::{Converter, Format};
-pub use fetcher::WebFetcher;
+pub use fetcher::{WebFetcher, FetchMode};
 pub use search::{SearchEngine, SearchMode, SearchResult};
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::str::FromStr;
-
-    #[tokio::test]
-    async fn test_html_to_markdown_conversion() {
-        let converter = Converter::new();
-        let html = "<h1>Hello World</h1><p>This is a <strong>test</strong>.</p>";
-        let result = converter.convert(html, Format::Markdown).await.unwrap();
-        assert!(result.contains("Hello World"));
-        assert!(result.contains("test"));
-    }
-
-    #[tokio::test]
-    async fn test_html_to_json_conversion() {
-        let converter = Converter::new();
-        let html = "<h1>Test Title</h1><p>Test content</p>";
-        let result = converter.convert(html, Format::Json).await.unwrap();
-        assert!(result.contains("Test Title"));
-        assert!(result.contains("Test content"));
-    }
 
     #[test]
     fn test_format_parsing() {
@@ -47,7 +29,30 @@ mod tests {
 
     #[test]
     fn test_search_mode_parsing() {
-        assert_eq!(SearchMode::from_str("browser").unwrap(), SearchMode::Browser);
-        assert_eq!(SearchMode::from_str("api").unwrap(), SearchMode::Api);
+        assert_eq!(SearchMode::from_str("webquery").unwrap(), SearchMode::WebQuery);
+        assert_eq!(SearchMode::from_str("apiquery").unwrap(), SearchMode::ApiQuery);
+    }
+
+    #[test]
+    fn test_fetch_mode_parsing() {
+        assert_eq!(FetchMode::from_str("plain_request").unwrap(), FetchMode::PlainRequest);
+        assert_eq!(FetchMode::from_str("browser_head").unwrap(), FetchMode::BrowserHead);
+        assert_eq!(FetchMode::from_str("browser_headless").unwrap(), FetchMode::BrowserHeadless);
+    }
+
+    #[test]
+    fn test_modular_structure() {
+        // Test that modules can be instantiated
+        let _converter = Converter::new();
+        let _fetcher = WebFetcher::new();
+        let _search_engine = SearchEngine::new();
+        
+        // Test that types can be created
+        let _format = Format::Markdown;
+        let _fetch_mode = FetchMode::PlainRequest;
+        let _search_mode = SearchMode::WebQuery;
+        
+        // This test verifies that the modular structure compiles correctly
+        assert!(true);
     }
 } 

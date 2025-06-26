@@ -1,91 +1,77 @@
 use tarsier::{
-    Result,
-    converter::{Converter, Format},
-    fetcher::WebFetcher,
-    search::{SearchEngine, SearchMode},
+    WebFetcher, FetchMode, SearchEngine, SearchMode, Format,
+    Result, TarsierError
 };
+use std::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("=== Tarsier Basic Usage Example ===\n");
-
-    // 1. HTML to Markdown conversion
-    println!("1. Converting HTML to Markdown:");
-    let html_input = r#"
-        <html>
-            <head><title>Example Page</title></head>
-            <body>
-                <h1>Welcome to Tarsier</h1>
-                <p>This is a <strong>test</strong> page with <a href="https://example.com">a link</a>.</p>
-                <img src="image.jpg" alt="Test image">
-            </body>
-        </html>
-    "#;
-
-    let converter = Converter::new();
-    let markdown = converter.convert(html_input, Format::Markdown).await?;
-    println!("Markdown output:\n{}\n", markdown);
-
-    // 2. HTML to JSON conversion
-    println!("2. Converting HTML to JSON:");
-    let json_output = converter.convert(html_input, Format::Json).await?;
-    println!("JSON output:\n{}\n", json_output);
-
-    // 3. Web page fetching (without JavaScript)
-    println!("3. Fetching web page (without JavaScript):");
-    let fetcher = WebFetcher::new();
-    match fetcher.fetch("https://httpbin.org/html").await {
-        Ok(content) => {
-            println!("Successfully fetched page ({} characters)", content.len());
-            let markdown = converter.convert(&content, Format::Markdown).await?;
-            println!(
-                "Converted to markdown (first 200 chars):\n{}...\n",
-                &markdown[..markdown.len().min(200)]
-            );
-        }
-        Err(e) => {
-            println!("Failed to fetch page: {}\n", e);
-        }
+    // Initialize tracing
+    tracing_subscriber::fmt::init();
+    
+    println!("=== Tarsier Modular Example ===\n");
+    
+    // Example 1: Using the fetcher module directly
+    println!("1. Fetching content with different modes:");
+    
+    let mut fetcher = WebFetcher::new();
+    let test_url = "https://httpbin.org/html";
+    
+    // Plain request mode
+    match fetcher.fetch(test_url, FetchMode::PlainRequest, Format::Html).await {
+        Ok(content) => println!("   Plain request: {} characters", content.len()),
+        Err(e) => println!("   Plain request failed: {}", e),
     }
-
-    // 4. Search functionality (browser mode)
-    println!("4. Search functionality (browser mode):");
+    
+    // Browser headless mode
+    match fetcher.fetch(test_url, FetchMode::BrowserHeadless, Format::Markdown).await {
+        Ok(content) => println!("   Browser headless: {} characters", content.len()),
+        Err(e) => println!("   Browser headless failed: {}", e),
+    }
+    
+    println!();
+    
+    // Example 2: Using the search module
+    println!("2. Searching and fetching content:");
+    
     let mut search_engine = SearchEngine::new();
-    match search_engine
-        .search("Rust programming", SearchMode::Browser, 3)
-        .await
-    {
+    let query = "rust programming";
+    
+    // Search for results
+    match search_engine.search(query, SearchMode::WebQuery, 3).await {
         Ok(results) => {
-            println!("Found {} search results:", results.len());
+            println!("   Found {} search results", results.len());
             for (i, result) in results.iter().enumerate() {
-                println!("  {}. {} ({})", i + 1, result.title, result.url);
-                println!("     {}", result.snippet);
+                println!("   {}. {} - {}", i + 1, result.title, result.url);
             }
         }
-        Err(e) => {
-            println!("Search failed: {}\n", e);
-        }
+        Err(e) => println!("   Search failed: {}", e),
     }
-
-    // 5. Search functionality (API mode)
-    println!("5. Search functionality (API mode):");
-    let mut api_search_engine = SearchEngine::new().with_api_key("demo_key".to_string());
-    match api_search_engine
-        .search("Python programming", SearchMode::Api, 2)
-        .await
-    {
-        Ok(results) => {
-            println!("Found {} API search results:", results.len());
-            for (i, result) in results.iter().enumerate() {
-                println!("  {}. {} ({})", i + 1, result.title, result.url);
-                println!("     {}", result.snippet);
+    
+    println!();
+    
+    // Example 3: Search and fetch content for each result
+    println!("3. Search and fetch content for each result:");
+    
+    match search_engine.search_and_fetch(
+        query, 
+        SearchMode::WebQuery, 
+        2, 
+        FetchMode::PlainRequest, 
+        Format::Json
+    ).await {
+        Ok(results_with_content) => {
+            println!("   Successfully fetched content for {}/{} results", 
+                    results_with_content.len(), 2);
+            for (i, (result, content)) in results_with_content.iter().enumerate() {
+                println!("   {}. {} ({} characters)", i + 1, result.title, content.len());
             }
         }
-        Err(e) => {
-            println!("API search failed: {}\n", e);
-        }
+        Err(e) => println!("   Search and fetch failed: {}", e),
     }
-
-    println!("=== Example completed successfully! ===");
+    
+    println!();
+    println!("=== Example completed ===");
+    
     Ok(())
 }
