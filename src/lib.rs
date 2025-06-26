@@ -2,6 +2,7 @@ pub mod converter;
 pub mod fetcher;
 pub mod search;
 pub mod error;
+pub mod config;
 
 #[cfg(feature = "pyo3")]
 pub mod python;

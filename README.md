@@ -51,6 +51,58 @@ maturin develop
 pip install tarsier
 ```
 
+## Configuration
+
+Tarsier supports configuration via TOML files:
+
+### Default Configuration Locations
+- **User config**: `$HOME/.tarsier.toml` (for production use)
+- **Development config**: `./tarsier.toml` (in project root)
+
+### Configuration Sections
+
+```toml
+[general]
+log_level = "info"        # Logging level: debug, info, warn, error
+timeout = 30              # General timeout in seconds
+
+[converter]
+default_format = "markdown"  # Default output format: markdown, json, yaml
+
+[fetcher]
+user_agent = "Mozilla/5.0 (compatible; Tarsier/1.0)"  # Custom user agent
+timeout = 30              # HTTP request timeout
+
+[browser]
+browser_mode = "headless" # Browser mode: headless, head
+timeout = 60              # Browser operation timeout
+
+[search]
+search_mode = "browser"   # Search mode: browser, api
+search_engine = "bing.com" # Default search engine
+result_limit = 3          # Default number of results
+# API keys for different search engines (optional)
+# google_search_api_key = "your_google_api_key"
+# bing_search_api_key = "your_bing_api_key"
+# duckduckgo_api_key = "your_duckduckgo_api_key"
+```
+
+### Configuration Management
+
+```rust
+use tarsier::config::Config;
+
+// Load user configuration
+let config = Config::load()?;
+
+// Load development configuration
+let dev_config = Config::load_dev()?;
+
+// Save configuration
+config.save()?;
+config.save_dev()?;
+```
+
 ## Usage
 
 ### CLI Usage

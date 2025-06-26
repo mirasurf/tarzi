@@ -1,0 +1,19 @@
+[general]
+log_level = "info"
+timeout = 30
+
+[converter]
+default_format = "markdown"
+
+[fetcher]
+user_agent = "Mozilla/5.0 (compatible; Tarsier/1.0)"
+timeout = 30
+
+[browser]
+browser_mode = "headless"
+timeout = 60
+
+[search]
+search_mode = "browser"
+search_engine = "google"
+result_limit = 5
