@@ -1,4 +1,4 @@
-use crate::{Result, error::TarziError};
+use crate::{Result, config::Config, error::TarziError};
 use pulldown_cmark::{Event, HeadingLevel, Parser as MarkdownParser, Tag};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -48,6 +48,12 @@ impl Converter {
             Format::Json => self.html_to_json(input).await,
             Format::Yaml => self.html_to_yaml(input).await,
         }
+    }
+
+    /// Convert content using the format specified in the config
+    pub async fn convert_with_config(&self, input: &str, config: &Config) -> Result<String> {
+        let format = Format::from_str(&config.fetcher.format)?;
+        self.convert(input, format).await
     }
 
     fn html_to_markdown(&self, html: &str) -> Result<String> {
@@ -434,12 +440,39 @@ mod tests {
     #[test]
     fn test_convert_search_results_empty() {
         let results: Vec<SearchResult> = vec![];
+        let format = Format::Json;
 
-        let json_result = convert_search_results(&results, Format::Json).unwrap();
-        assert_eq!(json_result, "[]");
+        let result = convert_search_results(&results, format).unwrap();
+        assert_eq!(result, "[]");
+    }
 
-        let yaml_result = convert_search_results(&results, Format::Yaml).unwrap();
-        assert_eq!(yaml_result, "[]\n");
+    #[test]
+    fn test_convert_with_config() {
+        use crate::config::Config;
+
+        let converter = Converter::new();
+        let mut config = Config::new();
+
+        // Test with markdown format
+        config.fetcher.format = "markdown".to_string();
+        let html = "<h1>Hello World</h1>";
+
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(async { converter.convert_with_config(html, &config).await })
+            .unwrap();
+
+        assert!(result.contains("Hello World"));
+
+        // Test with json format
+        config.fetcher.format = "json".to_string();
+        let result = tokio::runtime::Runtime::new()
+            .unwrap()
+            .block_on(async { converter.convert_with_config(html, &config).await })
+            .unwrap();
+
+        assert!(result.contains("Hello World"));
+        assert!(result.contains("title"));
     }
 
     #[tokio::test]

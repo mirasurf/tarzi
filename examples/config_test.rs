@@ -8,15 +8,12 @@ fn main() -> tarzi::Result<()> {
     let config = Config::new();
     println!("   General log level: {}", config.general.log_level);
     println!("   General timeout: {}", config.general.timeout);
-    println!(
-        "   Converter default format: {}",
-        config.converter.default_format
-    );
+    println!("   Fetcher mode: {}", config.fetcher.mode);
+    println!("   Fetcher format: {}", config.fetcher.format);
     println!("   Fetcher user agent: {}", config.fetcher.user_agent);
-    println!("   Browser mode: {}", config.browser.browser_mode);
-    println!("   Search mode: {}", config.search.search_mode);
-    println!("   Search engine: {}", config.search.search_engine);
-    println!("   Result limit: {}", config.search.result_limit);
+    println!("   Search mode: {}", config.search.mode);
+    println!("   Search engine: {}", config.search.engine);
+    println!("   Result limit: {}", config.search.limit);
     println!();
 
     // Test loading dev config
@@ -24,8 +21,8 @@ fn main() -> tarzi::Result<()> {
     match Config::load_dev() {
         Ok(config) => {
             println!("   Successfully loaded dev config");
-            println!("   Search engine: {}", config.search.search_engine);
-            println!("   Result limit: {}", config.search.result_limit);
+            println!("   Search engine: {}", config.search.engine);
+            println!("   Result limit: {}", config.search.limit);
         }
         Err(e) => {
             println!("   Failed to load dev config: {}", e);
@@ -36,9 +33,9 @@ fn main() -> tarzi::Result<()> {
     // Test saving dev config
     println!("3. Saving development configuration:");
     let mut config = Config::new();
-    config.search.result_limit = 5;
-    config.search.search_engine = "google.com".to_string();
-    config.browser.browser_mode = "head".to_string();
+    config.search.limit = 5;
+    config.search.engine = "google.com".to_string();
+    config.fetcher.mode = "browser_head".to_string();
 
     match config.save_dev() {
         Ok(_) => println!("   Successfully saved dev config"),
@@ -51,9 +48,9 @@ fn main() -> tarzi::Result<()> {
     match Config::load_dev() {
         Ok(config) => {
             println!("   Successfully loaded saved dev config");
-            println!("   Search engine: {}", config.search.search_engine);
-            println!("   Result limit: {}", config.search.result_limit);
-            println!("   Browser mode: {}", config.browser.browser_mode);
+            println!("   Search engine: {}", config.search.engine);
+            println!("   Result limit: {}", config.search.limit);
+            println!("   Fetcher mode: {}", config.fetcher.mode);
         }
         Err(e) => {
             println!("   Failed to load saved dev config: {}", e);

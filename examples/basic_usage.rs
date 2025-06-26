@@ -1,5 +1,4 @@
-use std::str::FromStr;
-use tarzi::{FetchMode, Format, Result, SearchEngine, SearchMode, TarziError, WebFetcher};
+use tarzi::{FetchMode, Format, Result, SearchEngine, SearchMode, WebFetcher};
 
 #[tokio::main]
 async fn main() -> Result<()> {

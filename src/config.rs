@@ -257,10 +257,7 @@ mod tests {
         let toml_str = toml::to_string_pretty(&config).unwrap();
         let parsed_config: Config = toml::from_str(&toml_str).unwrap();
 
-        assert_eq!(
-            parsed_config.search.api_key,
-            Some("test_key".to_string())
-        );
+        assert_eq!(parsed_config.search.api_key, Some("test_key".to_string()));
         assert_eq!(parsed_config.search.limit, 5);
         assert_eq!(parsed_config.fetcher.mode, "head");
     }
@@ -327,35 +324,48 @@ api_key = "google_key_123"
         assert_eq!(config.fetcher.format, "json");
         assert_eq!(config.fetcher.user_agent, "Custom User Agent");
         assert_eq!(config.fetcher.timeout, 45);
-        assert_eq!(config.fetcher.proxy, Some("http://example.com:8080".to_string()));
+        assert_eq!(
+            config.fetcher.proxy,
+            Some("http://example.com:8080".to_string())
+        );
         assert_eq!(config.search.mode, "api");
         assert_eq!(config.search.engine, "google.com");
         assert_eq!(config.search.limit, 5);
-        assert_eq!(
-            config.search.api_key,
-            Some("google_key_123".to_string())
-        );
+        assert_eq!(config.search.api_key, Some("google_key_123".to_string()));
     }
 
     #[test]
     fn test_load_actual_tarzi_toml() {
         // Test loading the actual tarzi.toml file
         let config = Config::load_dev();
-        assert!(config.is_ok(), "Failed to load tarzi.toml: {:?}", config.err());
-        
+        assert!(
+            config.is_ok(),
+            "Failed to load tarzi.toml: {:?}",
+            config.err()
+        );
+
         let config = config.unwrap();
-        
+
         // Verify the structure matches our expectations
         assert_eq!(config.general.log_level, "info");
         assert_eq!(config.general.timeout, 30);
         assert_eq!(config.fetcher.mode, "browser_headless");
         assert_eq!(config.fetcher.format, "markdown");
-        assert_eq!(config.fetcher.user_agent, "Mozilla/5.0 (compatible; Tarzi/1.0)");
+        assert_eq!(
+            config.fetcher.user_agent,
+            "Mozilla/5.0 (compatible; Tarzi/1.0)"
+        );
         assert_eq!(config.fetcher.timeout, 30);
-        assert_eq!(config.fetcher.proxy, Some("http://127.0.0.1:7890".to_string()));
+        assert_eq!(
+            config.fetcher.proxy,
+            Some("http://127.0.0.1:7890".to_string())
+        );
         assert_eq!(config.search.mode, "webquery");
         assert_eq!(config.search.engine, "google");
         assert_eq!(config.search.limit, 5);
-        assert_eq!(config.search.api_key, Some("your-api-key-for-apiquery-mode".to_string()));
+        assert_eq!(
+            config.search.api_key,
+            Some("your-api-key-for-apiquery-mode".to_string())
+        );
     }
 }

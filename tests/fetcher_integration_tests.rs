@@ -1,7 +1,7 @@
+use serde_json;
 use tarzi::converter::Format;
 use tarzi::error::TarziError;
 use tarzi::fetcher::{FetchMode, WebFetcher};
-use serde_json;
 
 // Integration tests for fetcher module
 // These tests require internet access and may take longer to run
@@ -31,14 +31,16 @@ async fn test_fetch_plain_request_httpbin() {
 #[tokio::test]
 async fn test_fetch_plain_request_json() {
     let mut fetcher = WebFetcher::new();
-    
+
     // Test fetching JSON and converting to JSON format
-    let result = fetcher.fetch(
-        "https://httpbin.org/json",
-        FetchMode::PlainRequest,
-        Format::Json
-    ).await;
-    
+    let result = fetcher
+        .fetch(
+            "https://httpbin.org/json",
+            FetchMode::PlainRequest,
+            Format::Json,
+        )
+        .await;
+
     assert!(result.is_ok());
     let content = result.unwrap();
     eprintln!("Returned content: {}", content);
@@ -145,15 +147,17 @@ async fn test_fetch_timeout_url() {
 #[tokio::test]
 async fn test_fetch_with_proxy_plain_request() {
     let mut fetcher = WebFetcher::new();
-    
+
     // Test fetching with an invalid proxy (should fail)
-    let result = fetcher.fetch_with_proxy(
-        "https://httpbin.org/html",
-        "http://invalid-proxy:8080",
-        FetchMode::PlainRequest,
-        Format::Html
-    ).await;
-    
+    let result = fetcher
+        .fetch_with_proxy(
+            "https://httpbin.org/html",
+            "http://invalid-proxy:8080",
+            FetchMode::PlainRequest,
+            Format::Html,
+        )
+        .await;
+
     match result {
         Ok(_) => {
             println!("Proxy test succeeded - invalid proxy was handled gracefully");
