@@ -11,6 +11,7 @@ proxy = "http://127.0.0.1:7890"
 
 [search]
 mode = "webquery"
-engine = "google"
+engine = "bing"
+query_pattern = "https://www.bing.com/search?q={query}"
 limit = 5
 api_key = "your-api-key-for-apiquery-mode"

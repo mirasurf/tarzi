@@ -255,7 +255,10 @@ async fn test_fetch_browser_headless() {
         Err(TarziError::Browser(msg)) => {
             // Expected failure in CI environments without browser setup
             // This is considered a successful test outcome
-            println!("✓ Browser headless test passed (browser not available): {}", msg);
+            println!(
+                "✓ Browser headless test passed (browser not available): {}",
+                msg
+            );
         }
         Err(TarziError::Http(e)) => {
             // Network-related errors are acceptable in CI environments
@@ -263,7 +266,10 @@ async fn test_fetch_browser_headless() {
         }
         Err(e) => {
             // Only unexpected errors should cause test failure
-            panic!("Browser headless test failed with unexpected error: {:?}", e);
+            panic!(
+                "Browser headless test failed with unexpected error: {:?}",
+                e
+            );
         }
     }
 }

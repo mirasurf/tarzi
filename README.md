@@ -63,6 +63,42 @@ The codebase has been restructured into three main modules with clear separation
 - **Output**: Search results with fetched content
 - **Reuses**: Fetcher module interfaces without duplication
 
+## Search Engine Support
+
+Tarzi supports multiple search engines with configurable query patterns:
+
+### Supported Search Engines
+- **Bing** (default): `https://www.bing.com/search?q={query}`
+- **Google**: `https://www.google.com/search?q={query}`
+- **DuckDuckGo**: `https://duckduckgo.com/?q={query}`
+- **Brave Search**: `https://search.brave.com/search?q={query}`
+- **Tavily**: `https://tavily.com/search?q={query}`
+- **SearchApi**: `https://www.searchapi.io/search?q={query}`
+- **Custom**: User-defined query patterns
+
+### Configuration
+Configure search engines in your `tarzi.toml` file:
+
+```toml
+[search]
+mode = "webquery"
+engine = "bing"  # Default search engine
+query_pattern = "https://www.bing.com/search?q={query}"  # Custom pattern (optional)
+limit = 5
+api_key = "your-api-key-for-apiquery-mode"
+```
+
+### Custom Query Patterns
+You can define custom query patterns for any search engine:
+
+```toml
+[search]
+engine = "google"
+query_pattern = "https://custom-search.com/search?query={query}&lang=en&region=us"
+```
+
+The `{query}` placeholder is automatically replaced with the user's search query.
+
 ## Key Improvements
 
 ### Modular Design

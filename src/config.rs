@@ -40,6 +40,8 @@ pub struct SearchConfig {
     pub mode: String,
     #[serde(default = "default_search_engine")]
     pub engine: String,
+    #[serde(default = "default_query_pattern")]
+    pub query_pattern: String,
     #[serde(default = "default_result_limit")]
     pub limit: usize,
     pub api_key: Option<String>,
@@ -173,6 +175,7 @@ impl Default for SearchConfig {
         Self {
             mode: default_search_mode(),
             engine: default_search_engine(),
+            query_pattern: default_query_pattern(),
             limit: default_result_limit(),
             api_key: None,
         }
@@ -215,7 +218,11 @@ fn default_search_mode() -> String {
 }
 
 fn default_search_engine() -> String {
-    "google".to_string()
+    "bing".to_string()
+}
+
+fn default_query_pattern() -> String {
+    "https://www.bing.com/search?q={query}".to_string()
 }
 
 fn default_result_limit() -> usize {
@@ -242,7 +249,11 @@ mod tests {
         );
         assert_eq!(config.fetcher.timeout, 30);
         assert_eq!(config.search.mode, "webquery");
-        assert_eq!(config.search.engine, "google");
+        assert_eq!(config.search.engine, "bing");
+        assert_eq!(
+            config.search.query_pattern,
+            "https://www.bing.com/search?q={query}"
+        );
         assert_eq!(config.search.limit, 5);
         assert!(config.search.api_key.is_none());
     }
@@ -312,6 +323,7 @@ proxy = "http://example.com:8080"
 [search]
 mode = "api"
 engine = "google.com"
+query_pattern = ".*"
 limit = 5
 api_key = "google_key_123"
 "#;
@@ -330,6 +342,7 @@ api_key = "google_key_123"
         );
         assert_eq!(config.search.mode, "api");
         assert_eq!(config.search.engine, "google.com");
+        assert_eq!(config.search.query_pattern, ".*");
         assert_eq!(config.search.limit, 5);
         assert_eq!(config.search.api_key, Some("google_key_123".to_string()));
     }
@@ -361,7 +374,11 @@ api_key = "google_key_123"
             Some("http://127.0.0.1:7890".to_string())
         );
         assert_eq!(config.search.mode, "webquery");
-        assert_eq!(config.search.engine, "google");
+        assert_eq!(config.search.engine, "bing");
+        assert_eq!(
+            config.search.query_pattern,
+            "https://www.bing.com/search?q={query}"
+        );
         assert_eq!(config.search.limit, 5);
         assert_eq!(
             config.search.api_key,
