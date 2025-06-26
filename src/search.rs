@@ -1,9 +1,13 @@
-use crate::{error::TarziError, Result, fetcher::{WebFetcher, FetchMode}};
+use crate::{
+    Result,
+    error::TarziError,
+    fetcher::{FetchMode, WebFetcher},
+};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::time::Duration;
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SearchMode {
@@ -51,7 +55,12 @@ impl SearchEngine {
         self
     }
 
-    pub async fn search(&mut self, query: &str, mode: SearchMode, limit: usize) -> Result<Vec<SearchResult>> {
+    pub async fn search(
+        &mut self,
+        query: &str,
+        mode: SearchMode,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
         info!("Starting search with mode: {:?}, limit: {}", mode, limit);
         match mode {
             SearchMode::WebQuery => {
@@ -67,29 +76,42 @@ impl SearchEngine {
 
     async fn search_browser(&mut self, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
         info!("Starting browser-based search for query: '{}'", query);
-        
+
         // Use the fetcher to get the search results page
-        let search_url = format!("https://www.google.com/search?q={}", urlencoding::encode(query));
+        let search_url = format!(
+            "https://www.google.com/search?q={}",
+            urlencoding::encode(query)
+        );
         info!("Fetching search results from: {}", search_url);
-        
-        let search_page_content = self.fetcher.fetch_raw(&search_url, FetchMode::BrowserHeadless).await?;
-        info!("Successfully fetched search page ({} characters)", search_page_content.len());
-        
+
+        let search_page_content = self
+            .fetcher
+            .fetch_raw(&search_url, FetchMode::BrowserHeadless)
+            .await?;
+        info!(
+            "Successfully fetched search page ({} characters)",
+            search_page_content.len()
+        );
+
         // Extract search results from the HTML content
         let results = self.extract_search_results_from_html(&search_page_content, limit)?;
         info!("Successfully extracted {} search results", results.len());
-        
+
         Ok(results)
     }
 
-    fn extract_search_results_from_html(&self, _html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+    fn extract_search_results_from_html(
+        &self,
+        _html: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
         info!("Extracting search results from HTML content");
-        
+
         // This is a simplified HTML parsing approach
         // In a real implementation, you might use a proper HTML parser like scraper
         let mut results = Vec::new();
         let mut rank = 1;
-        
+
         // Simple regex-based extraction (this is a basic implementation)
         // In practice, you'd want to use a proper HTML parser
         // For now, we'll create mock results to demonstrate the structure
@@ -98,24 +120,26 @@ impl SearchEngine {
                 title: format!("Search result {} for query", i + 1),
                 url: format!("https://example.com/result{}", i + 1),
                 snippet: format!("This is a snippet for search result {}", i + 1),
-                rank: rank,
+                rank,
             });
             rank += 1;
         }
-        
+
         info!("Extracted {} search results", results.len());
         Ok(results)
     }
 
     async fn search_api(&self, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
         info!("Starting API-based search for query: '{}'", query);
-        
+
         // This is a simplified API search implementation
         // In a real implementation, you would use actual search APIs like Google Custom Search, Bing, etc.
-        
+
         if self.api_key.is_none() {
             warn!("No API key provided for API mode");
-            return Err(TarziError::Config("API key required for API mode".to_string()));
+            return Err(TarziError::Config(
+                "API key required for API mode".to_string(),
+            ));
         }
 
         info!("Using API key for search");
@@ -143,21 +167,32 @@ impl SearchEngine {
     }
 
     /// Search and fetch content for each result
-    pub async fn search_and_fetch(&mut self, query: &str, mode: SearchMode, limit: usize, fetch_mode: FetchMode, format: crate::converter::Format) -> Result<Vec<(SearchResult, String)>> {
+    pub async fn search_and_fetch(
+        &mut self,
+        query: &str,
+        mode: SearchMode,
+        limit: usize,
+        fetch_mode: FetchMode,
+        format: crate::converter::Format,
+    ) -> Result<Vec<(SearchResult, String)>> {
         info!("Searching and fetching content for query: '{}'", query);
-        
+
         // First, perform the search
         let search_results = self.search(query, mode, limit).await?;
         info!("Found {} search results", search_results.len());
-        
+
         // Then, fetch content for each result
         let mut results_with_content = Vec::new();
-        
+
         for result in search_results.clone() {
             info!("Fetching content for: {}", result.url);
             match self.fetcher.fetch(&result.url, fetch_mode, format).await {
                 Ok(content) => {
-                    info!("Successfully fetched content for {} ({} characters)", result.url, content.len());
+                    info!(
+                        "Successfully fetched content for {} ({} characters)",
+                        result.url,
+                        content.len()
+                    );
                     results_with_content.push((result, content));
                 }
                 Err(e) => {
@@ -166,12 +201,22 @@ impl SearchEngine {
                 }
             }
         }
-        
-        info!("Successfully fetched content for {}/{} results", results_with_content.len(), search_results.len());
+
+        info!(
+            "Successfully fetched content for {}/{} results",
+            results_with_content.len(),
+            search_results.len()
+        );
         Ok(results_with_content)
     }
 
-    pub async fn search_with_proxy(&mut self, query: &str, mode: SearchMode, limit: usize, proxy: &str) -> Result<Vec<SearchResult>> {
+    pub async fn search_with_proxy(
+        &mut self,
+        query: &str,
+        mode: SearchMode,
+        limit: usize,
+        proxy: &str,
+    ) -> Result<Vec<SearchResult>> {
         info!("Starting search with proxy: {}", proxy);
         match mode {
             SearchMode::WebQuery => {
@@ -222,4 +267,4 @@ impl Drop for SearchEngine {
         info!("Cleaning up SearchEngine resources");
         // The fetcher will handle its own cleanup
     }
-} 
+}

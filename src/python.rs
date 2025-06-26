@@ -1,11 +1,11 @@
-use pyo3::prelude::*;
-use pyo3::wrap_pyfunction;
 use crate::{
+    Result,
     converter::{Converter, Format},
     fetcher::WebFetcher,
     search::{SearchEngine, SearchMode},
-    Result,
 };
+use pyo3::prelude::*;
+use pyo3::wrap_pyfunction;
 
 #[pymodule]
 fn tarzi(_py: Python, m: &PyModule) -> PyResult<()> {
@@ -37,14 +37,12 @@ impl PyConverter {
     fn py_convert(&self, input: &str, format: &str) -> PyResult<String> {
         let format = Format::from_str(format)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
-        
+
         let rt = tokio::runtime::Runtime::new()
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-        
-        rt.block_on(async {
-            self.inner.convert(input, format).await
-        })
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+
+        rt.block_on(async { self.inner.convert(input, format).await })
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
     }
 }
 
@@ -66,22 +64,18 @@ impl PyWebFetcher {
     fn py_fetch(&self, url: &str) -> PyResult<String> {
         let rt = tokio::runtime::Runtime::new()
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-        
-        rt.block_on(async {
-            self.inner.fetch(url).await
-        })
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+
+        rt.block_on(async { self.inner.fetch(url).await })
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
     }
 
     #[pyo3(name = "fetch_with_js")]
     fn py_fetch_with_js(&mut self, url: &str) -> PyResult<String> {
         let rt = tokio::runtime::Runtime::new()
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-        
-        rt.block_on(async {
-            self.inner.fetch_with_js(url).await
-        })
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+
+        rt.block_on(async { self.inner.fetch_with_js(url).await })
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
     }
 }
 
@@ -100,31 +94,41 @@ impl PySearchEngine {
     }
 
     #[pyo3(name = "with_api_key")]
-    fn py_with_api_key(mut self_, _py: Python, api_key: String) -> PyResult<PyRefMut<Self>> {
+    fn py_with_api_key(
+        mut self_: PyRefMut<Self>,
+        _py: Python,
+        api_key: String,
+    ) -> PyResult<PyRefMut<Self>> {
         self_.inner = self_.inner.with_api_key(api_key);
         Ok(self_)
     }
 
     #[pyo3(name = "search")]
-    fn py_search(&mut self, query: &str, mode: &str, limit: usize) -> PyResult<Vec<PySearchResult>> {
+    fn py_search(
+        &mut self,
+        query: &str,
+        mode: &str,
+        limit: usize,
+    ) -> PyResult<Vec<PySearchResult>> {
         let mode = SearchMode::from_str(mode)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
-        
+
         let rt = tokio::runtime::Runtime::new()
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-        
-        rt.block_on(async {
-            self.inner.search(query, mode, limit).await
-        })
-        .map(|results| {
-            results.into_iter().map(|r| PySearchResult {
-                title: r.title,
-                url: r.url,
-                snippet: r.snippet,
-                rank: r.rank,
-            }).collect()
-        })
-        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+
+        rt.block_on(async { self.inner.search(query, mode, limit).await })
+            .map(|results| {
+                results
+                    .into_iter()
+                    .map(|r| PySearchResult {
+                        title: r.title,
+                        url: r.url,
+                        snippet: r.snippet,
+                        rank: r.rank,
+                    })
+                    .collect()
+            })
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
     }
 }
 
@@ -146,21 +150,19 @@ fn convert_html(input: &str, format: &str) -> PyResult<String> {
     let converter = Converter::new();
     let format = Format::from_str(format)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
-    
+
     let rt = tokio::runtime::Runtime::new()
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-    
-    rt.block_on(async {
-        converter.convert(input, format).await
-    })
-    .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+
+    rt.block_on(async { converter.convert(input, format).await })
+        .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
 }
 
 #[pyfunction]
 fn fetch_url(url: &str, js: bool) -> PyResult<String> {
     let rt = tokio::runtime::Runtime::new()
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-    
+
     rt.block_on(async {
         if js {
             let mut fetcher = WebFetcher::new();
@@ -177,21 +179,24 @@ fn fetch_url(url: &str, js: bool) -> PyResult<String> {
 fn search_web(query: &str, mode: &str, limit: usize) -> PyResult<Vec<PySearchResult>> {
     let mode = SearchMode::from_str(mode)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(e.to_string()))?;
-    
+
     let rt = tokio::runtime::Runtime::new()
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-    
+
     rt.block_on(async {
         let mut search_engine = SearchEngine::new();
         search_engine.search(query, mode, limit).await
     })
     .map(|results| {
-        results.into_iter().map(|r| PySearchResult {
-            title: r.title,
-            url: r.url,
-            snippet: r.snippet,
-            rank: r.rank,
-        }).collect()
+        results
+            .into_iter()
+            .map(|r| PySearchResult {
+                title: r.title,
+                url: r.url,
+                snippet: r.snippet,
+                rank: r.rank,
+            })
+            .collect()
     })
     .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
-} 
+}

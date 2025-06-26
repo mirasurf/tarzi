@@ -8,7 +8,10 @@ fn main() -> tarzi::Result<()> {
     let config = Config::new();
     println!("   General log level: {}", config.general.log_level);
     println!("   General timeout: {}", config.general.timeout);
-    println!("   Converter default format: {}", config.converter.default_format);
+    println!(
+        "   Converter default format: {}",
+        config.converter.default_format
+    );
     println!("   Fetcher user agent: {}", config.fetcher.user_agent);
     println!("   Browser mode: {}", config.browser.browser_mode);
     println!("   Search mode: {}", config.search.search_mode);
@@ -36,7 +39,7 @@ fn main() -> tarzi::Result<()> {
     config.search.result_limit = 5;
     config.search.search_engine = "google.com".to_string();
     config.browser.browser_mode = "head".to_string();
-    
+
     match config.save_dev() {
         Ok(_) => println!("   Successfully saved dev config"),
         Err(e) => println!("   Failed to save dev config: {}", e),
@@ -59,4 +62,4 @@ fn main() -> tarzi::Result<()> {
 
     println!("\n=== Configuration test completed ===");
     Ok(())
-} 
+}

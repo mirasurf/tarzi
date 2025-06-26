@@ -145,6 +145,6 @@ MIT License - see LICENSE file for details.
 
 ## Contributors
 
-Thank you ❤ all human contributors, and Cursor.
+Thank you ❤ all human and non-human contributors.
 
 [![tarzi contributors](https://contrib.rocks/image?repo=mirasurf/tarzi "tarzi contributors")](https://github.com/mirasurf/tarzi/graphs/contributors)

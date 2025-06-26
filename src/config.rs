@@ -1,4 +1,4 @@
-use crate::{error::TarziError, Result};
+use crate::{Result, error::TarziError};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
@@ -73,14 +73,14 @@ impl Config {
 
     pub fn load() -> Result<Self> {
         let config_path = Self::get_config_path()?;
-        
+
         if config_path.exists() {
             let content = fs::read_to_string(&config_path)
                 .map_err(|e| TarziError::Config(format!("Failed to read config file: {}", e)))?;
-            
+
             let config: Config = toml::from_str(&content)
                 .map_err(|e| TarziError::Config(format!("Failed to parse config file: {}", e)))?;
-            
+
             Ok(config)
         } else {
             // Return default config if file doesn't exist
@@ -90,7 +90,7 @@ impl Config {
 
     pub fn load_or_create() -> Result<Self> {
         let config_path = Self::get_config_path()?;
-        
+
         if config_path.exists() {
             Self::load()
         } else {
@@ -103,26 +103,27 @@ impl Config {
 
     pub fn save(&self) -> Result<()> {
         let config_path = Self::get_config_path()?;
-        
+
         // Create parent directory if it doesn't exist
         if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent)
-                .map_err(|e| TarziError::Config(format!("Failed to create config directory: {}", e)))?;
+            fs::create_dir_all(parent).map_err(|e| {
+                TarziError::Config(format!("Failed to create config directory: {}", e))
+            })?;
         }
-        
+
         let content = toml::to_string_pretty(self)
             .map_err(|e| TarziError::Config(format!("Failed to serialize config: {}", e)))?;
-        
+
         fs::write(&config_path, content)
             .map_err(|e| TarziError::Config(format!("Failed to write config file: {}", e)))?;
-        
+
         Ok(())
     }
 
     fn get_config_path() -> Result<PathBuf> {
         let home_dir = std::env::var("HOME")
             .map_err(|_| TarziError::Config("HOME environment variable not set".to_string()))?;
-        
+
         Ok(PathBuf::from(home_dir).join(".tarzi.toml"))
     }
 
@@ -132,14 +133,16 @@ impl Config {
 
     pub fn load_dev() -> Result<Self> {
         let config_path = Self::get_dev_config_path();
-        
+
         if config_path.exists() {
-            let content = fs::read_to_string(&config_path)
-                .map_err(|e| TarziError::Config(format!("Failed to read dev config file: {}", e)))?;
-            
-            let config: Config = toml::from_str(&content)
-                .map_err(|e| TarziError::Config(format!("Failed to parse dev config file: {}", e)))?;
-            
+            let content = fs::read_to_string(&config_path).map_err(|e| {
+                TarziError::Config(format!("Failed to read dev config file: {}", e))
+            })?;
+
+            let config: Config = toml::from_str(&content).map_err(|e| {
+                TarziError::Config(format!("Failed to parse dev config file: {}", e))
+            })?;
+
             Ok(config)
         } else {
             // Return default config if file doesn't exist
@@ -149,13 +152,13 @@ impl Config {
 
     pub fn save_dev(&self) -> Result<()> {
         let config_path = Self::get_dev_config_path();
-        
+
         let content = toml::to_string_pretty(self)
             .map_err(|e| TarziError::Config(format!("Failed to serialize dev config: {}", e)))?;
-        
+
         fs::write(&config_path, content)
             .map_err(|e| TarziError::Config(format!("Failed to write dev config file: {}", e)))?;
-        
+
         Ok(())
     }
 }
@@ -209,6 +212,12 @@ impl Default for SearchConfig {
     }
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 // Default value functions
 fn default_log_level() -> String {
     "info".to_string()
@@ -259,11 +268,14 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = Config::new();
-        
+
         assert_eq!(config.general.log_level, "info");
         assert_eq!(config.general.timeout, 30);
         assert_eq!(config.converter.default_format, "markdown");
-        assert_eq!(config.fetcher.user_agent, "Mozilla/5.0 (compatible; Tarzi/1.0)");
+        assert_eq!(
+            config.fetcher.user_agent,
+            "Mozilla/5.0 (compatible; Tarzi/1.0)"
+        );
         assert_eq!(config.fetcher.timeout, 30);
         assert_eq!(config.browser.browser_mode, "headless");
         assert_eq!(config.browser.timeout, 60);
@@ -281,11 +293,14 @@ mod tests {
         config.search.google_search_api_key = Some("test_key".to_string());
         config.search.result_limit = 5;
         config.browser.browser_mode = "head".to_string();
-        
+
         let toml_str = toml::to_string_pretty(&config).unwrap();
         let parsed_config: Config = toml::from_str(&toml_str).unwrap();
-        
-        assert_eq!(parsed_config.search.google_search_api_key, Some("test_key".to_string()));
+
+        assert_eq!(
+            parsed_config.search.google_search_api_key,
+            Some("test_key".to_string())
+        );
         assert_eq!(parsed_config.search.result_limit, 5);
         assert_eq!(parsed_config.browser.browser_mode, "head");
     }
@@ -294,22 +309,25 @@ mod tests {
     fn test_config_save_and_load() {
         let temp_dir = tempdir().unwrap();
         let config_path = temp_dir.path().join("test_config.toml");
-        
+
         // Create a test config
         let mut config = Config::new();
         config.search.google_search_api_key = Some("test_api_key".to_string());
         config.search.result_limit = 10;
         config.general.log_level = "debug".to_string();
-        
+
         // Save config to temporary file
         let content = toml::to_string_pretty(&config).unwrap();
         fs::write(&config_path, content).unwrap();
-        
+
         // Load config from file
         let content = fs::read_to_string(&config_path).unwrap();
         let loaded_config: Config = toml::from_str(&content).unwrap();
-        
-        assert_eq!(loaded_config.search.google_search_api_key, Some("test_api_key".to_string()));
+
+        assert_eq!(
+            loaded_config.search.google_search_api_key,
+            Some("test_api_key".to_string())
+        );
         assert_eq!(loaded_config.search.result_limit, 10);
         assert_eq!(loaded_config.general.log_level, "debug");
     }
@@ -348,7 +366,7 @@ duckduckgo_api_key = "ddg_key_789"
 "#;
 
         let config: Config = toml::from_str(config_str).unwrap();
-        
+
         assert_eq!(config.general.log_level, "debug");
         assert_eq!(config.general.timeout, 60);
         assert_eq!(config.converter.default_format, "json");
@@ -359,8 +377,17 @@ duckduckgo_api_key = "ddg_key_789"
         assert_eq!(config.search.search_mode, "api");
         assert_eq!(config.search.search_engine, "google.com");
         assert_eq!(config.search.result_limit, 5);
-        assert_eq!(config.search.google_search_api_key, Some("google_key_123".to_string()));
-        assert_eq!(config.search.bing_search_api_key, Some("bing_key_456".to_string()));
-        assert_eq!(config.search.duckduckgo_api_key, Some("ddg_key_789".to_string()));
+        assert_eq!(
+            config.search.google_search_api_key,
+            Some("google_key_123".to_string())
+        );
+        assert_eq!(
+            config.search.bing_search_api_key,
+            Some("bing_key_456".to_string())
+        );
+        assert_eq!(
+            config.search.duckduckgo_api_key,
+            Some("ddg_key_789".to_string())
+        );
     }
-} 
+}

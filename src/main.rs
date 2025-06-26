@@ -3,7 +3,7 @@ use std::str::FromStr;
 use tarzi::{
     Result,
     converter::{Converter, Format, convert_search_results},
-    fetcher::{WebFetcher, FetchMode},
+    fetcher::{FetchMode, WebFetcher},
     search::{SearchEngine, SearchMode},
 };
 use tracing::{Level, debug, info};
@@ -147,7 +147,7 @@ async fn main() -> Result<()> {
             let mut fetcher = WebFetcher::new();
             let fetch_mode = FetchMode::from_str(&mode)?;
             let format = Format::from_str(&format)?;
-            
+
             let result = fetcher.fetch(&url, fetch_mode, format).await?;
 
             info!(
@@ -213,7 +213,10 @@ async fn main() -> Result<()> {
             let log_level = if verbose { Level::DEBUG } else { Level::INFO };
             tracing_subscriber::fmt().with_max_level(log_level).init();
 
-            info!("Tarzi SearchAndFetch starting with verbose mode: {}", verbose);
+            info!(
+                "Tarzi SearchAndFetch starting with verbose mode: {}",
+                verbose
+            );
             info!("Starting search and fetch operation");
             info!("Query: '{}'", query);
             info!("Search mode: {}", search_mode);
@@ -227,15 +230,14 @@ async fn main() -> Result<()> {
             let format = Format::from_str(&format)?;
 
             info!("Search engine initialized, starting search and fetch...");
-            let results_with_content = search_engine.search_and_fetch(
-                &query, 
-                search_mode, 
-                limit, 
-                fetch_mode, 
-                format
-            ).await?;
+            let results_with_content = search_engine
+                .search_and_fetch(&query, search_mode, limit, fetch_mode, format)
+                .await?;
 
-            info!("Search and fetch completed, processed {} results", results_with_content.len());
+            info!(
+                "Search and fetch completed, processed {} results",
+                results_with_content.len()
+            );
 
             // Convert results to JSON for output
             let result = serde_json::to_string_pretty(&results_with_content)?;
