@@ -1,5 +1,5 @@
 <div align="center">Add commentMore actions
-  <img src="tarsier.png" alt="Tarsier Logo" width="200" height="200">
+  <img src="tarzi.png" alt="Tarzi Logo" width="200" height="200">
 </div>
 
 <h1 align="center">tarzi.rs</h1>
