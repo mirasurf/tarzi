@@ -19,6 +19,7 @@ Rust-native lite search for AI applications.
 
 # Dependencies
 
+* Rust edition 2024
 * chromiumoxide: support chrome browser instance
 * HTML → Markdown: html2md
 * Markdown → JSON: use pulldown-cmark to produce JSON
