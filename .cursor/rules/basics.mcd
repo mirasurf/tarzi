@@ -17,4 +17,5 @@ You're working on **Tarzi**—a rust-native lite search for AI applications.
 
 ## Code Revision
 
-After generation, always make sure the code format and lintint are performed well.
+- After generation, always make sure the code format and linting are performed well.
+- Always DO NOT change unrelated parts beyond user requirements.

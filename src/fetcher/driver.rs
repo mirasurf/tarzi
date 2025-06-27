@@ -86,7 +86,7 @@ pub enum DriverStatus {
 }
 
 /// Information about a running driver
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DriverInfo {
     /// Configuration used to start the driver
     pub config: DriverConfig,

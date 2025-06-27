@@ -59,7 +59,7 @@ impl WebFetcher {
             .expect("Failed to create HTTP client from config");
         Self {
             http_client,
-            browser_manager: BrowserManager::new(),
+            browser_manager: BrowserManager::from_config(config),
             converter: Converter::new(),
         }
     }
@@ -366,6 +366,21 @@ impl WebFetcher {
             .create_multiple_browsers(count, headless, base_instance_id)
             .await
     }
+
+    /// Clean up managed driver if any
+    pub async fn cleanup_managed_driver(&mut self) -> Result<()> {
+        self.browser_manager.cleanup_managed_driver().await
+    }
+
+    /// Check if this fetcher has a managed driver
+    pub fn has_managed_driver(&self) -> bool {
+        self.browser_manager.has_managed_driver()
+    }
+
+    /// Get information about the managed driver
+    pub fn get_managed_driver_info(&self) -> Option<&super::driver::DriverInfo> {
+        self.browser_manager.get_managed_driver_info()
+    }
 }
 
 impl Default for WebFetcher {
@@ -378,6 +393,9 @@ impl Drop for WebFetcher {
     fn drop(&mut self) {
         if self.browser_manager.has_browsers() {
             warn!("Cleaning up browser resources manually");
+        }
+        if self.browser_manager.has_managed_driver() {
+            warn!("Managed WebDriver will be cleaned up automatically");
         }
     }
 }

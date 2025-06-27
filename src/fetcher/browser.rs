@@ -1,4 +1,5 @@
-use crate::{Result, error::TarziError, utils::is_webdriver_available};
+use super::driver::{DriverConfig, DriverInfo, DriverManager, DriverType};
+use crate::{Result, config::Config, error::TarziError, utils::is_webdriver_available};
 use std::{collections::HashMap, path::PathBuf, time::Duration};
 use tempfile::TempDir;
 use thirtyfour::{ChromiumLikeCapabilities, DesiredCapabilities, WebDriver};
@@ -7,12 +8,25 @@ use tracing::{error, info, warn};
 /// Browser instance manager
 pub struct BrowserManager {
     browsers: HashMap<String, (WebDriver, TempDir)>,
+    driver_manager: Option<DriverManager>,
+    managed_driver_info: Option<DriverInfo>,
 }
 
 impl BrowserManager {
     pub fn new() -> Self {
         Self {
             browsers: HashMap::new(),
+            driver_manager: None,
+            managed_driver_info: None,
+        }
+    }
+
+    /// Create a new BrowserManager with configuration
+    pub fn from_config(_config: &Config) -> Self {
+        Self {
+            browsers: HashMap::new(),
+            driver_manager: None,
+            managed_driver_info: None,
         }
     }
 
@@ -23,18 +37,7 @@ impl BrowserManager {
         headless: bool,
         instance_id: Option<String>,
     ) -> Result<String> {
-        let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
-            .unwrap_or_else(|_| "http://localhost:4444".to_string());
-
-        // Check if WebDriver server is available before creating browser
-        info!("Checking WebDriver availability at: {}", webdriver_url);
-        if !is_webdriver_available().await {
-            return Err(TarziError::Browser(format!(
-                "WebDriver server is not available at {}. Please start ChromeDriver or another WebDriver server.",
-                webdriver_url
-            )));
-        }
-        info!("WebDriver server is available and ready");
+        let webdriver_url = self.get_or_create_webdriver_endpoint().await?;
 
         let instance_id = instance_id.unwrap_or_else(|| {
             let temp_dir = TempDir::new().expect("Failed to create temp dir for instance ID");
@@ -201,6 +204,180 @@ impl BrowserManager {
     /// Get the first available browser
     pub fn get_first_browser(&self) -> Option<&WebDriver> {
         self.browsers.values().next().map(|(browser, _)| browser)
+    }
+
+    /// Get or create a webdriver endpoint, prioritizing TARZI_WEBDRIVER_URL
+    /// If TARZI_WEBDRIVER_URL is not set and no webdriver is available, use DriverManager
+    async fn get_or_create_webdriver_endpoint(&mut self) -> Result<String> {
+        // First, check if TARZI_WEBDRIVER_URL is set
+        if let Ok(webdriver_url) = std::env::var("TARZI_WEBDRIVER_URL") {
+            if !webdriver_url.is_empty() {
+                info!("Using TARZI_WEBDRIVER_URL: {}", webdriver_url);
+
+                // Check if the specified webdriver is available
+                info!("Checking WebDriver availability at: {}", webdriver_url);
+                if is_webdriver_available().await {
+                    info!("WebDriver server is available and ready");
+                    return Ok(webdriver_url);
+                } else {
+                    warn!(
+                        "TARZI_WEBDRIVER_URL is set but WebDriver is not available at: {}",
+                        webdriver_url
+                    );
+                    return Err(TarziError::Browser(format!(
+                        "WebDriver server is not available at {}. Please start the WebDriver server.",
+                        webdriver_url
+                    )));
+                }
+            }
+        }
+
+        // If TARZI_WEBDRIVER_URL is not set or empty, try default WebDriver URL
+        let default_url = "http://localhost:9515".to_string();
+        info!(
+            "TARZI_WEBDRIVER_URL not set, checking default WebDriver at: {}",
+            default_url
+        );
+
+        if is_webdriver_available_at_url(&default_url).await {
+            info!("WebDriver server found at default URL: {}", default_url);
+            return Ok(default_url);
+        }
+
+        // If no webdriver is available, try to start one using DriverManager
+        info!("No WebDriver server found, attempting to start one using DriverManager");
+
+        // Initialize DriverManager if not already done
+        if self.driver_manager.is_none() {
+            info!("Initializing DriverManager");
+            self.driver_manager = Some(DriverManager::new());
+        }
+
+        // Try to start a driver using DriverManager
+        let driver_manager = self.driver_manager.as_ref().unwrap();
+
+        // First check if chromedriver is available
+        match driver_manager.check_driver_binary(&DriverType::Chrome) {
+            Ok(()) => {
+                info!("ChromeDriver found, starting driver with DriverManager");
+                let config = DriverConfig {
+                    driver_type: DriverType::Chrome,
+                    port: 9515,
+                    args: vec![
+                        "--disable-gpu".to_string(),
+                        "--no-sandbox".to_string(),
+                        "--disable-dev-shm-usage".to_string(),
+                    ],
+                    timeout: Duration::from_secs(30),
+                    verbose: false,
+                };
+
+                match driver_manager.start_driver_with_config(config) {
+                    Ok(driver_info) => {
+                        info!(
+                            "Successfully started ChromeDriver at: {}",
+                            driver_info.endpoint
+                        );
+                        self.managed_driver_info = Some(driver_info.clone());
+                        return Ok(driver_info.endpoint);
+                    }
+                    Err(e) => {
+                        warn!("Failed to start ChromeDriver with DriverManager: {}", e);
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("ChromeDriver not available: {}", e);
+            }
+        }
+
+        // Try Firefox as fallback
+        match driver_manager.check_driver_binary(&DriverType::Firefox) {
+            Ok(()) => {
+                info!("GeckoDriver found, starting driver with DriverManager");
+                let config = DriverConfig {
+                    driver_type: DriverType::Firefox,
+                    port: 4444,
+                    args: vec!["--log=warn".to_string()],
+                    timeout: Duration::from_secs(30),
+                    verbose: false,
+                };
+
+                match driver_manager.start_driver_with_config(config) {
+                    Ok(driver_info) => {
+                        info!(
+                            "Successfully started GeckoDriver at: {}",
+                            driver_info.endpoint
+                        );
+                        self.managed_driver_info = Some(driver_info.clone());
+                        return Ok(driver_info.endpoint);
+                    }
+                    Err(e) => {
+                        warn!("Failed to start GeckoDriver with DriverManager: {}", e);
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("GeckoDriver not available: {}", e);
+            }
+        }
+
+        // If all attempts failed, return an error with helpful guidance
+        Err(TarziError::Browser(
+            "No WebDriver server is available. Please either:\n\
+            1. Set TARZI_WEBDRIVER_URL environment variable to your WebDriver endpoint, or\n\
+            2. Install ChromeDriver (https://chromedriver.chromium.org/) or GeckoDriver (https://github.com/mozilla/geckodriver/releases) and ensure they're in your PATH, or\n\
+            3. Start a WebDriver server manually and set TARZI_WEBDRIVER_URL".to_string()
+        ))
+    }
+
+    /// Clean up managed driver if any
+    pub async fn cleanup_managed_driver(&mut self) -> Result<()> {
+        if let (Some(driver_manager), Some(driver_info)) =
+            (&mut self.driver_manager, &self.managed_driver_info)
+        {
+            info!("Cleaning up managed driver: {}", driver_info.endpoint);
+            match driver_manager.stop_driver(driver_info.config.port) {
+                Ok(()) => {
+                    info!("Successfully stopped managed driver");
+                    self.managed_driver_info = None;
+                }
+                Err(e) => {
+                    warn!("Failed to stop managed driver: {}", e);
+                    return Err(TarziError::Browser(format!(
+                        "Failed to stop managed driver: {}",
+                        e
+                    )));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Check if this browser manager has a managed driver
+    pub fn has_managed_driver(&self) -> bool {
+        self.managed_driver_info.is_some()
+    }
+
+    /// Get information about the managed driver
+    pub fn get_managed_driver_info(&self) -> Option<&DriverInfo> {
+        self.managed_driver_info.as_ref()
+    }
+}
+
+/// Helper function to check if webdriver is available at a specific URL
+async fn is_webdriver_available_at_url(url: &str) -> bool {
+    use reqwest;
+    use tokio::time::timeout;
+
+    match timeout(
+        Duration::from_secs(2),
+        reqwest::get(&format!("{}/status", url)),
+    )
+    .await
+    {
+        Ok(Ok(response)) => response.status().is_success(),
+        _ => false,
     }
 }
 
