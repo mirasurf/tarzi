@@ -1,5 +1,5 @@
 use std::time::Duration;
-use tarzi::search::parser::{BingParser, DuckDuckGoParser, SearchResultParser};
+use tarzi::search::parser::{BingParser, DuckDuckGoParser, GoogleParser, SearchResultParser};
 use tarzi::search::types::SearchEngineType;
 use tarzi::utils::is_webdriver_available;
 use thirtyfour::prelude::*;
@@ -154,6 +154,95 @@ async fn perform_duckduckgo_search(query: &str) -> Result<String, Box<dyn std::e
         // Get page source
         let page_source = driver.source().await?;
         println!("Retrieved DuckDuckGo page source, length: {} characters", page_source.len());
+
+        Ok::<String, Box<dyn std::error::Error>>(page_source)
+    }.await;
+
+    // Always quit the driver
+    if let Err(e) = driver.quit().await {
+        eprintln!("Warning: Failed to quit WebDriver: {}", e);
+    }
+
+    result
+}
+
+/// Perform a real Google search using WebDriver and return the HTML
+async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
+        .unwrap_or_else(|_| "http://localhost:4444".to_string());
+
+    // Setup Chrome capabilities for head browser with additional stealth options
+    let mut caps = DesiredCapabilities::chrome();
+    caps.add_arg("--disable-blink-features=AutomationControlled")?;
+    caps.add_arg("--disable-web-security")?;
+    caps.add_arg("--disable-features=VizDisplayCompositor")?;
+    caps.add_arg("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")?;
+    caps.add_arg("--no-first-run")?;
+    caps.add_arg("--disable-default-apps")?;
+
+    // Connect to WebDriver
+    let driver = WebDriver::new(&webdriver_url, caps).await?;
+
+    let result = async {
+        // Navigate to Google
+        driver.goto("https://www.google.com").await?;
+        println!("Navigated to Google homepage");
+
+        // Wait a moment for the page to load
+        tokio::time::sleep(Duration::from_millis(2000)).await;
+
+        // Try to accept cookies if prompted
+        if let Ok(cookie_button) = driver.find(By::Css("button#L2AGLb")).await {
+            if let Ok(_) = cookie_button.click().await {
+                println!("Accepted Google cookies");
+                tokio::time::sleep(Duration::from_millis(1000)).await;
+            }
+        }
+
+        // Try to find search box with different selectors
+        let search_box = match driver.find(By::Name("q")).await {
+            Ok(element) => element,
+            Err(_) => {
+                // Try alternative selector
+                match driver.find(By::Css("input[name='q']")).await {
+                    Ok(element) => element,
+                    Err(_) => driver.find(By::Css("input[type='text']")).await?
+                }
+            }
+        };
+
+        search_box.clear().await?;
+        search_box.send_keys(query).await?;
+        println!("Entered search query: '{}'", query);
+
+        // Submit with Enter key
+        search_box.send_keys(Key::Enter).await?;
+        println!("Submitted search with Enter key");
+
+        // Wait for search results to load
+        let mut search_results_loaded = false;
+        for _ in 0..20 {
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            match driver.find_all(By::Css("div.tF2Cxc")).await {
+                Ok(elements) if !elements.is_empty() => {
+                    println!("Google search results loaded successfully");
+                    search_results_loaded = true;
+                    break;
+                }
+                _ => continue,
+            }
+        }
+
+        if !search_results_loaded {
+            println!("Warning: Google search results did not load within timeout, trying to get page source anyway");
+        }
+
+        // Additional wait to ensure all results are loaded
+        tokio::time::sleep(Duration::from_millis(2000)).await;
+
+        // Get page source
+        let page_source = driver.source().await?;
+        println!("Retrieved Google page source, length: {} characters", page_source.len());
 
         Ok::<String, Box<dyn std::error::Error>>(page_source)
     }.await;
@@ -486,4 +575,137 @@ async fn test_duckduckgo_parser_real_world_integration() {
     println!("✓ Parser correctly handles empty HTML");
 
     println!("🎉 Real-world DuckDuckGo parser integration test completed successfully!");
+}
+
+#[tokio::test]
+async fn test_google_parser_real_world_integration() {
+    // Skip test if WebDriver is not available
+    if !is_webdriver_available().await {
+        println!("Skipping Google real-world integration test: WebDriver not available");
+        println!("To run this test, start a WebDriver server (e.g., chromedriver on port 4444)");
+        return;
+    }
+
+    println!("Starting real-world Google search integration test...");
+
+    // Perform a real search with timeout
+    let search_query = "rust programming language";
+    let html_content = match tokio::time::timeout(
+        Duration::from_secs(30), // Shorter timeout
+        perform_google_search(search_query),
+    )
+    .await
+    {
+        Ok(Ok(html)) => html,
+        Ok(Err(e)) => {
+            println!("⚠️  Google search failed: {}", e);
+            println!("This is likely due to Google's anti-automation measures or CAPTCHA.");
+            println!("The GoogleParser logic is tested separately in unit tests.");
+            return; // Skip the test gracefully
+        }
+        Err(_) => {
+            println!("⚠️  Google search timed out after 30 seconds");
+            println!("This is likely due to Google's anti-automation measures or CAPTCHA.");
+            println!("The GoogleParser logic is tested separately in unit tests.");
+            return; // Skip the test gracefully
+        }
+    };
+
+    // Verify we got actual Google HTML
+    assert!(html_content.contains("google.com") || html_content.contains("Google"));
+    assert!(html_content.len() > 5000); // Google pages are typically quite large
+    println!("✓ Successfully retrieved Google search results HTML");
+
+    // Create GoogleParser and parse the results
+    let parser = GoogleParser::new();
+    assert_eq!(parser.name(), "GoogleParser");
+    assert!(parser.supports(&SearchEngineType::Google));
+    println!("✓ GoogleParser created and validated");
+
+    // Parse the real HTML
+    let limit = 5;
+    let results = match parser.parse(&html_content, limit) {
+        Ok(results) => results,
+        Err(e) => {
+            eprintln!("Failed to parse Google HTML: {}", e);
+            // Save HTML for debugging if needed
+            if std::env::var("TARZI_DEBUG").is_ok() {
+                std::fs::write("debug_google.html", &html_content).ok();
+                println!("Debug HTML saved to debug_google.html");
+            }
+            panic!("Parser failed: {}", e);
+        }
+    };
+
+    println!("✓ Successfully parsed {} search results", results.len());
+
+    // Validate the parsed results
+    if results.is_empty() {
+        println!("⚠️  Warning: No search results found. This could be due to:");
+        println!("   - Google blocking automated requests or showing CAPTCHA");
+        println!("   - Changes in Google's HTML structure");
+        println!("   - Geographic restrictions or different page layout");
+
+        // Don't fail the test immediately, but save debug info
+        if std::env::var("TARZI_DEBUG").is_ok() {
+            std::fs::write("debug_google_no_results.html", &html_content).ok();
+            println!("Debug HTML saved to debug_google_no_results.html");
+        }
+    } else {
+        assert!(
+            results.len() <= limit,
+            "Should not exceed the requested limit"
+        );
+
+        // Validate each result structure
+        for (i, result) in results.iter().enumerate() {
+            println!("Result {}: {} - {}", i + 1, result.title, result.url);
+
+            // Basic validation
+            assert!(!result.title.is_empty(), "Title should not be empty");
+            assert_eq!(result.rank, i + 1, "Rank should be sequential");
+
+            // URL validation (Google might have empty URLs for some results)
+            if !result.url.is_empty() {
+                assert!(
+                    result.url.starts_with("http://")
+                        || result.url.starts_with("https://")
+                        || result.url.starts_with("/"),
+                    "URL should be properly formatted or relative: {}",
+                    result.url
+                );
+            }
+
+            // Content validation (for "rust programming language" search)
+            let lower_title = result.title.to_lowercase();
+            let lower_snippet = result.snippet.to_lowercase();
+            let contains_rust = lower_title.contains("rust")
+                || lower_snippet.contains("rust")
+                || lower_title.contains("programming")
+                || lower_snippet.contains("programming");
+
+            if !contains_rust {
+                println!(
+                    "Warning: Result {} may not be relevant to search query",
+                    i + 1
+                );
+            }
+        }
+
+        println!("✓ All results validated successfully");
+    }
+
+    // Test with different limits
+    let small_limit = 2;
+    let small_results = parser.parse(&html_content, small_limit).unwrap();
+    assert!(small_results.len() <= small_limit);
+    assert!(small_results.len() <= results.len());
+    println!("✓ Parser correctly handles different limits");
+
+    // Test with empty HTML
+    let empty_results = parser.parse("", 5).unwrap();
+    assert!(empty_results.is_empty());
+    println!("✓ Parser correctly handles empty HTML");
+
+    println!("🎉 Real-world Google parser integration test completed successfully!");
 }

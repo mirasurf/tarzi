@@ -1,5 +1,5 @@
 use super::*;
-use crate::search::types::{SearchEngineType, SearchResult};
+use crate::search::types::SearchEngineType;
 
 #[cfg(test)]
 mod tests {
@@ -39,13 +39,54 @@ mod tests {
     #[test]
     fn test_google_parser() {
         let parser = GoogleParser::new();
-        let html = "<html><body>Mock HTML content</body></html>";
-        let results = parser.parse(html, 5).unwrap();
+        let html = r#"
+        <html>
+            <body>
+                <div class="tF2Cxc">
+                    <div class="yuRUbf">
+                        <a href="https://example1.com">Google Test Result 1</a>
+                    </div>
+                    <div class="IsZvec">This is a test snippet for Google 1</div>
+                </div>
+                <div class="tF2Cxc">
+                    <div class="yuRUbf">
+                        <a href="https://example2.com">Google Test Result 2</a>
+                    </div>
+                    <div class="IsZvec">This is a test snippet for Google 2</div>
+                </div>
+                <div class="tF2Cxc">
+                    <div class="yuRUbf">
+                        <a href="https://example3.com">Google Test Result 3</a>
+                    </div>
+                    <div class="IsZvec">This is a test snippet for Google 3</div>
+                </div>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 2).unwrap();
 
-        assert_eq!(results.len(), 5);
+        assert_eq!(results.len(), 2);
         assert_eq!(parser.name(), "GoogleParser");
         assert!(parser.supports(&SearchEngineType::Google));
         assert!(!parser.supports(&SearchEngineType::Bing));
+
+        // Check first result
+        assert_eq!(results[0].title, "Google Test Result 1");
+        assert_eq!(results[0].url, "https://example1.com");
+        assert_eq!(
+            results[0].snippet,
+            "This is a test snippet for Google 1"
+        );
+        assert_eq!(results[0].rank, 1);
+
+        // Check second result
+        assert_eq!(results[1].title, "Google Test Result 2");
+        assert_eq!(results[1].url, "https://example2.com");
+        assert_eq!(
+            results[1].snippet,
+            "This is a test snippet for Google 2"
+        );
+        assert_eq!(results[1].rank, 2);
     }
 
     #[test]

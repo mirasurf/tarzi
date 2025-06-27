@@ -1,7 +1,9 @@
 use super::SearchResultParser;
 use crate::Result;
 use crate::search::types::{SearchEngineType, SearchResult};
-use tracing::info;
+use tracing::{info, warn};
+use select::document::Document;
+use select::predicate::{Class, Name, Predicate};
 
 pub struct GoogleParser;
 
@@ -12,49 +14,69 @@ impl GoogleParser {
 }
 
 impl SearchResultParser for GoogleParser {
-    fn parse(&self, _html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         info!("Parsing Google search results from HTML");
 
+        if html.is_empty() {
+            warn!("Empty HTML provided to GoogleParser");
+            return Ok(Vec::new());
+        }
+
+        let document = Document::from(html);
         let mut results = Vec::new();
 
-        // Mock implementation - in reality, you would parse actual Google HTML structure
-        // Google typically uses CSS classes like 'g' for search results
+        // Look for Google search result containers
+        // Google uses .tF2Cxc for individual result containers
+        for (rank, node) in document.find(Class("tF2Cxc")).take(limit).enumerate() {
+            // Extract title and URL from .yuRUbf a element
+            let title_link = node.find(Class("yuRUbf").descendant(Name("a"))).next();
 
-        // Simulate finding search results in HTML
-        let mock_results_count = std::cmp::min(limit, 10);
+            let title = title_link
+                .map(|n| n.text().trim().to_string())
+                .unwrap_or_default();
 
-        for i in 0..mock_results_count {
-            let rank = i + 1;
+            let url = title_link
+                .and_then(|n| n.attr("href"))
+                .map(|href| {
+                    // Google sometimes uses redirect URLs or relative paths
+                    if href.starts_with("http") {
+                        href.to_string()
+                    } else if href.starts_with("/") {
+                        format!("https://www.google.com{}", href)
+                    } else {
+                        href.to_string()
+                    }
+                })
+                .unwrap_or_default();
 
-            // Mock Google-style results
-            let result = SearchResult {
-                title: format!("Google Search Result #{} - Mock Title", rank),
-                url: format!("https://example-google-result-{}.com", rank),
-                snippet: format!(
-                    "This is a mock Google search result snippet for result {}. In a real implementation, this would be extracted from the HTML using CSS selectors like '.VwiC3b' or similar.",
-                    rank
-                ),
-                rank,
-            };
+            // Extract snippet from .IsZvec element
+            let snippet = node
+                .find(Class("IsZvec"))
+                .next()
+                .map(|n| n.text().trim().to_string())
+                .unwrap_or_default();
 
-            results.push(result);
+            // Only add if we have at least a title
+            if !title.is_empty() {
+                let result = SearchResult {
+                    title,
+                    url,
+                    snippet,
+                    rank: rank + 1,
+                };
+                info!(
+                    "Extracted Google result #{}: {}",
+                    rank + 1,
+                    result.title
+                );
+                results.push(result);
+            }
         }
 
         info!(
-            "Successfully parsed {} Google search results",
+            "Successfully parsed {} Google search results from HTML",
             results.len()
         );
-
-        // In a real implementation, you might use something like:
-        // - scraper crate with CSS selectors
-        // - html5ever for HTML parsing
-        //
-        // Example structure for Google:
-        // - Results container: .g
-        // - Title: h3 a
-        // - URL: cite
-        // - Snippet: .VwiC3b or .s
-
         Ok(results)
     }
 
