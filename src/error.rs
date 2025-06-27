@@ -20,6 +20,9 @@ pub enum TarziError {
     #[error("Browser automation error: {0}")]
     Browser(String),
 
+    #[error("Browser error: {0}")]
+    BrowserError(String),
+
     #[error("Conversion error: {0}")]
     Conversion(String),
 
@@ -34,6 +37,9 @@ pub enum TarziError {
 
     #[error("Configuration error: {0}")]
     Config(String),
+
+    #[error("WebDriver error: {0}")]
+    WebDriver(#[from] thirtyfour::error::WebDriverError),
 }
 
 pub type Result<T> = std::result::Result<T, TarziError>;

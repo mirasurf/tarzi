@@ -1,11 +1,11 @@
+use super::parser::{ParserFactory, SearchResultParser};
+use super::types::{SearchEngineType, SearchMode, SearchResult};
 use crate::config::Config;
 use crate::{
     Result,
     error::TarziError,
     fetcher::{FetchMode, WebFetcher},
 };
-use super::types::{SearchMode, SearchEngineType, SearchResult};
-use super::parser::{ParserFactory, SearchResultParser};
 use reqwest::Client;
 use std::str::FromStr;
 use std::time::Duration;
@@ -142,13 +142,21 @@ impl SearchEngine {
 
         // Get the appropriate parser for the current engine type
         let parser = self.parser_factory.get_parser(&self.engine_type);
-        
-        info!("Using parser: {} for engine type: {:?}", parser.name(), self.engine_type);
-        
+
+        info!(
+            "Using parser: {} for engine type: {:?}",
+            parser.name(),
+            self.engine_type
+        );
+
         // Use the parser to extract results
         let results = parser.parse(html, limit)?;
-        
-        info!("Successfully extracted {} search results using {}", results.len(), parser.name());
+
+        info!(
+            "Successfully extracted {} search results using {}",
+            results.len(),
+            parser.name()
+        );
         Ok(results)
     }
 

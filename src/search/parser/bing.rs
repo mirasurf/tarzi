@@ -1,6 +1,8 @@
+use super::SearchResultParser;
 use crate::Result;
-use super::{SearchResultParser};
 use crate::search::types::{SearchEngineType, SearchResult};
+use select::document::Document;
+use select::predicate::{Class, Name, Predicate};
 use tracing::{info, warn};
 
 pub struct BingParser;
@@ -14,49 +16,69 @@ impl BingParser {
 impl SearchResultParser for BingParser {
     fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         info!("Parsing Bing search results from HTML");
-        
-        let mut results = Vec::new();
-        
-        // Mock implementation - in reality, you would parse actual Bing HTML structure
-        // Bing typically uses CSS classes like 'b_algo' for search results
-        
-        // Simulate finding search results in HTML
-        let mock_results_count = std::cmp::min(limit, 10); // Limit to 10 or requested limit
-        
-        for i in 0..mock_results_count {
-            let rank = i + 1;
-            
-            // Mock Bing-style results
-            let result = SearchResult {
-                title: format!("Bing Search Result #{} - Mock Title", rank),
-                url: format!("https://example-bing-result-{}.com", rank),
-                snippet: format!("This is a mock Bing search result snippet for result {}. In a real implementation, this would be extracted from the HTML using CSS selectors like '.b_caption p' or similar.", rank),
-                rank,
-            };
-            
-            results.push(result);
+
+        if html.is_empty() {
+            warn!("Empty HTML provided to BingParser");
+            return Ok(Vec::new());
         }
-        
-        info!("Successfully parsed {} Bing search results", results.len());
-        
-        // In a real implementation, you might use something like:
-        // - scraper crate with CSS selectors
-        // - html5ever for HTML parsing
-        // - regex patterns (less reliable)
-        // 
-        // Example structure for Bing:
-        // - Results container: .b_algo
-        // - Title: h2 a
-        // - URL: cite
-        // - Snippet: .b_caption p
-        
+
+        let document = Document::from(html);
+        let mut results = Vec::new();
+
+        // Look for Bing search result containers
+        for (rank, node) in document.find(Class("b_algo")).take(limit).enumerate() {
+            // Extract title and URL from h2 > a element
+            let title_link = node.find(Name("h2").descendant(Name("a"))).next();
+
+            let title = title_link
+                .map(|n| n.text().trim().to_string())
+                .unwrap_or_default();
+
+            let url = title_link
+                .and_then(|n| n.attr("href"))
+                .map(|href| {
+                    // Bing sometimes uses relative URLs or has tracking parameters
+                    if href.starts_with("http") {
+                        href.to_string()
+                    } else if href.starts_with("/") {
+                        format!("https://www.bing.com{}", href)
+                    } else {
+                        href.to_string()
+                    }
+                })
+                .unwrap_or_default();
+
+            // Extract snippet from .b_caption p element
+            let snippet = node
+                .find(Class("b_caption").descendant(Name("p")))
+                .next()
+                .map(|n| n.text().trim().to_string())
+                .unwrap_or_default();
+
+            // Only add if we have at least a title
+            if !title.is_empty() {
+                let result = SearchResult {
+                    title,
+                    url,
+                    snippet,
+                    rank: rank + 1,
+                };
+                info!("Extracted Bing result #{}: {}", rank + 1, result.title);
+                results.push(result);
+            }
+        }
+
+        info!(
+            "Successfully parsed {} Bing search results from HTML",
+            results.len()
+        );
         Ok(results)
     }
-    
+
     fn name(&self) -> &str {
         "BingParser"
     }
-    
+
     fn supports(&self, engine_type: &SearchEngineType) -> bool {
         matches!(engine_type, SearchEngineType::Bing)
     }
@@ -66,4 +88,4 @@ impl Default for BingParser {
     fn default() -> Self {
         Self::new()
     }
-} 
+}

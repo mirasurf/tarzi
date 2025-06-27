@@ -7,13 +7,13 @@
 //! - Extensible parser system for extracting search results from HTML
 
 pub mod engine;
-pub mod types;
 pub mod parser;
+pub mod types;
 
 #[cfg(test)]
 mod tests;
 
 // Re-export main types and functions
 pub use engine::SearchEngine;
+pub use parser::{CustomParserConfig, ParserFactory, SearchResultParser};
 pub use types::{SearchEngineType, SearchMode, SearchResult};
-pub use parser::{SearchResultParser, ParserFactory, CustomParserConfig}; 

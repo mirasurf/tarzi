@@ -1,8 +1,7 @@
-use crate::{Result, error::TarziError};
+use crate::{Result, error::TarziError, utils::is_webdriver_available};
 use std::{collections::HashMap, path::PathBuf, time::Duration};
 use tempfile::TempDir;
 use thirtyfour::{ChromiumLikeCapabilities, DesiredCapabilities, WebDriver};
-use tokio::time::timeout;
 use tracing::{error, info, warn};
 
 /// Browser instance manager
@@ -29,24 +28,7 @@ impl BrowserManager {
 
         // Check if WebDriver server is available before creating browser
         info!("Checking WebDriver availability at: {}", webdriver_url);
-        let is_available = match timeout(
-            Duration::from_secs(5),
-            reqwest::get(&format!("{}/status", webdriver_url)),
-        )
-        .await
-        {
-            Ok(Ok(response)) => response.status().is_success(),
-            Ok(Err(e)) => {
-                error!("Failed to connect to WebDriver: {}", e);
-                false
-            }
-            Err(_) => {
-                error!("Timeout while checking WebDriver availability");
-                false
-            }
-        };
-
-        if !is_available {
+        if !is_webdriver_available().await {
             return Err(TarziError::Browser(format!(
                 "WebDriver server is not available at {}. Please start ChromeDriver or another WebDriver server.",
                 webdriver_url
