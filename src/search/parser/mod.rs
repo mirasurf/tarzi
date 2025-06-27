@@ -1,6 +1,7 @@
 use super::types::{SearchEngineType, SearchResult};
 use crate::Result;
 
+pub mod baidu;
 pub mod bing;
 pub mod brave;
 pub mod custom;
@@ -12,6 +13,7 @@ pub mod tavily;
 #[cfg(test)]
 mod tests;
 
+pub use baidu::BaiduParser;
 pub use bing::BingParser;
 pub use brave::BraveParser;
 pub use custom::{CustomParser, CustomParserConfig};
@@ -56,6 +58,7 @@ impl ParserFactory {
             SearchEngineType::DuckDuckGo => Box::new(DuckDuckGoParser::new()),
             SearchEngineType::Google => Box::new(GoogleParser::new()),
             SearchEngineType::BraveSearch => Box::new(BraveParser::new()),
+            SearchEngineType::Baidu => Box::new(BaiduParser::new()),
             SearchEngineType::Tavily => Box::new(TavilyParser::new()),
             SearchEngineType::SearchApi => Box::new(SearchApiParser::new()),
             SearchEngineType::Custom(name) => {

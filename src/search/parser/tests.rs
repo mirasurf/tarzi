@@ -171,6 +171,52 @@ mod tests {
     }
 
     #[test]
+    fn test_baidu_parser() {
+        let parser = BaiduParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <div class="result c-container">
+                    <h3><a href="https://example1.com">Baidu Test Result 1</a></h3>
+                    <div class="c-abstract">This is a test snippet for Baidu 1</div>
+                </div>
+                <div class="result c-container" data-tuiguang="1">
+                    <h3><a href="https://ad-example.com">Ad Result</a></h3>
+                    <div class="c-abstract">This is an ad snippet</div>
+                </div>
+                <div class="result c-container">
+                    <h3><a href="https://example2.com">Baidu Test Result 2</a></h3>
+                    <div class="c-abstract">This is a test snippet for Baidu 2</div>
+                </div>
+                <div class="result c-container">
+                    <h3><a href="https://example3.com">Baidu Test Result 3</a></h3>
+                    <div class="c-abstract">This is a test snippet for Baidu 3</div>
+                </div>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 2).unwrap();
+
+        // Should get 2 results, skipping the ad (data-tuiguang)
+        assert_eq!(results.len(), 2);
+        assert_eq!(parser.name(), "BaiduParser");
+        assert!(parser.supports(&SearchEngineType::Baidu));
+        assert!(!parser.supports(&SearchEngineType::Google));
+
+        // Check first result
+        assert_eq!(results[0].title, "Baidu Test Result 1");
+        assert_eq!(results[0].url, "https://example1.com");
+        assert_eq!(results[0].snippet, "This is a test snippet for Baidu 1");
+        assert_eq!(results[0].rank, 1);
+
+        // Check second result (should be the third div, skipping the ad)
+        assert_eq!(results[1].title, "Baidu Test Result 2");
+        assert_eq!(results[1].url, "https://example2.com");
+        assert_eq!(results[1].snippet, "This is a test snippet for Baidu 2");
+        assert_eq!(results[1].rank, 2);
+    }
+
+    #[test]
     fn test_custom_parser() {
         let parser = CustomParser::new("TestEngine".to_string());
         let html = "<html><body>Mock HTML content</body></html>";
@@ -221,6 +267,9 @@ mod tests {
         let brave_parser = factory.get_parser(&SearchEngineType::BraveSearch);
         assert_eq!(brave_parser.name(), "BraveParser");
 
+        let baidu_parser = factory.get_parser(&SearchEngineType::Baidu);
+        assert_eq!(baidu_parser.name(), "BaiduParser");
+
         let tavily_parser = factory.get_parser(&SearchEngineType::Tavily);
         assert_eq!(tavily_parser.name(), "TavilyParser");
 
@@ -254,6 +303,7 @@ mod tests {
             (SearchEngineType::Google, "GoogleParser"),
             (SearchEngineType::DuckDuckGo, "DuckDuckGoParser"),
             (SearchEngineType::BraveSearch, "BraveParser"),
+            (SearchEngineType::Baidu, "BaiduParser"),
             (SearchEngineType::Tavily, "TavilyParser"),
             (SearchEngineType::SearchApi, "SearchApiParser"),
         ];

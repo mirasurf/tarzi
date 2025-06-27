@@ -13,7 +13,7 @@ classifiers = [
 version = "0.0.3"
 description = "Rust-native lite search for AI applications"
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
 authors = [
     {name = "xmingc", email = "chenxm35@gmail.com"},
 ]

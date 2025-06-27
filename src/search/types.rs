@@ -14,6 +14,7 @@ pub enum SearchEngineType {
     DuckDuckGo,
     Google,
     BraveSearch,
+    Baidu,
     Tavily,
     SearchApi,
     Custom(String),
@@ -28,6 +29,7 @@ impl FromStr for SearchEngineType {
             "duckduckgo" => Ok(SearchEngineType::DuckDuckGo),
             "google" => Ok(SearchEngineType::Google),
             "brave" => Ok(SearchEngineType::BraveSearch),
+            "baidu" => Ok(SearchEngineType::Baidu),
             "tavily" => Ok(SearchEngineType::Tavily),
             "searchapi" => Ok(SearchEngineType::SearchApi),
             _ => Ok(SearchEngineType::Custom(s.to_string())),
@@ -44,6 +46,7 @@ impl SearchEngineType {
             SearchEngineType::BraveSearch => {
                 "https://search.brave.com/search?q={query}".to_string()
             }
+            SearchEngineType::Baidu => "https://www.baidu.com/s?wd={query}".to_string(),
             SearchEngineType::Tavily => "https://tavily.com/search?q={query}".to_string(),
             SearchEngineType::SearchApi => "https://www.searchapi.io/search?q={query}".to_string(),
             SearchEngineType::Custom(_) => "{query}".to_string(), // Default pattern for custom engines
