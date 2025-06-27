@@ -1,17 +1,62 @@
+# =============================================================================
+# Tarzi Configuration File
+# =============================================================================
+# This file contains settings for the tarzi web fetcher and search tool.
+# Modify these settings according to your requirements.
+
+# -----------------------------------------------------------------------------
+# General Settings
+# -----------------------------------------------------------------------------
 [general]
+# Logging level for the application
+# Options: trace, debug, info, warn, error
 log_level = "info"
+
+# Request timeout in seconds
 timeout = 30
 
+# -----------------------------------------------------------------------------
+# Web Fetcher Settings
+# -----------------------------------------------------------------------------
 [fetcher]
+# Fetcher mode - how to retrieve web content
+# Options: "browser_headless", "browser_headed", "http"
 mode = "browser_headless"
+
+# Output format for fetched content
+# Options: "markdown", "html", "text"
 format = "markdown"
+
+# HTTP proxy server (optional)
+# Uncomment and configure if you need to use a proxy
 # proxy = "http://127.0.0.1:7890"
-web_driver = "chromedriver" # geckodriver
+
+# Web driver executable
+# Options: "chromedriver", "geckodriver"
+web_driver = "chromedriver"
+
+# Port for the web driver service
 web_driver_port = 9515
 
+# -----------------------------------------------------------------------------
+# Search Engine Settings
+# -----------------------------------------------------------------------------
 [search]
+# Search mode - how to perform searches
+# Options: "webquery" (scrape search results), "apiquery" (use search API)
 mode = "webquery"
+
+# Search engine to use
+# Options: "google", "bing", "duckduckgo", "brave", "baidu"
 engine = "bing"
-query_pattern = "https://www.bing.com/search?q={query}"
+
+# URL pattern for search queries
+# Use {query} as placeholder for the search term
+# query_pattern = "https://www.bing.com/search?q={query}"
+
+# Maximum number of search results to return
 limit = 5
+
+# API key for search engines that require authentication
+# Required when using apiquery mode with certain search engines
 api_key = "your-api-key-for-apiquery-mode"
