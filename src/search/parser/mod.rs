@@ -7,8 +7,6 @@ pub mod brave;
 pub mod custom;
 pub mod duckduckgo;
 pub mod google;
-pub mod searchapi;
-pub mod tavily;
 
 #[cfg(test)]
 mod tests;
@@ -19,8 +17,6 @@ pub use brave::BraveParser;
 pub use custom::{CustomParser, CustomParserConfig};
 pub use duckduckgo::DuckDuckGoParser;
 pub use google::GoogleParser;
-pub use searchapi::SearchApiParser;
-pub use tavily::TavilyParser;
 
 /// Trait for parsing search results from HTML content
 pub trait SearchResultParser: Send + Sync {
@@ -59,8 +55,6 @@ impl ParserFactory {
             SearchEngineType::Google => Box::new(GoogleParser::new()),
             SearchEngineType::BraveSearch => Box::new(BraveParser::new()),
             SearchEngineType::Baidu => Box::new(BaiduParser::new()),
-            SearchEngineType::Tavily => Box::new(TavilyParser::new()),
-            SearchEngineType::SearchApi => Box::new(SearchApiParser::new()),
             SearchEngineType::Custom(name) => {
                 if let Some(_parser) = self.custom_parsers.get(name) {
                     // Note: This is a simplified approach. In practice, you might want

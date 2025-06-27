@@ -270,12 +270,6 @@ mod tests {
         let baidu_parser = factory.get_parser(&SearchEngineType::Baidu);
         assert_eq!(baidu_parser.name(), "BaiduParser");
 
-        let tavily_parser = factory.get_parser(&SearchEngineType::Tavily);
-        assert_eq!(tavily_parser.name(), "TavilyParser");
-
-        let searchapi_parser = factory.get_parser(&SearchEngineType::SearchApi);
-        assert_eq!(searchapi_parser.name(), "SearchApiParser");
-
         let custom_parser = factory.get_parser(&SearchEngineType::Custom("TestCustom".to_string()));
         assert_eq!(custom_parser.name(), "TestCustom");
     }
@@ -304,8 +298,6 @@ mod tests {
             (SearchEngineType::DuckDuckGo, "DuckDuckGoParser"),
             (SearchEngineType::BraveSearch, "BraveParser"),
             (SearchEngineType::Baidu, "BaiduParser"),
-            (SearchEngineType::Tavily, "TavilyParser"),
-            (SearchEngineType::SearchApi, "SearchApiParser"),
         ];
 
         for (engine_type, expected_name) in test_cases {

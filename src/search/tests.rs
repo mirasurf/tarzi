@@ -37,12 +37,8 @@ mod tests {
             SearchEngineType::BraveSearch
         );
         assert_eq!(
-            SearchEngineType::from_str("tavily").unwrap(),
-            SearchEngineType::Tavily
-        );
-        assert_eq!(
-            SearchEngineType::from_str("searchapi").unwrap(),
-            SearchEngineType::SearchApi
+            SearchEngineType::from_str("baidu").unwrap(),
+            SearchEngineType::Baidu
         );
 
         // Test custom engine
@@ -69,12 +65,8 @@ mod tests {
             "https://search.brave.com/search?q={query}"
         );
         assert_eq!(
-            SearchEngineType::Tavily.get_query_pattern(),
-            "https://tavily.com/search?q={query}"
-        );
-        assert_eq!(
-            SearchEngineType::SearchApi.get_query_pattern(),
-            "https://www.searchapi.io/search?q={query}"
+            SearchEngineType::Baidu.get_query_pattern(),
+            "https://www.baidu.com/s?wd={query}"
         );
     }
 

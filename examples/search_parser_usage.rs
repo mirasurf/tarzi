@@ -65,8 +65,7 @@ async fn main() -> tarzi::Result<()> {
         (SearchEngineType::Google, "Google"),
         (SearchEngineType::DuckDuckGo, "DuckDuckGo"),
         (SearchEngineType::BraveSearch, "Brave Search"),
-        (SearchEngineType::Tavily, "Tavily"),
-        (SearchEngineType::SearchApi, "SearchApi"),
+        (SearchEngineType::Baidu, "Baidu"),
     ];
 
     for (engine_type, engine_name) in engines {
