@@ -348,10 +348,8 @@ impl WebFetcher {
         };
 
         let temp_dir = TempDir::new()?;
-        self.browsers.insert(
-            "external".to_string(),
-            (browser, handler, temp_dir),
-        );
+        self.browsers
+            .insert("external".to_string(), (browser, handler, temp_dir));
         info!("External browser connection established and stored");
         Ok(())
     }
@@ -512,11 +510,8 @@ impl WebFetcher {
             TarziError::Browser(format!("Failed to create browser config: {}", e))
         })?;
         info!("Browser config created successfully");
-        let browser_result = tokio::time::timeout(
-            Duration::from_secs(60),
-            Browser::launch(config),
-        )
-        .await;
+        let browser_result =
+            tokio::time::timeout(Duration::from_secs(60), Browser::launch(config)).await;
         let (browser, handler) = match browser_result {
             Ok(Ok(result)) => {
                 info!("Browser launched successfully with ID: {}", instance_id);
