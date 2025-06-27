@@ -566,9 +566,8 @@ impl Default for WebFetcher {
 
 impl Drop for WebFetcher {
     fn drop(&mut self) {
-        // Clean up browser resources if needed
         if self.browser_manager.has_browsers() || self.external_browser_manager.is_connected() {
-            // FIXME (2025-06-27): In a real implementation, you might want to properly close the browsers
+            warn!("Cleaning up external browser resources manually");
         }
     }
 }

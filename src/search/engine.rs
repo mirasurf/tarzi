@@ -5,6 +5,7 @@ use crate::{
     fetcher::{FetchMode, WebFetcher},
 };
 use super::types::{SearchMode, SearchEngineType, SearchResult};
+use super::parser::{ParserFactory, SearchResultParser};
 use reqwest::Client;
 use std::str::FromStr;
 use std::time::Duration;
@@ -17,6 +18,7 @@ pub struct SearchEngine {
     engine_type: SearchEngineType,
     query_pattern: String,
     user_agent: String,
+    parser_factory: ParserFactory,
 }
 
 impl SearchEngine {
@@ -28,6 +30,7 @@ impl SearchEngine {
             engine_type: SearchEngineType::Bing,
             query_pattern: SearchEngineType::Bing.get_query_pattern(),
             user_agent: "Mozilla/5.0 (compatible; Tarzi/1.0)".to_string(),
+            parser_factory: ParserFactory::new(),
         }
     }
 
@@ -54,6 +57,12 @@ impl SearchEngine {
         &self.user_agent
     }
 
+    /// Register a custom parser for a specific engine
+    pub fn register_custom_parser(&mut self, name: String, parser: Box<dyn SearchResultParser>) {
+        info!("Registering custom parser: {}", name);
+        self.parser_factory.register_custom_parser(name, parser);
+    }
+
     pub fn from_config(config: &Config) -> Self {
         info!("Initializing SearchEngine from config");
         let fetcher = crate::fetcher::WebFetcher::from_config(config);
@@ -76,6 +85,7 @@ impl SearchEngine {
             engine_type,
             query_pattern,
             user_agent: config.fetcher.user_agent.clone(),
+            parser_factory: ParserFactory::new(),
         }
     }
 
@@ -125,30 +135,20 @@ impl SearchEngine {
 
     fn extract_search_results_from_html(
         &self,
-        _html: &str,
+        html: &str,
         limit: usize,
     ) -> Result<Vec<SearchResult>> {
-        info!("Extracting search results from HTML content");
+        info!("Extracting search results from HTML content using parser factory");
 
-        // This is a simplified HTML parsing approach
-        // In a real implementation, you might use a proper HTML parser like scraper
-        let mut results = Vec::new();
-        let mut rank = 1;
-
-        // Simple regex-based extraction (this is a basic implementation)
-        // In practice, you'd want to use a proper HTML parser
-        // For now, we'll create mock results to demonstrate the structure
-        for i in 0..limit {
-            results.push(SearchResult {
-                title: format!("Search result {} for query", i + 1),
-                url: format!("https://example.com/result{}", i + 1),
-                snippet: format!("This is a snippet for search result {}", i + 1),
-                rank,
-            });
-            rank += 1;
-        }
-
-        info!("Extracted {} search results", results.len());
+        // Get the appropriate parser for the current engine type
+        let parser = self.parser_factory.get_parser(&self.engine_type);
+        
+        info!("Using parser: {} for engine type: {:?}", parser.name(), self.engine_type);
+        
+        // Use the parser to extract results
+        let results = parser.parse(html, limit)?;
+        
+        info!("Successfully extracted {} search results using {}", results.len(), parser.name());
         Ok(results)
     }
 
