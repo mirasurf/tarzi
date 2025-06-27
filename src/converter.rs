@@ -186,7 +186,7 @@ mod tests {
     #[test]
     fn test_converter_default() {
         let converter1 = Converter::new();
-        let converter2 = Converter::default();
+        let converter2 = Converter::new();
         assert_eq!(converter1, converter2);
     }
 

@@ -1,4 +1,3 @@
-use serde_json;
 use tarzi::converter::Format;
 use tarzi::error::TarziError;
 use tarzi::fetcher::{FetchMode, WebFetcher};

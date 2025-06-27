@@ -9,7 +9,8 @@ use chromiumoxide::{
     handler::Handler,
 };
 use reqwest::Client;
-use std::time::Duration;
+use std::{collections::HashMap, path::PathBuf, time::Duration};
+use tempfile::TempDir;
 use tracing::{debug, error, info, warn};
 use url::Url;
 
@@ -37,8 +38,7 @@ impl std::str::FromStr for FetchMode {
 
 pub struct WebFetcher {
     http_client: Client,
-    browser: Option<Browser>,
-    _handler: Option<Handler>,
+    browsers: HashMap<String, (Browser, Handler, TempDir)>,
     converter: Converter,
 }
 
@@ -54,8 +54,7 @@ impl WebFetcher {
         info!("HTTP client created successfully for WebFetcher");
         Self {
             http_client,
-            browser: None,
-            _handler: None,
+            browsers: HashMap::new(),
             converter: Converter::new(),
         }
     }
@@ -84,8 +83,7 @@ impl WebFetcher {
             .expect("Failed to create HTTP client from config");
         Self {
             http_client,
-            browser: None,
-            _handler: None,
+            browsers: HashMap::new(),
             converter: Converter::new(),
         }
     }
@@ -224,57 +222,19 @@ impl WebFetcher {
     }
 
     async fn get_or_create_browser(&mut self, headless: bool) -> Result<&Browser> {
-        if self.browser.is_none() {
+        if self.browsers.is_empty() {
             info!(
                 "Creating new browser instance for WebFetcher (headless: {})...",
                 headless
             );
-            // For now, always use headless mode since the non-headless variant is not available
-            let config = BrowserConfig::builder()
-                .headless_mode(HeadlessMode::New)
-                .no_sandbox()
-                .build()
-                .map_err(|e| {
-                    error!("Failed to create browser config: {}", e);
-                    TarziError::Browser(format!("Failed to create browser config: {}", e))
-                })?;
-            info!("Browser config created successfully");
-
-            info!("Launching browser...");
-            let browser_result = tokio::time::timeout(
-                Duration::from_secs(60), // 60 seconds for browser launch
-                Browser::launch(config),
-            )
-            .await;
-
-            let (browser, handler) = match browser_result {
-                Ok(Ok(result)) => {
-                    info!("Browser launched successfully");
-                    result
-                }
-                Ok(Err(e)) => {
-                    error!("Failed to create browser: {}", e);
-                    return Err(TarziError::Browser(format!(
-                        "Failed to create browser: {}",
-                        e
-                    )));
-                }
-                Err(_) => {
-                    error!("Timeout while launching browser (60 seconds)");
-                    return Err(TarziError::Browser(
-                        "Timeout while launching browser".to_string(),
-                    ));
-                }
-            };
-
-            self.browser = Some(browser);
-            self._handler = Some(handler);
-            info!("Browser instance stored");
+            let instance_id = self
+                .create_browser_with_user_data(None, headless, Some("default".to_string()))
+                .await?;
+            info!("Browser instance created with ID: {}", instance_id);
         } else {
             info!("Using existing browser instance");
         }
-
-        Ok(self.browser.as_ref().unwrap())
+        Ok(&self.browsers.values().next().unwrap().0)
     }
 
     /// Fetch content using proxy
@@ -387,8 +347,11 @@ impl WebFetcher {
             }
         };
 
-        self.browser = Some(browser);
-        self._handler = Some(handler);
+        let temp_dir = TempDir::new()?;
+        self.browsers.insert(
+            "external".to_string(),
+            (browser, handler, temp_dir),
+        );
         info!("External browser connection established and stored");
         Ok(())
     }
@@ -418,24 +381,16 @@ impl WebFetcher {
     /// Fetch content using external browser instance
     async fn fetch_with_external_browser(&mut self, url: &str) -> Result<String> {
         info!("Fetching URL with external browser: {}", url);
-
-        // Check if we have an external browser connection
-        if self.browser.is_none() {
+        if self.browsers.is_empty() {
             warn!(
                 "No external browser connection established. Attempting to connect to default endpoint..."
             );
-
-            // FIXME (2025-06-26): Try to connect to a default external browser endpoint
-            // In practice, this would be configured via config or environment variable
             let default_endpoint = std::env::var("TARZI_EXTERNAL_BROWSER_ENDPOINT")
                 .unwrap_or_else(|_| "ws://localhost:9222".to_string());
-
             self.connect_to_external_browser(&default_endpoint).await?;
         }
-
         info!("Using external browser instance for fetching");
-        let browser = self.browser.as_ref().unwrap();
-
+        let browser = &self.browsers.values().next().unwrap().0;
         info!("Creating new page in external browser...");
         let page_result =
             tokio::time::timeout(Duration::from_secs(30), browser.new_page("about:blank")).await;
@@ -518,6 +473,258 @@ impl WebFetcher {
             FetchMode::BrowserHeadExternal => self.fetch_with_external_browser(url).await,
         }
     }
+
+    /// Create a new browser instance with a specific user data directory
+    pub async fn create_browser_with_user_data(
+        &mut self,
+        user_data_dir: Option<PathBuf>,
+        headless: bool,
+        instance_id: Option<String>,
+    ) -> Result<String> {
+        let instance_id = instance_id.unwrap_or_else(|| {
+            let temp_dir = TempDir::new().expect("Failed to create temp dir for instance ID");
+            temp_dir.path().to_string_lossy().to_string()
+        });
+        info!(
+            "Creating new browser instance with ID: {} (headless: {}, user_data_dir: {:?})",
+            instance_id, headless, user_data_dir
+        );
+        let mut config_builder = BrowserConfig::builder();
+        if headless {
+            config_builder = config_builder.headless_mode(HeadlessMode::New);
+        } else {
+            config_builder = config_builder.with_head();
+        }
+        config_builder = config_builder.no_sandbox();
+        let temp_dir = if let Some(user_data_path) = user_data_dir {
+            config_builder = config_builder.user_data_dir(user_data_path);
+            None
+        } else {
+            let temp = TempDir::new().map_err(|e| {
+                error!("Failed to create temporary directory: {}", e);
+                TarziError::Browser(format!("Failed to create temporary directory: {}", e))
+            })?;
+            config_builder = config_builder.user_data_dir(temp.path());
+            Some(temp)
+        };
+        let config = config_builder.build().map_err(|e| {
+            error!("Failed to create browser config: {}", e);
+            TarziError::Browser(format!("Failed to create browser config: {}", e))
+        })?;
+        info!("Browser config created successfully");
+        let browser_result = tokio::time::timeout(
+            Duration::from_secs(60),
+            Browser::launch(config),
+        )
+        .await;
+        let (browser, handler) = match browser_result {
+            Ok(Ok(result)) => {
+                info!("Browser launched successfully with ID: {}", instance_id);
+                result
+            }
+            Ok(Err(e)) => {
+                error!("Failed to create browser: {}", e);
+                return Err(TarziError::Browser(format!(
+                    "Failed to create browser: {}",
+                    e
+                )));
+            }
+            Err(_) => {
+                error!("Timeout while launching browser (60 seconds)");
+                return Err(TarziError::Browser(
+                    "Timeout while launching browser".to_string(),
+                ));
+            }
+        };
+        self.browsers.insert(
+            instance_id.clone(),
+            (
+                browser,
+                handler,
+                temp_dir.unwrap_or_else(|| {
+                    TempDir::new().expect("Failed to create temp dir for browser storage")
+                }),
+            ),
+        );
+        info!("Browser instance stored with ID: {}", instance_id);
+        Ok(instance_id)
+    }
+
+    /// Get a browser instance by ID
+    pub fn get_browser(&self, instance_id: &str) -> Option<&Browser> {
+        self.browsers
+            .get(instance_id)
+            .map(|(browser, _, _)| browser)
+    }
+
+    /// Get all browser instance IDs
+    pub fn get_browser_ids(&self) -> Vec<String> {
+        self.browsers.keys().cloned().collect()
+    }
+
+    /// Remove a browser instance by ID
+    pub fn remove_browser(&mut self, instance_id: &str) -> bool {
+        if let Some((_, _, _temp_dir)) = self.browsers.remove(instance_id) {
+            info!("Removed browser instance: {}", instance_id);
+            // The temp_dir will be automatically cleaned up when dropped
+            true
+        } else {
+            warn!("Browser instance not found: {}", instance_id);
+            false
+        }
+    }
+
+    /// Fetch content using a specific browser instance
+    pub async fn fetch_with_browser_instance(
+        &mut self,
+        url: &str,
+        instance_id: &str,
+        format: Format,
+    ) -> Result<String> {
+        info!(
+            "Fetching URL: {} with browser instance: {}",
+            url, instance_id
+        );
+
+        let browser = self.get_browser(instance_id).ok_or_else(|| {
+            TarziError::Browser(format!("Browser instance not found: {}", instance_id))
+        })?;
+
+        info!("Creating new page in browser instance: {}", instance_id);
+        let page_result =
+            tokio::time::timeout(Duration::from_secs(30), browser.new_page("about:blank")).await;
+
+        let page = match page_result {
+            Ok(Ok(page)) => {
+                info!(
+                    "New page created successfully in browser instance: {}",
+                    instance_id
+                );
+                page
+            }
+            Ok(Err(e)) => {
+                error!(
+                    "Failed to create page in browser instance {}: {}",
+                    instance_id, e
+                );
+                return Err(TarziError::Browser(format!("Failed to create page: {}", e)));
+            }
+            Err(_) => {
+                error!(
+                    "Timeout while creating new page in browser instance {} (30 seconds)",
+                    instance_id
+                );
+                return Err(TarziError::Browser(
+                    "Timeout while creating new page".to_string(),
+                ));
+            }
+        };
+
+        // Navigate to the URL
+        info!(
+            "Navigating to URL in browser instance {}: {}",
+            instance_id, url
+        );
+        let navigation_result = tokio::time::timeout(Duration::from_secs(30), page.goto(url)).await;
+
+        match navigation_result {
+            Ok(Ok(_)) => {
+                info!(
+                    "Successfully navigated to page in browser instance: {}",
+                    instance_id
+                );
+            }
+            Ok(Err(e)) => {
+                error!(
+                    "Failed to navigate to URL in browser instance {}: {}",
+                    instance_id, e
+                );
+                return Err(TarziError::Browser(format!("Failed to navigate: {}", e)));
+            }
+            Err(_) => {
+                error!(
+                    "Timeout while navigating to URL in browser instance {} (30 seconds)",
+                    instance_id
+                );
+                return Err(TarziError::Browser(
+                    "Timeout while navigating to URL".to_string(),
+                ));
+            }
+        }
+
+        // Wait for the page to load
+        info!(
+            "Waiting for page to load in browser instance {} (2 seconds)...",
+            instance_id
+        );
+        tokio::time::sleep(Duration::from_secs(2)).await;
+        info!("Wait completed");
+
+        // Get the page content
+        info!(
+            "Extracting page content from browser instance: {}",
+            instance_id
+        );
+        let content_result = tokio::time::timeout(Duration::from_secs(30), page.content()).await;
+
+        let content = match content_result {
+            Ok(Ok(content)) => {
+                info!(
+                    "Successfully extracted page content from browser instance {} ({} characters)",
+                    instance_id,
+                    content.len()
+                );
+                content
+            }
+            Ok(Err(e)) => {
+                error!(
+                    "Failed to get page content from browser instance {}: {}",
+                    instance_id, e
+                );
+                return Err(TarziError::Browser(format!("Failed to get content: {}", e)));
+            }
+            Err(_) => {
+                error!(
+                    "Timeout while extracting page content from browser instance {} (30 seconds)",
+                    instance_id
+                );
+                return Err(TarziError::Browser(
+                    "Timeout while extracting page content".to_string(),
+                ));
+            }
+        };
+
+        // Convert to specified format
+        let converted_content = self.converter.convert(&content, format).await?;
+        Ok(converted_content)
+    }
+
+    /// Create multiple browser instances for parallel processing
+    pub async fn create_multiple_browsers(
+        &mut self,
+        count: usize,
+        headless: bool,
+        base_instance_id: Option<String>,
+    ) -> Result<Vec<String>> {
+        info!(
+            "Creating {} browser instances (headless: {})",
+            count, headless
+        );
+
+        let base_id = base_instance_id.unwrap_or_else(|| "browser".to_string());
+        let mut instance_ids = Vec::new();
+
+        for i in 0..count {
+            let instance_id = format!("{}_{}", base_id, i);
+            let id = self
+                .create_browser_with_user_data(None, headless, Some(instance_id.clone()))
+                .await?;
+            instance_ids.push(id);
+        }
+
+        info!("Successfully created {} browser instances", count);
+        Ok(instance_ids)
+    }
 }
 
 impl Default for WebFetcher {
@@ -529,9 +736,8 @@ impl Default for WebFetcher {
 impl Drop for WebFetcher {
     fn drop(&mut self) {
         // Clean up browser resources if needed
-        if let Some(_browser) = &self.browser {
-            // Note: In a real implementation, you might want to properly close the browser
-            // This is a simplified version
+        if !self.browsers.is_empty() {
+            // FIXME (2025-06-27): In a real implementation, you might want to properly close the browsers
         }
     }
 }
@@ -617,8 +823,7 @@ mod tests {
     #[test]
     fn test_webfetcher_new() {
         let fetcher = WebFetcher::new();
-        assert!(fetcher.browser.is_none());
-        assert!(fetcher._handler.is_none());
+        assert!(fetcher.browsers.is_empty());
         assert_eq!(fetcher.converter, Converter::new());
     }
 
@@ -627,8 +832,8 @@ mod tests {
         let fetcher1 = WebFetcher::new();
         let fetcher2 = WebFetcher::default();
         assert_eq!(fetcher1.converter, fetcher2.converter);
-        assert_eq!(fetcher1.browser.is_none(), fetcher2.browser.is_none());
-        assert_eq!(fetcher1._handler.is_none(), fetcher2._handler.is_none());
+        assert!(fetcher1.browsers.is_empty());
+        assert!(fetcher2.browsers.is_empty());
     }
 
     #[test]
@@ -666,11 +871,11 @@ mod tests {
     #[test]
     fn test_fetch_mode_clone() {
         let mode1 = FetchMode::PlainRequest;
-        let mode2 = mode1.clone();
+        let mode2 = mode1;
         assert_eq!(mode1, mode2);
 
         let mode3 = FetchMode::BrowserHead;
-        let mode4 = mode3.clone();
+        let mode4 = mode3;
         assert_eq!(mode3, mode4);
     }
 
@@ -758,8 +963,7 @@ mod tests {
         let config = Config::new();
         let fetcher = WebFetcher::from_config(&config);
         // We can't directly check the http_client internals, but we can check that the struct is created
-        assert!(fetcher.browser.is_none());
-        assert!(fetcher._handler.is_none());
+        assert!(fetcher.browsers.is_empty());
         assert_eq!(fetcher.converter, Converter::new());
     }
 

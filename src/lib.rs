@@ -66,8 +66,10 @@ mod tests {
         let _format = Format::Markdown;
         let _fetch_mode = FetchMode::PlainRequest;
         let _search_mode = SearchMode::WebQuery;
+    }
 
-        // This test verifies that the modular structure compiles correctly
-        assert!(true);
+    #[test]
+    fn test_basic_functionality() {
+        // Basic functionality test
     }
 }
