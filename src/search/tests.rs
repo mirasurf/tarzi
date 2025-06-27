@@ -15,7 +15,7 @@ mod tests {
             engine.query_pattern(),
             "https://www.bing.com/search?q={query}"
         );
-        assert_eq!(engine.user_agent(), "Mozilla/5.0 (compatible; Tarzi/1.0)");
+        assert_eq!(engine.user_agent(), crate::constants::DEFAULT_USER_AGENT);
     }
 
     #[test]
@@ -105,7 +105,7 @@ mod tests {
             engine.query_pattern(),
             "https://www.bing.com/search?q={query}"
         );
-        assert_eq!(engine.user_agent(), "Mozilla/5.0 (compatible; Tarzi/1.0)");
+        assert_eq!(engine.user_agent(), crate::constants::DEFAULT_USER_AGENT);
     }
 
     #[test]

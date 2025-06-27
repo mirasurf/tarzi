@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
     let mut fetcher = WebFetcher::from_config(&config);
 
     // Demo URL
-    let test_url = "https://httpbin.org/html";
+    let test_url = tarzi::constants::HTTPBIN_HTML_URL;
 
     println!("Testing browser integration with URL: {}", test_url);
     println!();

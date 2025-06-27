@@ -11,7 +11,7 @@ async fn main() -> Result<()> {
     println!("1. Fetching content with different modes:");
 
     let mut fetcher = WebFetcher::new();
-    let test_url = "https://httpbin.org/html";
+    let test_url = tarzi::constants::HTTPBIN_HTML_URL;
 
     // Plain request mode
     match fetcher

@@ -1,11 +1,11 @@
 use crate::{
     Result,
     config::Config,
+    constants::{DEFAULT_TIMEOUT, DEFAULT_USER_AGENT, PAGE_LOAD_WAIT},
     converter::{Converter, Format},
     error::TarziError,
 };
 use reqwest::Client;
-use std::time::Duration;
 use tracing::{debug, error, info, warn};
 use url::Url;
 
@@ -22,8 +22,8 @@ impl WebFetcher {
     pub fn new() -> Self {
         info!("Initializing WebFetcher");
         let http_client = Client::builder()
-            .timeout(Duration::from_secs(30))
-            .user_agent("Mozilla/5.0 (compatible; Tarzi/1.0)")
+            .timeout(DEFAULT_TIMEOUT)
+            .user_agent(DEFAULT_USER_AGENT)
             .build()
             .expect("Failed to create HTTP client");
 
@@ -126,8 +126,7 @@ impl WebFetcher {
 
         // Navigate to the URL
         info!("Navigating to URL: {}", url);
-        let navigation_result =
-            tokio::time::timeout(Duration::from_secs(30), browser.get(url)).await;
+        let navigation_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.get(url)).await;
 
         match navigation_result {
             Ok(Ok(_)) => {
@@ -147,12 +146,12 @@ impl WebFetcher {
 
         // Wait for the page to load (simplified approach)
         info!("Waiting for page to load (2 seconds)...");
-        tokio::time::sleep(Duration::from_secs(2)).await;
+        tokio::time::sleep(PAGE_LOAD_WAIT).await;
         info!("Wait completed");
 
         // Get the page content
         info!("Extracting page content...");
-        let content_result = tokio::time::timeout(Duration::from_secs(30), browser.source()).await;
+        let content_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.source()).await;
 
         let content = match content_result {
             Ok(Ok(content)) => {
@@ -190,8 +189,8 @@ impl WebFetcher {
         let raw_content = match mode {
             FetchMode::PlainRequest => {
                 let proxy_client = Client::builder()
-                    .timeout(Duration::from_secs(30))
-                    .user_agent("Mozilla/5.0 (compatible; Tarzi/1.0)")
+                    .timeout(DEFAULT_TIMEOUT)
+                    .user_agent(DEFAULT_USER_AGENT)
                     .proxy(reqwest::Proxy::http(proxy)?)
                     .build()
                     .map_err(|e| {
@@ -280,8 +279,7 @@ impl WebFetcher {
             "Navigating to URL in browser instance {}: {}",
             instance_id, url
         );
-        let navigation_result =
-            tokio::time::timeout(Duration::from_secs(30), browser.get(url)).await;
+        let navigation_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.get(url)).await;
 
         match navigation_result {
             Ok(Ok(_)) => {
@@ -313,7 +311,7 @@ impl WebFetcher {
             "Waiting for page to load in browser instance {} (2 seconds)...",
             instance_id
         );
-        tokio::time::sleep(Duration::from_secs(2)).await;
+        tokio::time::sleep(PAGE_LOAD_WAIT).await;
         info!("Wait completed for browser instance {}", instance_id);
 
         // Get the page content
@@ -321,7 +319,7 @@ impl WebFetcher {
             "Extracting page content from browser instance {}...",
             instance_id
         );
-        let content_result = tokio::time::timeout(Duration::from_secs(30), browser.source()).await;
+        let content_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.source()).await;
 
         let content = match content_result {
             Ok(Ok(content)) => {

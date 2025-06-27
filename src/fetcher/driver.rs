@@ -4,7 +4,10 @@
 //! multiple browser drivers (chromedriver, geckodriver, etc.) with lifecycle management,
 //! status checking, and automatic cleanup.
 
-use crate::{Result, TarziError};
+use crate::{
+    Result, TarziError,
+    constants::{CHROMEDRIVER_DEFAULT_PORT, DEFAULT_TIMEOUT},
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process::{Child, Command, Stdio};
@@ -64,9 +67,9 @@ impl Default for DriverConfig {
     fn default() -> Self {
         Self {
             driver_type: DriverType::Chrome,
-            port: 9515,
+            port: CHROMEDRIVER_DEFAULT_PORT,
             args: Vec::new(),
-            timeout: Duration::from_secs(30),
+            timeout: DEFAULT_TIMEOUT,
             verbose: false,
         }
     }

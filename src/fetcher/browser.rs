@@ -1,6 +1,16 @@
 use super::driver::{DriverConfig, DriverInfo, DriverManager, DriverType};
-use crate::{Result, config::Config, error::TarziError, utils::is_webdriver_available};
-use std::{collections::HashMap, path::PathBuf, time::Duration};
+use crate::{
+    Result,
+    config::Config,
+    constants::{
+        BROWSER_LAUNCH_TIMEOUT, CHROME_DRIVER_ARGS, CHROMEDRIVER_DEFAULT_PORT,
+        CHROMEDRIVER_DEFAULT_URL, DEFAULT_TIMEOUT, FIREFOX_DRIVER_ARGS, GECKODRIVER_DEFAULT_PORT,
+        WEBDRIVER_CHECK_TIMEOUT,
+    },
+    error::TarziError,
+    utils::is_webdriver_available,
+};
+use std::{collections::HashMap, path::PathBuf};
 use tempfile::TempDir;
 use thirtyfour::{ChromiumLikeCapabilities, DesiredCapabilities, WebDriver};
 use tracing::{error, info, warn};
@@ -92,11 +102,9 @@ impl BrowserManager {
         };
 
         info!("Browser config created successfully");
-        let browser_result = tokio::time::timeout(
-            Duration::from_secs(60),
-            WebDriver::new(&webdriver_url, caps),
-        )
-        .await;
+        let browser_result =
+            tokio::time::timeout(BROWSER_LAUNCH_TIMEOUT, WebDriver::new(&webdriver_url, caps))
+                .await;
         let browser = match browser_result {
             Ok(Ok(result)) => {
                 info!("Browser launched successfully with ID: {}", instance_id);
@@ -233,7 +241,7 @@ impl BrowserManager {
         }
 
         // If TARZI_WEBDRIVER_URL is not set or empty, try default WebDriver URL
-        let default_url = "http://localhost:9515".to_string();
+        let default_url = CHROMEDRIVER_DEFAULT_URL.to_string();
         info!(
             "TARZI_WEBDRIVER_URL not set, checking default WebDriver at: {}",
             default_url
@@ -262,13 +270,9 @@ impl BrowserManager {
                 info!("ChromeDriver found, starting driver with DriverManager");
                 let config = DriverConfig {
                     driver_type: DriverType::Chrome,
-                    port: 9515,
-                    args: vec![
-                        "--disable-gpu".to_string(),
-                        "--no-sandbox".to_string(),
-                        "--disable-dev-shm-usage".to_string(),
-                    ],
-                    timeout: Duration::from_secs(30),
+                    port: CHROMEDRIVER_DEFAULT_PORT,
+                    args: CHROME_DRIVER_ARGS.iter().map(|s| s.to_string()).collect(),
+                    timeout: DEFAULT_TIMEOUT,
                     verbose: false,
                 };
 
@@ -297,9 +301,9 @@ impl BrowserManager {
                 info!("GeckoDriver found, starting driver with DriverManager");
                 let config = DriverConfig {
                     driver_type: DriverType::Firefox,
-                    port: 4444,
-                    args: vec!["--log=warn".to_string()],
-                    timeout: Duration::from_secs(30),
+                    port: GECKODRIVER_DEFAULT_PORT,
+                    args: FIREFOX_DRIVER_ARGS.iter().map(|s| s.to_string()).collect(),
+                    timeout: DEFAULT_TIMEOUT,
                     verbose: false,
                 };
 
@@ -371,7 +375,7 @@ async fn is_webdriver_available_at_url(url: &str) -> bool {
     use tokio::time::timeout;
 
     match timeout(
-        Duration::from_secs(2),
+        WEBDRIVER_CHECK_TIMEOUT,
         reqwest::get(&format!("{}/status", url)),
     )
     .await

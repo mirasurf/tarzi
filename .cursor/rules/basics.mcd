@@ -6,7 +6,7 @@ alwaysApply: true
 
 You're working on **Tarzi**—a rust-native lite search for AI applications.
 
-## Implementation Considerations
+## IMPLEMENTATION CONSIDERATIONS
 
 - We want to build a project that is still runnable after 10 years.
 - **Minimize external dependencies**: Use only well-maintained, stable crates with a strong community or institutional backing. Prefer the Rust standard library for core functionality like file I/O, threading, and networking.
@@ -15,7 +15,12 @@ You're working on **Tarzi**—a rust-native lite search for AI applications.
 - **Lock Rust Version and Toolchain**: For example, pin the Rust toolchain, document toolchain installation, consider vendoring the toolchain with `cargo vendor`, and regularly update vendored dependencies
 - **Write Robust, Portable Code**: Write code that avoids platform-specific assumptions, avoids external system dependencies. For platform-specific code, use #[cfg(...)] to handle differences gracefully.
 
-## Code Revision
+## CODE OF CONDUCT
 
 - After generation, always make sure the code format and linting are performed well.
 - Always DO NOT change unrelated parts beyond user requirements.
+
+## CODE STYLE
+
+- Always perfer modularized design for each module.
+- Always declared contants value modules to contain magic values. DO NOT treat error messages as constants.

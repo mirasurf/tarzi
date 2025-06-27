@@ -8,7 +8,7 @@ use crate::{
 };
 use reqwest::Client;
 use std::str::FromStr;
-use std::time::Duration;
+
 use tracing::{error, info, warn};
 
 pub struct SearchEngine {
@@ -29,7 +29,7 @@ impl SearchEngine {
             api_key: None,
             engine_type: SearchEngineType::Bing,
             query_pattern: SearchEngineType::Bing.get_query_pattern(),
-            user_agent: "Mozilla/5.0 (compatible; Tarzi/1.0)".to_string(),
+            user_agent: crate::constants::DEFAULT_USER_AGENT.to_string(),
             parser_factory: ParserFactory::new(),
         }
     }
@@ -266,7 +266,7 @@ impl SearchEngine {
                 info!("Creating proxy-enabled HTTP client");
                 // For API mode with proxy, we would use a proxy-enabled HTTP client
                 let _proxy_client = Client::builder()
-                    .timeout(Duration::from_secs(30))
+                    .timeout(crate::constants::DEFAULT_TIMEOUT)
                     .user_agent(&self.user_agent)
                     .proxy(reqwest::Proxy::http(&effective_proxy)?)
                     .build()

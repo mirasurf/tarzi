@@ -5,9 +5,6 @@ timeout = 30
 [fetcher]
 mode = "browser_headless"
 format = "markdown"
-user_agent = "Mozilla/5.0 (compatible; Tarzi/1.0)"
-# user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-timeout = 30
 proxy = "http://127.0.0.1:7890"
 web_driver = "chromedriver" # geckodriver
 web_driver_port = 9515

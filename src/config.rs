@@ -212,7 +212,7 @@ fn default_fetcher_format() -> String {
 }
 
 fn default_user_agent() -> String {
-    "Mozilla/5.0 (compatible; Tarzi/1.0)".to_string()
+    crate::constants::DEFAULT_USER_AGENT.to_string()
 }
 
 fn default_fetch_timeout() -> u64 {
@@ -240,7 +240,7 @@ fn default_web_driver() -> String {
 }
 
 fn default_web_driver_port() -> u16 {
-    9515
+    crate::constants::CHROMEDRIVER_DEFAULT_PORT
 }
 
 /// Get proxy configuration with environment variable override
@@ -278,7 +278,7 @@ mod tests {
         assert_eq!(config.fetcher.format, "markdown");
         assert_eq!(
             config.fetcher.user_agent,
-            "Mozilla/5.0 (compatible; Tarzi/1.0)"
+            crate::constants::DEFAULT_USER_AGENT
         );
         assert_eq!(config.fetcher.timeout, 30);
         assert_eq!(config.search.mode, "webquery");
@@ -403,7 +403,7 @@ api_key = "google_key_123"
         assert_eq!(config.fetcher.format, "markdown");
         assert_eq!(
             config.fetcher.user_agent,
-            "Mozilla/5.0 (compatible; Tarzi/1.0)"
+            crate::constants::DEFAULT_USER_AGENT
         );
         assert_eq!(config.fetcher.timeout, 30);
         assert_eq!(
