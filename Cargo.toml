@@ -6,7 +6,7 @@ authors = ["xmingc <chenxm35@gmail.com>"]
 description = "Rust-native lite search for AI applications"
 license = "Apache-2.0"
 repository = "https://github.com/mirasurf/tarzi"
-keywords = ["search", "web-scraping", "ai", "html", "markdown", "json", "yaml"]
+keywords = ["search", "web-crawler", "AI", "RAG"]
 categories = ["web-programming", "api-bindings", "text-processing"]
 
 [[bin]]
