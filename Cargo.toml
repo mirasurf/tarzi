@@ -21,6 +21,7 @@ crate-type = ["cdylib", "rlib"]
 default = []
 pyo3 = ["dep:pyo3"]
 test-helpers = []
+proxy-integration-tests = []
 
 [dependencies]  
 # Core dependencies

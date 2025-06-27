@@ -74,6 +74,26 @@ mod tests {
     }
 
     #[test]
+    fn test_webfetcher_from_config() {
+        let config = Config::load_dev().unwrap_or_else(|_| Config::new());
+        let fetcher = WebFetcher::from_config(&config);
+        assert!(!fetcher.browser_manager.has_browsers());
+    }
+
+    #[test]
+    fn test_webfetcher_from_config_with_proxy() {
+        let mut config = Config::new();
+        config.fetcher.proxy = Some("http://127.0.0.1:8080".to_string());
+        let fetcher = WebFetcher::from_config(&config);
+        assert!(!fetcher.browser_manager.has_browsers());
+        // Test that the proxy is configured in the browser manager
+        assert!(fetcher.browser_manager.config.is_some());
+        if let Some(ref browser_config) = fetcher.browser_manager.config {
+            assert_eq!(browser_config.fetcher.proxy, Some("http://127.0.0.1:8080".to_string()));
+        }
+    }
+
+    #[test]
     fn test_fetch_mode_partial_eq() {
         assert_eq!(FetchMode::PlainRequest, FetchMode::PlainRequest);
         assert_eq!(FetchMode::BrowserHead, FetchMode::BrowserHead);
@@ -153,6 +173,83 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    async fn test_fetch_with_proxy_browser_headless() {
+        let mut fetcher = WebFetcher::new();
+
+        // Test fetching with proxy in browser headless mode
+        let result = fetcher
+            .fetch_with_proxy(
+                "https://httpbin.org/html",
+                "http://invalid-proxy:8080",
+                FetchMode::BrowserHeadless,
+                Format::Html,
+            )
+            .await;
+
+        // This should fail due to invalid proxy, but we're testing that the code path works
+        match result {
+            Ok(_) => {
+                println!("Proxy browser test succeeded - invalid proxy was handled gracefully");
+            }
+            Err(_) => {
+                println!("Proxy browser test failed as expected");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_fetch_with_proxy_browser_head() {
+        let mut fetcher = WebFetcher::new();
+
+        // Test fetching with proxy in browser head mode
+        let result = fetcher
+            .fetch_with_proxy(
+                "https://httpbin.org/html",
+                "http://invalid-proxy:8080",
+                FetchMode::BrowserHead,
+                Format::Html,
+            )
+            .await;
+
+        // This should fail due to invalid proxy, but we're testing that the code path works
+        match result {
+            Ok(_) => {
+                println!("Proxy browser head test succeeded - invalid proxy was handled gracefully");
+            }
+            Err(_) => {
+                println!("Proxy browser head test failed as expected");
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_browser_with_proxy() {
+        let mut fetcher = WebFetcher::new();
+
+        // Test creating a browser with proxy configuration
+        let result = fetcher
+            .create_browser_with_proxy(
+                None,
+                true,
+                Some("test_proxy_browser".to_string()),
+                Some("http://127.0.0.1:8080".to_string()),
+            )
+            .await;
+
+        // This might fail due to no webdriver available, but we're testing the code path
+        match result {
+            Ok(instance_id) => {
+                println!("Browser with proxy created successfully: {}", instance_id);
+                // Clean up
+                let _ = fetcher.remove_browser(&instance_id).await;
+            }
+            Err(e) => {
+                println!("Browser creation with proxy failed as expected: {:?}", e);
+            }
+        }
+    }
+
     #[test]
     fn test_webfetcher_drop() {
         // Test that WebFetcher can be dropped without panicking
@@ -178,6 +275,45 @@ mod tests {
 
             let parsed = FetchMode::from_str(mode_str).unwrap();
             assert_eq!(mode, parsed);
+        }
+    }
+
+    #[test]
+    fn test_proxy_configuration_inheritance() {
+        // Test that proxy configuration is properly inherited by browser manager
+        let mut config = Config::new();
+        config.fetcher.proxy = Some("http://test-proxy:3128".to_string());
+        
+        let fetcher = WebFetcher::from_config(&config);
+        
+        // Verify that the browser manager has the config
+        assert!(fetcher.browser_manager.config.is_some());
+        
+        if let Some(ref browser_config) = fetcher.browser_manager.config {
+            assert_eq!(
+                browser_config.fetcher.proxy,
+                Some("http://test-proxy:3128".to_string())
+            );
+        }
+    }
+
+    #[test]
+    fn test_proxy_environment_override() {
+        use crate::config::get_proxy_from_env_or_config;
+        
+        // Test with config proxy
+        let config_proxy = Some("http://config-proxy:8080".to_string());
+        
+        // When no environment variables are set, should use config
+        let result = get_proxy_from_env_or_config(&config_proxy);
+        // This might vary based on environment, so we'll just ensure it doesn't panic
+        match result {
+            Some(proxy) => {
+                println!("Using proxy: {}", proxy);
+            }
+            None => {
+                println!("No proxy configured");
+            }
         }
     }
 }

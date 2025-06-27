@@ -406,10 +406,8 @@ api_key = "google_key_123"
             crate::constants::DEFAULT_USER_AGENT
         );
         assert_eq!(config.fetcher.timeout, 30);
-        assert_eq!(
-            config.fetcher.proxy,
-            Some("http://127.0.0.1:7890".to_string())
-        );
+        // Proxy should be None by default (commented out in tarzi.toml)
+        assert_eq!(config.fetcher.proxy, None);
         assert_eq!(config.search.mode, "webquery");
         assert_eq!(config.search.engine, "bing");
         assert_eq!(

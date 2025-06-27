@@ -203,10 +203,81 @@ impl WebFetcher {
                 response.text().await?
             }
             FetchMode::BrowserHead | FetchMode::BrowserHeadless => {
-                // For browser modes with proxy, we would need to configure the browser to use the proxy
-                // This is a simplified implementation - in practice you'd configure browser proxy settings
-                warn!("Proxy not yet implemented for browser modes, falling back to plain request");
-                self.fetch_plain_request(url).await?
+                // For browser modes with proxy, create a new browser instance with proxy configuration
+                info!("Creating browser with proxy for fetching: {}", proxy);
+                let headless = matches!(mode, FetchMode::BrowserHeadless);
+                let instance_id = self
+                    .browser_manager
+                    .create_browser_with_proxy(
+                        None,
+                        headless,
+                        Some("proxy_browser".to_string()),
+                        Some(proxy.to_string()),
+                    )
+                    .await?;
+
+                // Get the browser instance and fetch content
+                let browser = self
+                    .browser_manager
+                    .get_browser(&instance_id)
+                    .ok_or_else(|| {
+                        TarziError::Browser("Failed to get proxy browser instance".to_string())
+                    })?;
+
+                // Navigate to URL
+                let navigation_result =
+                    tokio::time::timeout(DEFAULT_TIMEOUT, browser.get(url)).await;
+                match navigation_result {
+                    Ok(Ok(_)) => info!("Successfully navigated to page with proxy"),
+                    Ok(Err(e)) => {
+                        error!("Failed to navigate to URL with proxy: {}", e);
+                        return Err(TarziError::Browser(format!(
+                            "Failed to navigate with proxy: {}",
+                            e
+                        )));
+                    }
+                    Err(_) => {
+                        error!("Timeout while navigating to URL with proxy");
+                        return Err(TarziError::Browser(
+                            "Timeout while navigating with proxy".to_string(),
+                        ));
+                    }
+                }
+
+                // Wait for page load
+                tokio::time::sleep(PAGE_LOAD_WAIT).await;
+
+                // Get page content
+                let content_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.source()).await;
+                let content = match content_result {
+                    Ok(Ok(content)) => {
+                        info!(
+                            "Successfully extracted page content with proxy ({} characters)",
+                            content.len()
+                        );
+                        content
+                    }
+                    Ok(Err(e)) => {
+                        error!("Failed to get page content with proxy: {}", e);
+                        return Err(TarziError::Browser(format!(
+                            "Failed to get content with proxy: {}",
+                            e
+                        )));
+                    }
+                    Err(_) => {
+                        error!("Timeout while extracting page content with proxy");
+                        return Err(TarziError::Browser(
+                            "Timeout while extracting content with proxy".to_string(),
+                        ));
+                    }
+                };
+
+                // Clean up the proxy browser instance
+                if let Err(e) = self.browser_manager.remove_browser(&instance_id).await {
+                    warn!("Failed to cleanup proxy browser instance: {}", e);
+                }
+
+                content
             }
         };
 
@@ -233,6 +304,19 @@ impl WebFetcher {
     ) -> Result<String> {
         self.browser_manager
             .create_browser_with_user_data(user_data_dir, headless, instance_id)
+            .await
+    }
+
+    /// Create a new browser instance with explicit proxy configuration
+    pub async fn create_browser_with_proxy(
+        &mut self,
+        user_data_dir: Option<std::path::PathBuf>,
+        headless: bool,
+        instance_id: Option<String>,
+        proxy: Option<String>,
+    ) -> Result<String> {
+        self.browser_manager
+            .create_browser_with_proxy(user_data_dir, headless, instance_id, proxy)
             .await
     }
 

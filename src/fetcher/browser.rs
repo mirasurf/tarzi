@@ -20,6 +20,7 @@ pub struct BrowserManager {
     browsers: HashMap<String, (WebDriver, TempDir)>,
     driver_manager: Option<DriverManager>,
     managed_driver_info: Option<DriverInfo>,
+    config: Option<Config>,
 }
 
 impl BrowserManager {
@@ -28,15 +29,17 @@ impl BrowserManager {
             browsers: HashMap::new(),
             driver_manager: None,
             managed_driver_info: None,
+            config: None,
         }
     }
 
     /// Create a new BrowserManager with configuration
-    pub fn from_config(_config: &Config) -> Self {
+    pub fn from_config(config: &Config) -> Self {
         Self {
             browsers: HashMap::new(),
             driver_manager: None,
             managed_driver_info: None,
+            config: Some(config.clone()),
         }
     }
 
@@ -80,6 +83,21 @@ impl BrowserManager {
             error!("Failed to add no-sandbox arg: {}", e);
             TarziError::Browser(format!("Failed to add no-sandbox arg: {}", e))
         })?;
+
+        // Add proxy configuration if available
+        if let Some(config) = &self.config {
+            let proxy = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
+            if let Some(proxy_url) = proxy {
+                if !proxy_url.is_empty() {
+                    info!("Configuring browser with proxy: {}", proxy_url);
+                    caps.add_arg(&format!("--proxy-server={}", proxy_url))
+                        .map_err(|e| {
+                            error!("Failed to add proxy-server arg: {}", e);
+                            TarziError::Browser(format!("Failed to add proxy-server arg: {}", e))
+                        })?;
+                }
+            }
+        }
 
         let temp_dir = if let Some(user_data_path) = user_data_dir {
             let user_data_arg = format!("--user-data-dir={}", user_data_path.to_string_lossy());
@@ -366,6 +384,35 @@ impl BrowserManager {
     /// Get information about the managed driver
     pub fn get_managed_driver_info(&self) -> Option<&DriverInfo> {
         self.managed_driver_info.as_ref()
+    }
+
+    /// Create a new browser instance with explicit proxy configuration
+    pub async fn create_browser_with_proxy(
+        &mut self,
+        user_data_dir: Option<PathBuf>,
+        headless: bool,
+        instance_id: Option<String>,
+        proxy: Option<String>,
+    ) -> Result<String> {
+        // Store original config proxy
+        let original_proxy = self.config.as_ref().and_then(|c| c.fetcher.proxy.clone());
+
+        // Temporarily override proxy configuration
+        if let Some(config) = &mut self.config {
+            config.fetcher.proxy = proxy;
+        }
+
+        // Create browser with proxy
+        let result = self
+            .create_browser_with_user_data(user_data_dir, headless, instance_id)
+            .await;
+
+        // Restore original proxy configuration
+        if let Some(config) = &mut self.config {
+            config.fetcher.proxy = original_proxy;
+        }
+
+        result
     }
 }
 

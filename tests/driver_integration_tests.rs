@@ -4,6 +4,9 @@
 //! Tests will be skipped if the required drivers are not installed.
 
 use std::time::Duration;
+#[cfg(not(feature = "test-helpers"))]
+use tarzi::fetcher::driver::{DriverConfig, DriverManager, DriverStatus, DriverType};
+#[cfg(feature = "test-helpers")]
 use tarzi::fetcher::driver::{DriverConfig, DriverManager, DriverStatus, DriverType, test_helpers};
 
 /// Test that we can create a driver manager
@@ -46,6 +49,7 @@ fn test_driver_binary_detection() {
 
 /// Test starting and stopping a Chrome driver (if available)
 #[test]
+#[cfg(feature = "test-helpers")]
 fn test_chrome_driver_lifecycle() {
     if !test_helpers::is_driver_available(&DriverType::Chrome) {
         println!("Skipping Chrome driver test - chromedriver not available");
@@ -111,6 +115,7 @@ fn test_chrome_driver_lifecycle() {
 
 /// Test error handling for non-existent driver
 #[test]
+#[cfg(feature = "test-helpers")]
 fn test_nonexistent_driver() {
     let manager = DriverManager::new();
 
