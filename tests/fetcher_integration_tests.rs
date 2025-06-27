@@ -1,9 +1,28 @@
+use std::time::Duration;
 use tarzi::converter::Format;
 use tarzi::error::TarziError;
 use tarzi::fetcher::{FetchMode, WebFetcher};
+use tokio::time::timeout;
 
 // Integration tests for fetcher module
 // These tests require internet access and may take longer to run
+
+/// Check if WebDriver server is available at the default endpoint
+async fn is_webdriver_available() -> bool {
+    let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
+        .unwrap_or_else(|_| "http://localhost:4444".to_string());
+
+    // Try to connect to WebDriver with a short timeout
+    match timeout(
+        Duration::from_secs(2),
+        reqwest::get(&format!("{}/status", webdriver_url)),
+    )
+    .await
+    {
+        Ok(Ok(response)) => response.status().is_success(),
+        _ => false,
+    }
+}
 
 #[tokio::test]
 async fn test_fetch_plain_request_httpbin() {
@@ -229,6 +248,12 @@ async fn test_fetch_different_formats() {
 
 #[tokio::test]
 async fn test_fetch_browser_headless() {
+    // Skip test if WebDriver is not available
+    if !is_webdriver_available().await {
+        println!("Skipping browser headless test - WebDriver not available");
+        return;
+    }
+
     let mut fetcher = WebFetcher::new();
 
     // Test fetching with headless browser
@@ -274,8 +299,13 @@ async fn test_fetch_browser_headless() {
 }
 
 #[tokio::test]
-#[ignore] // Ignore by default as browser tests require more setup
 async fn test_fetch_browser_head() {
+    // Skip test if WebDriver is not available
+    if !is_webdriver_available().await {
+        println!("Skipping browser head test - WebDriver not available");
+        return;
+    }
+
     let mut fetcher = WebFetcher::new();
 
     // Test fetching with browser head mode
@@ -304,8 +334,13 @@ async fn test_fetch_browser_head() {
 }
 
 #[tokio::test]
-#[ignore] // Ignore by default as browser tests require more setup
 async fn test_fetch_raw_browser() {
+    // Skip test if WebDriver is not available
+    if !is_webdriver_available().await {
+        println!("Skipping browser raw test - WebDriver not available");
+        return;
+    }
+
     let mut fetcher = WebFetcher::new();
 
     // Test fetching raw content with browser
