@@ -1,9 +1,9 @@
 use super::SearchResultParser;
 use crate::Result;
 use crate::search::types::{SearchEngineType, SearchResult};
-use tracing::{info, warn};
 use select::document::Document;
 use select::predicate::{Class, Name, Predicate};
+use tracing::{info, warn};
 
 pub struct GoogleParser;
 
@@ -64,11 +64,7 @@ impl SearchResultParser for GoogleParser {
                     snippet,
                     rank: rank + 1,
                 };
-                info!(
-                    "Extracted Google result #{}: {}",
-                    rank + 1,
-                    result.title
-                );
+                info!("Extracted Google result #{}: {}", rank + 1, result.title);
                 results.push(result);
             }
         }

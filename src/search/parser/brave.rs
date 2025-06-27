@@ -1,7 +1,9 @@
 use super::SearchResultParser;
 use crate::Result;
 use crate::search::types::{SearchEngineType, SearchResult};
-use tracing::info;
+use select::document::Document;
+use select::predicate::{Class, Name};
+use tracing::{info, warn};
 
 pub struct BraveParser;
 
@@ -12,33 +14,65 @@ impl BraveParser {
 }
 
 impl SearchResultParser for BraveParser {
-    fn parse(&self, _html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         info!("Parsing Brave search results from HTML");
 
-        let mut results = Vec::new();
-
-        // Mock implementation - in reality, you would parse actual Brave HTML structure
-        let mock_results_count = std::cmp::min(limit, 10);
-
-        for i in 0..mock_results_count {
-            let rank = i + 1;
-
-            // Mock Brave-style results
-            let result = SearchResult {
-                title: format!("Brave Search Result #{} - Mock Title", rank),
-                url: format!("https://example-brave-result-{}.com", rank),
-                snippet: format!(
-                    "This is a mock Brave search result snippet for result {}. In a real implementation, this would be extracted from the HTML using appropriate CSS selectors.",
-                    rank
-                ),
-                rank,
-            };
-
-            results.push(result);
+        if html.is_empty() {
+            warn!("Empty HTML provided to BraveParser");
+            return Ok(Vec::new());
         }
 
-        info!("Successfully parsed {} Brave search results", results.len());
+        let document = Document::from(html);
+        let mut results = Vec::new();
 
+        // Look for Brave search result containers
+        // Brave uses .result-row for individual result containers
+        for (rank, node) in document.find(Class("result-row")).take(limit).enumerate() {
+            // Extract title and URL from a element
+            let title_link = node.find(Name("a")).next();
+
+            let title = title_link
+                .map(|n| n.text().trim().to_string())
+                .unwrap_or_default();
+
+            let url = title_link
+                .and_then(|n| n.attr("href"))
+                .map(|href| {
+                    // Brave sometimes uses relative URLs or redirect URLs
+                    if href.starts_with("http") {
+                        href.to_string()
+                    } else if href.starts_with("/") {
+                        format!("https://search.brave.com{}", href)
+                    } else {
+                        href.to_string()
+                    }
+                })
+                .unwrap_or_default();
+
+            // Extract snippet from .result-snippet element
+            let snippet = node
+                .find(Class("result-snippet"))
+                .next()
+                .map(|n| n.text().trim().to_string())
+                .unwrap_or_default();
+
+            // Only add if we have at least a title
+            if !title.is_empty() {
+                let result = SearchResult {
+                    title,
+                    url,
+                    snippet,
+                    rank: rank + 1,
+                };
+                info!("Extracted Brave result #{}: {}", rank + 1, result.title);
+                results.push(result);
+            }
+        }
+
+        info!(
+            "Successfully parsed {} Brave search results from HTML",
+            results.len()
+        );
         Ok(results)
     }
 

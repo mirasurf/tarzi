@@ -73,19 +73,13 @@ mod tests {
         // Check first result
         assert_eq!(results[0].title, "Google Test Result 1");
         assert_eq!(results[0].url, "https://example1.com");
-        assert_eq!(
-            results[0].snippet,
-            "This is a test snippet for Google 1"
-        );
+        assert_eq!(results[0].snippet, "This is a test snippet for Google 1");
         assert_eq!(results[0].rank, 1);
 
         // Check second result
         assert_eq!(results[1].title, "Google Test Result 2");
         assert_eq!(results[1].url, "https://example2.com");
-        assert_eq!(
-            results[1].snippet,
-            "This is a test snippet for Google 2"
-        );
+        assert_eq!(results[1].snippet, "This is a test snippet for Google 2");
         assert_eq!(results[1].rank, 2);
     }
 
@@ -132,6 +126,47 @@ mod tests {
             results[1].snippet,
             "This is a test snippet for DuckDuckGo 2"
         );
+        assert_eq!(results[1].rank, 2);
+    }
+
+    #[test]
+    fn test_brave_parser() {
+        let parser = BraveParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <div class="result-row">
+                    <a href="https://example1.com">Brave Test Result 1</a>
+                    <div class="result-snippet">This is a test snippet for Brave 1</div>
+                </div>
+                <div class="result-row">
+                    <a href="https://example2.com">Brave Test Result 2</a>
+                    <div class="result-snippet">This is a test snippet for Brave 2</div>
+                </div>
+                <div class="result-row">
+                    <a href="https://example3.com">Brave Test Result 3</a>
+                    <div class="result-snippet">This is a test snippet for Brave 3</div>
+                </div>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 2).unwrap();
+
+        assert_eq!(results.len(), 2);
+        assert_eq!(parser.name(), "BraveParser");
+        assert!(parser.supports(&SearchEngineType::BraveSearch));
+        assert!(!parser.supports(&SearchEngineType::Google));
+
+        // Check first result
+        assert_eq!(results[0].title, "Brave Test Result 1");
+        assert_eq!(results[0].url, "https://example1.com");
+        assert_eq!(results[0].snippet, "This is a test snippet for Brave 1");
+        assert_eq!(results[0].rank, 1);
+
+        // Check second result
+        assert_eq!(results[1].title, "Brave Test Result 2");
+        assert_eq!(results[1].url, "https://example2.com");
+        assert_eq!(results[1].snippet, "This is a test snippet for Brave 2");
         assert_eq!(results[1].rank, 2);
     }
 

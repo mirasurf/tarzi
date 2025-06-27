@@ -1,5 +1,7 @@
 use std::time::Duration;
-use tarzi::search::parser::{BingParser, DuckDuckGoParser, GoogleParser, SearchResultParser};
+use tarzi::search::parser::{
+    BingParser, BraveParser, DuckDuckGoParser, GoogleParser, SearchResultParser,
+};
 use tarzi::search::types::SearchEngineType;
 use tarzi::utils::is_webdriver_available;
 use thirtyfour::prelude::*;
@@ -243,6 +245,87 @@ async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error
         // Get page source
         let page_source = driver.source().await?;
         println!("Retrieved Google page source, length: {} characters", page_source.len());
+
+        Ok::<String, Box<dyn std::error::Error>>(page_source)
+    }.await;
+
+    // Always quit the driver
+    if let Err(e) = driver.quit().await {
+        eprintln!("Warning: Failed to quit WebDriver: {}", e);
+    }
+
+    result
+}
+
+/// Perform a real Brave search using WebDriver and return the HTML
+async fn perform_brave_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
+        .unwrap_or_else(|_| "http://localhost:4444".to_string());
+
+    // Setup Chrome capabilities for head browser with additional stealth options
+    let mut caps = DesiredCapabilities::chrome();
+    caps.add_arg("--disable-blink-features=AutomationControlled")?;
+    caps.add_arg("--disable-web-security")?;
+    caps.add_arg("--disable-features=VizDisplayCompositor")?;
+    caps.add_arg("--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")?;
+    caps.add_arg("--no-first-run")?;
+    caps.add_arg("--disable-default-apps")?;
+
+    // Connect to WebDriver
+    let driver = WebDriver::new(&webdriver_url, caps).await?;
+
+    let result = async {
+        // Navigate to Brave Search
+        driver.goto("https://search.brave.com/").await?;
+        println!("Navigated to Brave Search homepage");
+
+        // Wait a moment for the page to load
+        tokio::time::sleep(Duration::from_millis(2000)).await;
+
+        // Try to find search box with different selectors
+        let search_box = match driver.find(By::Css("input[type='search']")).await {
+            Ok(element) => element,
+            Err(_) => {
+                // Try alternative selectors
+                match driver.find(By::Name("q")).await {
+                    Ok(element) => element,
+                    Err(_) => driver.find(By::Css("input[name='q']")).await?
+                }
+            }
+        };
+
+        search_box.clear().await?;
+        search_box.send_keys(query).await?;
+        println!("Entered search query: '{}'", query);
+
+        // Submit with Enter key
+        search_box.send_keys(Key::Enter).await?;
+        println!("Submitted search with Enter key");
+
+        // Wait for search results to load
+        let mut search_results_loaded = false;
+        for _ in 0..20 {
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            match driver.find_all(By::Css(".result-row")).await {
+                Ok(elements) if !elements.is_empty() => {
+                    println!("Brave search results loaded successfully");
+                    search_results_loaded = true;
+                    break;
+                }
+                _ => continue,
+            }
+        }
+
+        if !search_results_loaded {
+            println!("Warning: Brave search results did not load within timeout, trying to get page source anyway");
+        }
+
+        // Additional wait to ensure all results are loaded
+        tokio::time::sleep(Duration::from_millis(2000)).await;
+
+        // Get page source
+        let page_source = driver.source().await?;
+        println!("Retrieved Brave page source, length: {} characters", page_source.len());
 
         Ok::<String, Box<dyn std::error::Error>>(page_source)
     }.await;
@@ -708,4 +791,137 @@ async fn test_google_parser_real_world_integration() {
     println!("✓ Parser correctly handles empty HTML");
 
     println!("🎉 Real-world Google parser integration test completed successfully!");
+}
+
+#[tokio::test]
+async fn test_brave_parser_real_world_integration() {
+    // Skip test if WebDriver is not available
+    if !is_webdriver_available().await {
+        println!("Skipping Brave real-world integration test: WebDriver not available");
+        println!("To run this test, start a WebDriver server (e.g., chromedriver on port 4444)");
+        return;
+    }
+
+    println!("Starting real-world Brave search integration test...");
+
+    // Perform a real search with timeout
+    let search_query = "rust programming language";
+    let html_content = match tokio::time::timeout(
+        Duration::from_secs(30), // Shorter timeout
+        perform_brave_search(search_query),
+    )
+    .await
+    {
+        Ok(Ok(html)) => html,
+        Ok(Err(e)) => {
+            println!("⚠️  Brave search failed: {}", e);
+            println!("This is likely due to Brave's anti-automation measures or CAPTCHA.");
+            println!("The BraveParser logic is tested separately in unit tests.");
+            return; // Skip the test gracefully
+        }
+        Err(_) => {
+            println!("⚠️  Brave search timed out after 30 seconds");
+            println!("This is likely due to Brave's anti-automation measures or CAPTCHA.");
+            println!("The BraveParser logic is tested separately in unit tests.");
+            return; // Skip the test gracefully
+        }
+    };
+
+    // Verify we got actual Brave HTML
+    assert!(html_content.contains("brave.com") || html_content.contains("Brave"));
+    assert!(html_content.len() > 5000); // Brave pages are typically quite large
+    println!("✓ Successfully retrieved Brave search results HTML");
+
+    // Create BraveParser and parse the results
+    let parser = BraveParser::new();
+    assert_eq!(parser.name(), "BraveParser");
+    assert!(parser.supports(&SearchEngineType::BraveSearch));
+    println!("✓ BraveParser created and validated");
+
+    // Parse the real HTML
+    let limit = 5;
+    let results = match parser.parse(&html_content, limit) {
+        Ok(results) => results,
+        Err(e) => {
+            eprintln!("Failed to parse Brave HTML: {}", e);
+            // Save HTML for debugging if needed
+            if std::env::var("TARZI_DEBUG").is_ok() {
+                std::fs::write("debug_brave.html", &html_content).ok();
+                println!("Debug HTML saved to debug_brave.html");
+            }
+            panic!("Parser failed: {}", e);
+        }
+    };
+
+    println!("✓ Successfully parsed {} search results", results.len());
+
+    // Validate the parsed results
+    if results.is_empty() {
+        println!("⚠️  Warning: No search results found. This could be due to:");
+        println!("   - Brave blocking automated requests or showing CAPTCHA");
+        println!("   - Changes in Brave's HTML structure");
+        println!("   - Geographic restrictions or different page layout");
+
+        // Don't fail the test immediately, but save debug info
+        if std::env::var("TARZI_DEBUG").is_ok() {
+            std::fs::write("debug_brave_no_results.html", &html_content).ok();
+            println!("Debug HTML saved to debug_brave_no_results.html");
+        }
+    } else {
+        assert!(
+            results.len() <= limit,
+            "Should not exceed the requested limit"
+        );
+
+        // Validate each result structure
+        for (i, result) in results.iter().enumerate() {
+            println!("Result {}: {} - {}", i + 1, result.title, result.url);
+
+            // Basic validation
+            assert!(!result.title.is_empty(), "Title should not be empty");
+            assert_eq!(result.rank, i + 1, "Rank should be sequential");
+
+            // URL validation (Brave might have empty URLs for some results)
+            if !result.url.is_empty() {
+                assert!(
+                    result.url.starts_with("http://")
+                        || result.url.starts_with("https://")
+                        || result.url.starts_with("/"),
+                    "URL should be properly formatted or relative: {}",
+                    result.url
+                );
+            }
+
+            // Content validation (for "rust programming language" search)
+            let lower_title = result.title.to_lowercase();
+            let lower_snippet = result.snippet.to_lowercase();
+            let contains_rust = lower_title.contains("rust")
+                || lower_snippet.contains("rust")
+                || lower_title.contains("programming")
+                || lower_snippet.contains("programming");
+
+            if !contains_rust {
+                println!(
+                    "Warning: Result {} may not be relevant to search query",
+                    i + 1
+                );
+            }
+        }
+
+        println!("✓ All results validated successfully");
+    }
+
+    // Test with different limits
+    let small_limit = 2;
+    let small_results = parser.parse(&html_content, small_limit).unwrap();
+    assert!(small_results.len() <= small_limit);
+    assert!(small_results.len() <= results.len());
+    println!("✓ Parser correctly handles different limits");
+
+    // Test with empty HTML
+    let empty_results = parser.parse("", 5).unwrap();
+    assert!(empty_results.is_empty());
+    println!("✓ Parser correctly handles empty HTML");
+
+    println!("🎉 Real-world Brave parser integration test completed successfully!");
 }
