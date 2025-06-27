@@ -55,15 +55,15 @@ install-rust: build ## Install Rust binary
 # Test commands
 .PHONY: test
 test: ## Run all tests
-	$(CARGO) test
+	$(CARGO) test --features test-helpers
 
 .PHONY: test-unit
 test-unit: ## Run unit tests only
-	$(CARGO) test --lib
+	$(CARGO) test --lib --features test-helpers
 
 .PHONY: test-integration
 test-integration: ## Run integration tests
-	$(CARGO) test --test '*'
+	$(CARGO) test --test '*' --features test-helpers
 
 .PHONY: test-python
 test-python: ## Run Python tests

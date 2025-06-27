@@ -32,6 +32,10 @@ pub struct FetcherConfig {
     #[serde(default = "default_fetch_timeout")]
     pub timeout: u64,
     pub proxy: Option<String>,
+    #[serde(default = "default_web_driver")]
+    pub web_driver: String,
+    #[serde(default = "default_web_driver_port")]
+    pub web_driver_port: u16,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -166,6 +170,8 @@ impl Default for FetcherConfig {
             user_agent: default_user_agent(),
             timeout: default_fetch_timeout(),
             proxy: None,
+            web_driver: default_web_driver(),
+            web_driver_port: default_web_driver_port(),
         }
     }
 }
@@ -227,6 +233,14 @@ fn default_query_pattern() -> String {
 
 fn default_result_limit() -> usize {
     5
+}
+
+fn default_web_driver() -> String {
+    "chromedriver".to_string()
+}
+
+fn default_web_driver_port() -> u16 {
+    9515
 }
 
 /// Get proxy configuration with environment variable override
@@ -338,6 +352,8 @@ format = "json"
 user_agent = "Custom User Agent"
 timeout = 45
 proxy = "http://example.com:8080"
+web_driver = "chrome"
+web_driver_port = 9515
 
 [search]
 mode = "api"
@@ -359,6 +375,8 @@ api_key = "google_key_123"
             config.fetcher.proxy,
             Some("http://example.com:8080".to_string())
         );
+        assert_eq!(config.fetcher.web_driver, "chrome");
+        assert_eq!(config.fetcher.web_driver_port, 9515);
         assert_eq!(config.search.mode, "api");
         assert_eq!(config.search.engine, "google.com");
         assert_eq!(config.search.query_pattern, ".*");
@@ -407,6 +425,14 @@ api_key = "google_key_123"
 
     #[test]
     fn test_get_proxy_from_env_or_config() {
+        // Clean up any existing environment variables first
+        unsafe {
+            std::env::remove_var("HTTP_PROXY");
+            std::env::remove_var("HTTPS_PROXY");
+            std::env::remove_var("http_proxy");
+            std::env::remove_var("https_proxy");
+        }
+
         // Test with no environment variables and no config proxy
         let result = get_proxy_from_env_or_config(&None);
         assert_eq!(result, None);
@@ -450,6 +476,14 @@ api_key = "google_key_123"
 
     #[test]
     fn test_get_proxy_from_env_or_config_empty_env() {
+        // Clean up any existing environment variables first
+        unsafe {
+            std::env::remove_var("HTTP_PROXY");
+            std::env::remove_var("HTTPS_PROXY");
+            std::env::remove_var("http_proxy");
+            std::env::remove_var("https_proxy");
+        }
+
         // Test with empty environment variable (should fall back to config)
         unsafe {
             std::env::set_var("HTTP_PROXY", "");

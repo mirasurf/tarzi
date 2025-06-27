@@ -40,6 +40,15 @@ pub enum TarziError {
 
     #[error("WebDriver error: {0}")]
     WebDriver(#[from] thirtyfour::error::WebDriverError),
+
+    #[error("Driver error: {0}")]
+    Driver(String),
+
+    #[error("Driver not found: {0}")]
+    DriverNotFound(String),
+
+    #[error("Driver process error: {0}")]
+    DriverProcess(String),
 }
 
 pub type Result<T> = std::result::Result<T, TarziError>;

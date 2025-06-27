@@ -14,3 +14,7 @@ You're working on **Tarzi**—a rust-native lite search for AI applications.
 - **Use stable Rust features**: Avoid experimental or nightly-only features (e.g., unstable APIs or #![feature(...)]). Stick to the stable Rust release channel to ensure compatibility with future Rust versions.
 - **Lock Rust Version and Toolchain**: For example, pin the Rust toolchain, document toolchain installation, consider vendoring the toolchain with `cargo vendor`, and regularly update vendored dependencies
 - **Write Robust, Portable Code**: Write code that avoids platform-specific assumptions, avoids external system dependencies. For platform-specific code, use #[cfg(...)] to handle differences gracefully.
+
+## Code Revision
+
+After generation, always make sure the code format and lintint are performed well.
