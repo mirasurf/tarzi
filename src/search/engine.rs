@@ -4,80 +4,11 @@ use crate::{
     error::TarziError,
     fetcher::{FetchMode, WebFetcher},
 };
+use super::types::{SearchMode, SearchEngineType, SearchResult};
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use std::time::Duration;
 use tracing::{error, info, warn};
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum SearchMode {
-    WebQuery,
-    ApiQuery,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum SearchEngineType {
-    Bing,
-    DuckDuckGo,
-    Google,
-    BraveSearch,
-    Tavily,
-    SearchApi,
-    Custom(String),
-}
-
-impl FromStr for SearchEngineType {
-    type Err = TarziError;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "bing" => Ok(SearchEngineType::Bing),
-            "duckduckgo" => Ok(SearchEngineType::DuckDuckGo),
-            "google" => Ok(SearchEngineType::Google),
-            "brave" => Ok(SearchEngineType::BraveSearch),
-            "tavily" => Ok(SearchEngineType::Tavily),
-            "searchapi" => Ok(SearchEngineType::SearchApi),
-            _ => Ok(SearchEngineType::Custom(s.to_string())),
-        }
-    }
-}
-
-impl SearchEngineType {
-    pub fn get_query_pattern(&self) -> String {
-        match self {
-            SearchEngineType::Bing => "https://www.bing.com/search?q={query}".to_string(),
-            SearchEngineType::DuckDuckGo => "https://duckduckgo.com/?q={query}".to_string(),
-            SearchEngineType::Google => "https://www.google.com/search?q={query}".to_string(),
-            SearchEngineType::BraveSearch => {
-                "https://search.brave.com/search?q={query}".to_string()
-            }
-            SearchEngineType::Tavily => "https://tavily.com/search?q={query}".to_string(),
-            SearchEngineType::SearchApi => "https://www.searchapi.io/search?q={query}".to_string(),
-            SearchEngineType::Custom(_) => "{query}".to_string(), // Default pattern for custom engines
-        }
-    }
-}
-
-impl FromStr for SearchMode {
-    type Err = TarziError;
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s.to_lowercase().as_str() {
-            "webquery" => Ok(SearchMode::WebQuery),
-            "apiquery" => Ok(SearchMode::ApiQuery),
-            _ => Err(TarziError::InvalidMode(s.to_string())),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct SearchResult {
-    pub title: String,
-    pub url: String,
-    pub snippet: String,
-    pub rank: usize,
-}
 
 pub struct SearchEngine {
     fetcher: WebFetcher,
@@ -104,6 +35,23 @@ impl SearchEngine {
         info!("Setting API key for SearchEngine");
         self.api_key = Some(api_key);
         self
+    }
+
+    // Getter methods for testing
+    pub fn api_key(&self) -> &Option<String> {
+        &self.api_key
+    }
+
+    pub fn engine_type(&self) -> &SearchEngineType {
+        &self.engine_type
+    }
+
+    pub fn query_pattern(&self) -> &str {
+        &self.query_pattern
+    }
+
+    pub fn user_agent(&self) -> &str {
+        &self.user_agent
     }
 
     pub fn from_config(config: &Config) -> Self {
@@ -349,111 +297,5 @@ impl Drop for SearchEngine {
     fn drop(&mut self) {
         info!("Cleaning up SearchEngine resources");
         // The fetcher will handle its own cleanup
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_searchengine_from_config() {
-        use crate::config::Config;
-        let mut config = Config::new();
-        config.search.api_key = Some("test-api-key-123".to_string());
-        let engine = SearchEngine::from_config(&config);
-        assert_eq!(engine.api_key, Some("test-api-key-123".to_string()));
-        assert_eq!(engine.engine_type, SearchEngineType::Bing);
-        assert_eq!(
-            engine.query_pattern,
-            "https://www.bing.com/search?q={query}"
-        );
-        assert_eq!(engine.user_agent, "Mozilla/5.0 (compatible; Tarzi/1.0)");
-    }
-
-    #[test]
-    fn test_search_engine_type_parsing() {
-        assert_eq!(
-            SearchEngineType::from_str("bing").unwrap(),
-            SearchEngineType::Bing
-        );
-        assert_eq!(
-            SearchEngineType::from_str("google").unwrap(),
-            SearchEngineType::Google
-        );
-        assert_eq!(
-            SearchEngineType::from_str("duckduckgo").unwrap(),
-            SearchEngineType::DuckDuckGo
-        );
-        assert_eq!(
-            SearchEngineType::from_str("brave").unwrap(),
-            SearchEngineType::BraveSearch
-        );
-        assert_eq!(
-            SearchEngineType::from_str("tavily").unwrap(),
-            SearchEngineType::Tavily
-        );
-        assert_eq!(
-            SearchEngineType::from_str("searchapi").unwrap(),
-            SearchEngineType::SearchApi
-        );
-
-        // Test custom engine
-        let custom = SearchEngineType::from_str("custom-engine").unwrap();
-        assert!(matches!(custom, SearchEngineType::Custom(_)));
-    }
-
-    #[test]
-    fn test_query_patterns() {
-        assert_eq!(
-            SearchEngineType::Bing.get_query_pattern(),
-            "https://www.bing.com/search?q={query}"
-        );
-        assert_eq!(
-            SearchEngineType::Google.get_query_pattern(),
-            "https://www.google.com/search?q={query}"
-        );
-        assert_eq!(
-            SearchEngineType::DuckDuckGo.get_query_pattern(),
-            "https://duckduckgo.com/?q={query}"
-        );
-        assert_eq!(
-            SearchEngineType::BraveSearch.get_query_pattern(),
-            "https://search.brave.com/search?q={query}"
-        );
-        assert_eq!(
-            SearchEngineType::Tavily.get_query_pattern(),
-            "https://tavily.com/search?q={query}"
-        );
-        assert_eq!(
-            SearchEngineType::SearchApi.get_query_pattern(),
-            "https://www.searchapi.io/search?q={query}"
-        );
-    }
-
-    #[test]
-    fn test_custom_query_pattern() {
-        use crate::config::Config;
-        let mut config = Config::new();
-        config.search.engine = "google".to_string();
-        config.search.query_pattern =
-            "https://custom-search.com/search?query={query}&lang=en".to_string();
-
-        let engine = SearchEngine::from_config(&config);
-        assert_eq!(engine.engine_type, SearchEngineType::Google);
-        assert_eq!(
-            engine.query_pattern,
-            "https://custom-search.com/search?query={query}&lang=en"
-        );
-    }
-
-    #[test]
-    fn test_custom_user_agent() {
-        use crate::config::Config;
-        let mut config = Config::new();
-        config.fetcher.user_agent = "Custom User Agent String".to_string();
-
-        let engine = SearchEngine::from_config(&config);
-        assert_eq!(engine.user_agent, "Custom User Agent String");
     }
 }
