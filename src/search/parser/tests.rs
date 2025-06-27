@@ -8,17 +8,31 @@ mod tests {
     #[test]
     fn test_bing_parser() {
         let parser = BingParser::new();
-        let html = "<html><body>Mock HTML content</body></html>";
+        let html = r#"
+        <html>
+            <body>
+                <li class="b_algo">
+                    <h2><a href="https://example1.com">Test Result 1</a></h2>
+                    <div class="b_caption"><p>This is a test snippet 1</p></div>
+                </li>
+                <li class="b_algo">
+                    <h2><a href="https://example2.com">Test Result 2</a></h2>
+                    <div class="b_caption"><p>This is a test snippet 2</p></div>
+                </li>
+            </body>
+        </html>
+        "#;
         let results = parser.parse(html, 3).unwrap();
 
-        assert_eq!(results.len(), 3);
+        assert_eq!(results.len(), 2);
         assert_eq!(parser.name(), "BingParser");
         assert!(parser.supports(&SearchEngineType::Bing));
         assert!(!parser.supports(&SearchEngineType::Google));
 
         // Check first result
-        assert!(results[0].title.contains("Bing Search Result #1"));
-        assert!(results[0].url.contains("example-bing-result-1"));
+        assert_eq!(results[0].title, "Test Result 1");
+        assert_eq!(results[0].url, "https://example1.com");
+        assert_eq!(results[0].snippet, "This is a test snippet 1");
         assert_eq!(results[0].rank, 1);
     }
 
@@ -37,12 +51,47 @@ mod tests {
     #[test]
     fn test_duckduckgo_parser() {
         let parser = DuckDuckGoParser::new();
-        let html = "<html><body>Mock HTML content</body></html>";
+        let html = r#"
+        <html>
+            <body>
+                <div class="result__body">
+                    <a class="result__a" href="https://example1.com">DuckDuckGo Test Result 1</a>
+                    <div class="result__snippet">This is a test snippet for DuckDuckGo 1</div>
+                </div>
+                <div class="result__body">
+                    <a class="result__a" href="https://example2.com">DuckDuckGo Test Result 2</a>
+                    <div class="result__snippet">This is a test snippet for DuckDuckGo 2</div>
+                </div>
+                <div class="result__body">
+                    <a class="result__a" href="https://example3.com">DuckDuckGo Test Result 3</a>
+                    <div class="result__snippet">This is a test snippet for DuckDuckGo 3</div>
+                </div>
+            </body>
+        </html>
+        "#;
         let results = parser.parse(html, 2).unwrap();
 
         assert_eq!(results.len(), 2);
         assert_eq!(parser.name(), "DuckDuckGoParser");
         assert!(parser.supports(&SearchEngineType::DuckDuckGo));
+
+        // Check first result
+        assert_eq!(results[0].title, "DuckDuckGo Test Result 1");
+        assert_eq!(results[0].url, "https://example1.com");
+        assert_eq!(
+            results[0].snippet,
+            "This is a test snippet for DuckDuckGo 1"
+        );
+        assert_eq!(results[0].rank, 1);
+
+        // Check second result
+        assert_eq!(results[1].title, "DuckDuckGo Test Result 2");
+        assert_eq!(results[1].url, "https://example2.com");
+        assert_eq!(
+            results[1].snippet,
+            "This is a test snippet for DuckDuckGo 2"
+        );
+        assert_eq!(results[1].rank, 2);
     }
 
     #[test]
