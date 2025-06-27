@@ -52,23 +52,6 @@ mod tests {
             FetchMode::BrowserHeadless
         );
 
-        assert_eq!(
-            FetchMode::from_str("browser_head_external").unwrap(),
-            FetchMode::BrowserHeadExternal
-        );
-        assert_eq!(
-            FetchMode::from_str("external").unwrap(),
-            FetchMode::BrowserHeadExternal
-        );
-        assert_eq!(
-            FetchMode::from_str("BROWSER_HEAD_EXTERNAL").unwrap(),
-            FetchMode::BrowserHeadExternal
-        );
-        assert_eq!(
-            FetchMode::from_str("EXTERNAL").unwrap(),
-            FetchMode::BrowserHeadExternal
-        );
-
         // Test invalid modes
         assert!(FetchMode::from_str("invalid").is_err());
         assert!(FetchMode::from_str("").is_err());
@@ -80,7 +63,6 @@ mod tests {
     fn test_webfetcher_new() {
         let fetcher = WebFetcher::new();
         assert!(!fetcher.browser_manager.has_browsers());
-        assert!(!fetcher.external_browser_manager.is_connected());
     }
 
     #[test]
@@ -89,8 +71,6 @@ mod tests {
         let fetcher2 = WebFetcher::default();
         assert!(!fetcher1.browser_manager.has_browsers());
         assert!(!fetcher2.browser_manager.has_browsers());
-        assert!(!fetcher1.external_browser_manager.is_connected());
-        assert!(!fetcher2.external_browser_manager.is_connected());
     }
 
     #[test]
@@ -98,17 +78,10 @@ mod tests {
         assert_eq!(FetchMode::PlainRequest, FetchMode::PlainRequest);
         assert_eq!(FetchMode::BrowserHead, FetchMode::BrowserHead);
         assert_eq!(FetchMode::BrowserHeadless, FetchMode::BrowserHeadless);
-        assert_eq!(
-            FetchMode::BrowserHeadExternal,
-            FetchMode::BrowserHeadExternal
-        );
 
         assert_ne!(FetchMode::PlainRequest, FetchMode::BrowserHead);
         assert_ne!(FetchMode::PlainRequest, FetchMode::BrowserHeadless);
-        assert_ne!(FetchMode::PlainRequest, FetchMode::BrowserHeadExternal);
         assert_ne!(FetchMode::BrowserHead, FetchMode::BrowserHeadless);
-        assert_ne!(FetchMode::BrowserHead, FetchMode::BrowserHeadExternal);
-        assert_ne!(FetchMode::BrowserHeadless, FetchMode::BrowserHeadExternal);
     }
 
     #[test]
@@ -118,10 +91,6 @@ mod tests {
         assert_eq!(
             format!("{:?}", FetchMode::BrowserHeadless),
             "BrowserHeadless"
-        );
-        assert_eq!(
-            format!("{:?}", FetchMode::BrowserHeadExternal),
-            "BrowserHeadExternal"
         );
     }
 
@@ -198,7 +167,6 @@ mod tests {
             FetchMode::PlainRequest,
             FetchMode::BrowserHead,
             FetchMode::BrowserHeadless,
-            FetchMode::BrowserHeadExternal,
         ];
 
         for mode in modes {
@@ -206,211 +174,10 @@ mod tests {
                 FetchMode::PlainRequest => "plain_request",
                 FetchMode::BrowserHead => "browser_head",
                 FetchMode::BrowserHeadless => "browser_headless",
-                FetchMode::BrowserHeadExternal => "browser_head_external",
             };
 
             let parsed = FetchMode::from_str(mode_str).unwrap();
             assert_eq!(mode, parsed);
-        }
-    }
-
-    #[test]
-    fn test_webfetcher_from_config() {
-        use crate::config::Config;
-        let config = Config::new();
-        let fetcher = WebFetcher::from_config(&config);
-        // We can't directly check the http_client internals, but we can check that the struct is created
-        assert!(!fetcher.browser_manager.has_browsers());
-        assert!(!fetcher.external_browser_manager.is_connected());
-    }
-
-    #[test]
-    fn test_webfetcher_from_config_with_env_proxy() {
-        use crate::config::Config;
-        // Set environment variable
-        unsafe {
-            std::env::set_var("HTTP_PROXY", "http://test-proxy:8080");
-        }
-
-        let config = Config::new();
-        let _fetcher = WebFetcher::from_config(&config);
-
-        // Note: We can't easily test if the proxy was actually set on the client
-        // without making HTTP requests, but we can verify the function doesn't panic
-
-        // Clean up
-        unsafe {
-            std::env::remove_var("HTTP_PROXY");
-        }
-    }
-
-    // Integration tests for external browser functionality
-    #[tokio::test]
-    async fn test_connect_to_external_browser_invalid_endpoint() {
-        let mut fetcher = WebFetcher::new();
-
-        // Test with invalid endpoint format
-        let result = fetcher
-            .connect_to_external_browser("invalid-endpoint")
-            .await;
-        assert!(result.is_err());
-
-        // Test with non-websocket endpoint
-        let result = fetcher
-            .connect_to_external_browser("http://localhost:9222")
-            .await;
-        assert!(result.is_err());
-    }
-
-    #[tokio::test]
-    async fn test_connect_to_external_browser_valid_format() {
-        let mut fetcher = WebFetcher::new();
-
-        // Test with valid WebSocket format (should pass format validation but fail connection)
-        let result = fetcher
-            .connect_to_external_browser("ws://localhost:9222")
-            .await;
-
-        // This should fail because there's no actual browser running, but it should pass the format check
-        // and fail during the actual connection attempt
-        match result {
-            Ok(_) => {
-                // If it succeeds, that means there's actually a browser running (unlikely in test environment)
-                println!("External browser connection succeeded - browser is actually running");
-            }
-            Err(e) => {
-                // This is the expected behavior in test environment
-                match e {
-                    TarziError::Browser(_) => {
-                        println!("External browser connection failed as expected: {:?}", e);
-                    }
-                    _ => panic!("Expected Browser error, got {:?}", e),
-                }
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fetch_with_external_browser_no_connection() {
-        let mut fetcher = WebFetcher::new();
-
-        // Test fetching with external browser mode when no connection is established
-        // This should attempt to connect to the default endpoint and fail
-        let result = fetcher
-            .fetch_raw("https://httpbin.org/html", FetchMode::BrowserHeadExternal)
-            .await;
-
-        match result {
-            Ok(_) => {
-                // If it succeeds, that means there's actually a browser running
-                println!("External browser fetch succeeded - browser is actually running");
-            }
-            Err(e) => {
-                // This is the expected behavior in test environment
-                match e {
-                    TarziError::Browser(_) => {
-                        println!("External browser fetch failed as expected: {:?}", e);
-                    }
-                    _ => panic!("Expected Browser error, got {:?}", e),
-                }
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn test_external_browser_prerequisites_check() {
-        let fetcher = WebFetcher::new();
-
-        // Test valid WebSocket endpoints
-        let valid_endpoints = vec![
-            "ws://localhost:9222",
-            "wss://localhost:9222",
-            "ws://127.0.0.1:9222",
-            "wss://example.com:9222",
-        ];
-
-        for endpoint in valid_endpoints {
-            let result = fetcher.check_external_browser_prerequisites(endpoint).await;
-            assert!(result.is_ok());
-            assert!(
-                result.unwrap(),
-                "Endpoint {} should pass prerequisites check",
-                endpoint
-            );
-        }
-
-        // Test invalid endpoints
-        let invalid_endpoints = vec![
-            "http://localhost:9222",
-            "https://localhost:9222",
-            "invalid-endpoint",
-            "ftp://localhost:9222",
-            "",
-        ];
-
-        for endpoint in invalid_endpoints {
-            let result = fetcher.check_external_browser_prerequisites(endpoint).await;
-            assert!(result.is_ok());
-            assert!(
-                !result.unwrap(),
-                "Endpoint {} should fail prerequisites check",
-                endpoint
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fetch_with_external_browser_no_connection() {
-        let mut fetcher = WebFetcher::new();
-
-        // Test fetching with external browser mode when no connection is established
-        // This should attempt to connect to the default endpoint and fail
-        let result = fetcher
-            .fetch_raw("https://httpbin.org/html", FetchMode::BrowserHeadExternal)
-            .await;
-
-        match result {
-            Ok(_) => {
-                // If it succeeds, that means there's actually a browser running
-                println!("External browser fetch succeeded - browser is actually running");
-            }
-            Err(e) => {
-                // This is the expected behavior in test environment
-                match e {
-                    TarziError::Browser(_) => {
-                        println!("External browser fetch failed as expected: {:?}", e);
-                    }
-                    _ => panic!("Expected Browser error, got {:?}", e),
-                }
-            }
-        }
-    }
-
-    #[tokio::test]
-    async fn test_external_browser_integration() {
-        let mut fetcher = WebFetcher::new();
-
-        // Test fetching with external browser mode when no connection is established
-        // This should attempt to connect to the default endpoint and fail
-        let result = fetcher
-            .fetch_raw("https://httpbin.org/html", FetchMode::BrowserHeadExternal)
-            .await;
-
-        match result {
-            Ok(_) => {
-                println!(
-                    "External browser integration test succeeded - browser is actually running"
-                );
-            }
-            Err(e) => match e {
-                TarziError::Browser(_) => {
-                    println!(
-                        "External browser integration test failed as expected: {:?}",
-                        e
-                    );
-                }
-                _ => panic!("Expected Browser error, got {:?}", e),
-            },
         }
     }
 }

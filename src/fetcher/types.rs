@@ -9,8 +9,6 @@ pub enum FetchMode {
     BrowserHead,
     /// Fetch content using browser in headless mode
     BrowserHeadless,
-    /// Fetch content using external browser instance
-    BrowserHeadExternal,
 }
 
 impl std::str::FromStr for FetchMode {
@@ -21,7 +19,6 @@ impl std::str::FromStr for FetchMode {
             "plain_request" | "plain" => Ok(FetchMode::PlainRequest),
             "browser_head" | "head" => Ok(FetchMode::BrowserHead),
             "browser_headless" | "headless" => Ok(FetchMode::BrowserHeadless),
-            "browser_head_external" | "external" => Ok(FetchMode::BrowserHeadExternal),
             _ => Err(TarziError::InvalidMode(s.to_string())),
         }
     }

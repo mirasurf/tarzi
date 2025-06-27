@@ -1,70 +1,70 @@
-# Integration Tests
+# Tests
 
-This directory contains integration tests for the Tarzi library that test real-world functionality.
+This directory contains integration tests for the tarzi library.
 
-## Test Categories
+## Test Files
 
 ### 1. Fetcher Integration Tests (`fetcher_integration_tests.rs`)
-Tests the web fetching functionality with real HTTP requests and browser automation.
+Tests the web fetching functionality including browser automation and HTTP requests.
 
-### 2. External Browser Integration Tests (`external_browser_integration_tests.rs`) 
-Tests the external browser functionality for connecting to existing browser instances.
+### 2. Search Parser Integration Tests (`search_parser_integration_tests.rs`)
+Tests the search parsing functionality for various search engines.
 
-### 3. Search Parser Integration Tests (`search_parser_integration_tests.rs`)
-**NEW**: Real-world integration tests for search engine parsers using head browsers.
+## Test Configuration
 
-## Running the Tests
+All tests are integration tests that test the library as a whole rather than individual units.
 
-### Prerequisites for Browser Tests
+Some tests may require network access or browser installations and may be skipped in CI environments.
 
-The search parser integration tests require a WebDriver server to be running. You have several options:
+## Running Tests
 
-#### Option 1: ChromeDriver (Recommended)
+Run all tests:
 ```bash
-# Install ChromeDriver
-brew install chromedriver  # macOS
-# or download from https://chromedriver.chromium.org/
-
-# Start ChromeDriver on port 4444
-chromedriver --port=4444
+cargo test
 ```
 
-#### Option 2: Selenium Standalone Server
+Run specific test file:
 ```bash
-# Download selenium-server-standalone
-wget https://selenium-release.storage.googleapis.com/4.15/selenium-server-4.15.0.jar
-
-# Start Selenium server
-java -jar selenium-server-4.15.0.jar standalone --port 4444
-```
-
-#### Option 3: Docker Selenium
-```bash
-# Start Selenium Chrome container
-docker run -d -p 4444:4444 --shm-size=2g selenium/standalone-chrome:latest
-```
-
-### Environment Variables
-
-- `TARZI_WEBDRIVER_URL`: WebDriver server URL (default: `http://localhost:4444`)
-- `TARZI_DEBUG`: Enable debug mode to save HTML for debugging failed tests
-
-### Running the Tests
-
-```bash
-# Run all integration tests
-cargo test --test "*_integration_tests"
-
-# Run specific test categories
 cargo test --test fetcher_integration_tests
-cargo test --test external_browser_integration_tests
 cargo test --test search_parser_integration_tests
+```
 
-# Run with output visible
-cargo test --test search_parser_integration_tests -- --nocapture
+Run tests with output:
+```bash
+cargo test -- --nocapture
+```
 
-# Run specific test
-cargo test test_bing_parser_real_world_integration --test search_parser_integration_tests -- --nocapture
+Run tests matching a pattern:
+```bash
+cargo test browser
+```
+
+## Test Environment
+
+- Tests use the `tokio::test` runtime for async operations
+- Browser tests may require Chrome/Chromium to be installed
+- Network-dependent tests may fail in offline environments
+- Some tests include timeouts to prevent hanging
+
+## Adding New Tests
+
+When adding new integration tests:
+
+1. Create a new `.rs` file in the `tests/` directory
+2. Add the necessary imports and test functions
+3. Use `#[tokio::test]` for async tests
+4. Include appropriate error handling and assertions
+5. Document the test purpose and requirements
+
+Example test structure:
+```rust
+use tarzi::*;
+
+#[tokio::test]
+async fn test_feature() {
+    // Test implementation
+    assert!(result.is_ok());
+}
 ```
 
 ## Search Parser Integration Tests

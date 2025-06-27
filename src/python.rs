@@ -128,14 +128,6 @@ impl PyWebFetcher {
         rt.block_on(async { self.inner.fetch_with_proxy(url, proxy, mode, format).await })
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
     }
-
-    fn connect_to_external_browser(&mut self, ws_endpoint: &str) -> PyResult<()> {
-        let rt = tokio::runtime::Runtime::new()
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-
-        rt.block_on(async { self.inner.connect_to_external_browser(ws_endpoint).await })
-            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
-    }
 }
 
 #[pyclass]

@@ -9,13 +9,12 @@ use std::time::Duration;
 use tracing::{debug, error, info, warn};
 use url::Url;
 
-use super::{browser::BrowserManager, external::ExternalBrowserManager, types::FetchMode};
+use super::{browser::BrowserManager, types::FetchMode};
 
 /// Main web content fetcher
 pub struct WebFetcher {
     http_client: Client,
     browser_manager: BrowserManager,
-    external_browser_manager: ExternalBrowserManager,
     converter: Converter,
 }
 
@@ -32,7 +31,6 @@ impl WebFetcher {
         Self {
             http_client,
             browser_manager: BrowserManager::new(),
-            external_browser_manager: ExternalBrowserManager::new(),
             converter: Converter::new(),
         }
     }
@@ -62,7 +60,6 @@ impl WebFetcher {
         Self {
             http_client,
             browser_manager: BrowserManager::new(),
-            external_browser_manager: ExternalBrowserManager::new(),
             converter: Converter::new(),
         }
     }
@@ -79,7 +76,6 @@ impl WebFetcher {
             FetchMode::PlainRequest => self.fetch_plain_request(url).await?,
             FetchMode::BrowserHead => self.fetch_with_browser(url, false).await?,
             FetchMode::BrowserHeadless => self.fetch_with_browser(url, true).await?,
-            FetchMode::BrowserHeadExternal => self.fetch_with_external_browser(url).await?,
         };
 
         // Then convert to the specified format
@@ -123,38 +119,10 @@ impl WebFetcher {
             headless, url
         );
 
+        // Get or create browser instance
         info!("Getting or creating browser instance...");
         let browser = self.browser_manager.get_or_create_browser(headless).await?;
-        info!("Browser instance ready");
-
-        info!("Creating new page...");
-        let page_result = tokio::time::timeout(Duration::from_secs(30), browser.new_window()).await;
-
-        let window_handle = match page_result {
-            Ok(Ok(handle)) => {
-                info!("New window created successfully");
-                handle
-            }
-            Ok(Err(e)) => {
-                error!("Failed to create window: {}", e);
-                return Err(TarziError::Browser(format!(
-                    "Failed to create window: {}",
-                    e
-                )));
-            }
-            Err(_) => {
-                error!("Timeout while creating new window (30 seconds)");
-                return Err(TarziError::Browser(
-                    "Timeout while creating new window".to_string(),
-                ));
-            }
-        };
-
-        // Switch to the new window
-        browser.switch_to_window(window_handle).await.map_err(|e| {
-            error!("Failed to switch to window: {}", e);
-            TarziError::Browser(format!("Failed to switch to window: {}", e))
-        })?;
+        info!("Using existing browser instance for fetching");
 
         // Navigate to the URL
         info!("Navigating to URL: {}", url);
@@ -209,106 +177,6 @@ impl WebFetcher {
         Ok(content)
     }
 
-    /// Fetch content using external browser instance
-    async fn fetch_with_external_browser(&mut self, url: &str) -> Result<String> {
-        info!("Fetching URL with external browser: {}", url);
-        if !self.external_browser_manager.is_connected() {
-            warn!(
-                "No external browser connection established. Attempting to connect to default endpoint..."
-            );
-            let default_endpoint = ExternalBrowserManager::get_default_endpoint();
-            self.external_browser_manager
-                .connect_to_external_browser(&default_endpoint)
-                .await?;
-        }
-        info!("Using external browser instance for fetching");
-        let browser = self
-            .external_browser_manager
-            .get_external_browser()
-            .unwrap();
-        info!("Creating new window in external browser...");
-        let window_result =
-            tokio::time::timeout(Duration::from_secs(30), browser.new_window()).await;
-
-        let window_handle = match window_result {
-            Ok(Ok(handle)) => {
-                info!("New window created successfully in external browser");
-                handle
-            }
-            Ok(Err(e)) => {
-                error!("Failed to create window in external browser: {}", e);
-                return Err(TarziError::Browser(format!(
-                    "Failed to create window: {}",
-                    e
-                )));
-            }
-            Err(_) => {
-                error!("Timeout while creating new window in external browser (30 seconds)");
-                return Err(TarziError::Browser(
-                    "Timeout while creating new window".to_string(),
-                ));
-            }
-        };
-
-        // Switch to the new window
-        browser.switch_to_window(window_handle).await.map_err(|e| {
-            error!("Failed to switch to window in external browser: {}", e);
-            TarziError::Browser(format!("Failed to switch to window: {}", e))
-        })?;
-
-        // Navigate to the URL
-        info!("Navigating to URL in external browser: {}", url);
-        let navigation_result =
-            tokio::time::timeout(Duration::from_secs(30), browser.get(url)).await;
-
-        match navigation_result {
-            Ok(Ok(_)) => {
-                info!("Successfully navigated to page in external browser");
-            }
-            Ok(Err(e)) => {
-                error!("Failed to navigate to URL in external browser: {}", e);
-                return Err(TarziError::Browser(format!("Failed to navigate: {}", e)));
-            }
-            Err(_) => {
-                error!("Timeout while navigating to URL in external browser (30 seconds)");
-                return Err(TarziError::Browser(
-                    "Timeout while navigating to URL".to_string(),
-                ));
-            }
-        }
-
-        // Wait for the page to load (simplified approach)
-        info!("Waiting for page to load in external browser (2 seconds)...");
-        tokio::time::sleep(Duration::from_secs(2)).await;
-        info!("Wait completed");
-
-        // Get the page content
-        info!("Extracting page content from external browser...");
-        let content_result = tokio::time::timeout(Duration::from_secs(30), browser.source()).await;
-
-        let content = match content_result {
-            Ok(Ok(content)) => {
-                info!(
-                    "Successfully extracted page content from external browser ({} characters)",
-                    content.len()
-                );
-                content
-            }
-            Ok(Err(e)) => {
-                error!("Failed to get page content from external browser: {}", e);
-                return Err(TarziError::Browser(format!("Failed to get content: {}", e)));
-            }
-            Err(_) => {
-                error!("Timeout while extracting page content from external browser (30 seconds)");
-                return Err(TarziError::Browser(
-                    "Timeout while extracting page content".to_string(),
-                ));
-            }
-        };
-
-        Ok(content)
-    }
-
     /// Fetch content using proxy
     pub async fn fetch_with_proxy(
         &mut self,
@@ -341,14 +209,6 @@ impl WebFetcher {
                 warn!("Proxy not yet implemented for browser modes, falling back to plain request");
                 self.fetch_plain_request(url).await?
             }
-            FetchMode::BrowserHeadExternal => {
-                // For external browser mode with proxy, we would need to configure the browser to use the proxy
-                // This is a simplified implementation - in practice you'd configure browser proxy settings
-                warn!(
-                    "Proxy not yet implemented for external browser mode, falling back to plain request"
-                );
-                self.fetch_plain_request(url).await?
-            }
         };
 
         // Convert to specified format
@@ -362,22 +222,7 @@ impl WebFetcher {
             FetchMode::PlainRequest => self.fetch_plain_request(url).await,
             FetchMode::BrowserHead => self.fetch_with_browser(url, false).await,
             FetchMode::BrowserHeadless => self.fetch_with_browser(url, true).await,
-            FetchMode::BrowserHeadExternal => self.fetch_with_external_browser(url).await,
         }
-    }
-
-    /// Connect to an external browser instance
-    pub async fn connect_to_external_browser(&mut self, ws_endpoint: &str) -> Result<()> {
-        self.external_browser_manager
-            .connect_to_external_browser(ws_endpoint)
-            .await
-    }
-
-    /// Check prerequisites for external browser connection
-    pub async fn check_external_browser_prerequisites(&self, ws_endpoint: &str) -> Result<bool> {
-        self.external_browser_manager
-            .check_external_browser_prerequisites(ws_endpoint)
-            .await
     }
 
     /// Create a new browser instance with a specific user data directory
@@ -403,11 +248,12 @@ impl WebFetcher {
     }
 
     /// Remove a browser instance by ID
-    pub async fn remove_browser(&mut self, instance_id: &str) -> Result<bool> {
-        self.browser_manager.remove_browser(instance_id).await
+    pub async fn remove_browser(&mut self, instance_id: &str) -> Result<()> {
+        self.browser_manager.remove_browser(instance_id).await?;
+        Ok(())
     }
 
-    /// Fetch content using a specific browser instance
+    /// Fetch content from a specific browser instance
     pub async fn fetch_with_browser_instance(
         &mut self,
         url: &str,
@@ -415,55 +261,19 @@ impl WebFetcher {
         format: Format,
     ) -> Result<String> {
         info!(
-            "Fetching URL: {} with browser instance: {}",
-            url, instance_id
+            "Fetching URL with browser instance {}: {}",
+            instance_id, url
         );
 
-        let browser = self.get_browser(instance_id).ok_or_else(|| {
-            TarziError::Browser(format!("Browser instance not found: {}", instance_id))
-        })?;
+        // Get the browser instance
+        let browser = self
+            .browser_manager
+            .get_browser(instance_id)
+            .ok_or_else(|| {
+                TarziError::Browser(format!("Browser instance {} not found", instance_id))
+            })?;
 
-        info!("Creating new window in browser instance: {}", instance_id);
-        let window_result =
-            tokio::time::timeout(Duration::from_secs(30), browser.new_window()).await;
-
-        let window_handle = match window_result {
-            Ok(Ok(handle)) => {
-                info!(
-                    "New window created successfully in browser instance: {}",
-                    instance_id
-                );
-                handle
-            }
-            Ok(Err(e)) => {
-                error!(
-                    "Failed to create window in browser instance {}: {}",
-                    instance_id, e
-                );
-                return Err(TarziError::Browser(format!(
-                    "Failed to create window: {}",
-                    e
-                )));
-            }
-            Err(_) => {
-                error!(
-                    "Timeout while creating new window in browser instance {} (30 seconds)",
-                    instance_id
-                );
-                return Err(TarziError::Browser(
-                    "Timeout while creating new window".to_string(),
-                ));
-            }
-        };
-
-        // Switch to the new window
-        browser.switch_to_window(window_handle).await.map_err(|e| {
-            error!(
-                "Failed to switch to window in browser instance {}: {}",
-                instance_id, e
-            );
-            TarziError::Browser(format!("Failed to switch to window: {}", e))
-        })?;
+        info!("Using browser instance {} for fetching", instance_id);
 
         // Navigate to the URL
         info!(
@@ -476,7 +286,7 @@ impl WebFetcher {
         match navigation_result {
             Ok(Ok(_)) => {
                 info!(
-                    "Successfully navigated to page in browser instance: {}",
+                    "Successfully navigated to page in browser instance {}",
                     instance_id
                 );
             }
@@ -498,17 +308,17 @@ impl WebFetcher {
             }
         }
 
-        // Wait for the page to load
+        // Wait for the page to load (simplified approach)
         info!(
             "Waiting for page to load in browser instance {} (2 seconds)...",
             instance_id
         );
         tokio::time::sleep(Duration::from_secs(2)).await;
-        info!("Wait completed");
+        info!("Wait completed for browser instance {}", instance_id);
 
         // Get the page content
         info!(
-            "Extracting page content from browser instance: {}",
+            "Extracting page content from browser instance {}...",
             instance_id
         );
         let content_result = tokio::time::timeout(Duration::from_secs(30), browser.source()).await;
@@ -566,8 +376,8 @@ impl Default for WebFetcher {
 
 impl Drop for WebFetcher {
     fn drop(&mut self) {
-        if self.browser_manager.has_browsers() || self.external_browser_manager.is_connected() {
-            warn!("Cleaning up external browser resources manually");
+        if self.browser_manager.has_browsers() {
+            warn!("Cleaning up browser resources manually");
         }
     }
 }
