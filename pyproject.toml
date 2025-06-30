@@ -6,10 +6,22 @@ build-backend = "maturin"
 name = "tarzi"
 requires-python = ">=3.8"
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
     "Programming Language :: Rust",
-    "Programming Language :: Python :: Implementation :: CPython",
-    "Programming Language :: Python :: Implementation :: PyPy",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+keywords = ["web-scraping", "search-engine", "ai-tools", "rust", "browser-automation"]
 version = "0.0.4"
 description = "Rust-native lite search for AI applications"
 readme = "README.md"
@@ -17,10 +29,15 @@ license = {text = "Apache-2.0"}
 authors = [
     {name = "xmingc", email = "chenxm35@gmail.com"},
 ]
+maintainers = [
+    {name = "xmingc", email = "chenxm35@gmail.com"},
+]
 
 [project.urls]
 Homepage = "https://github.com/mirasurf/tarzi.rs"
+Documentation = "https://tarzi.readthedocs.io/"
 Repository = "https://github.com/mirasurf/tarzi.rs"
+"Bug Tracker" = "https://github.com/mirasurf/tarzi.rs/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -31,50 +48,51 @@ dev = [
     "ruff>=0.1.0",
     "isort>=5.0",
     "autoflake>=2.0",
+    "twine>=4.0.0",
+    "build>=0.10.0",
 ]
 test = [
     "pytest>=6.0",
     "pytest-cov>=4.0",
+    "pytest-asyncio>=0.20.0",
 ]
+docs = [
+    "sphinx>=6.0.0",
+    "sphinx-copybutton>=0.5.2",
+    "myst-parser>=2.0.0",
+    "sphinx-tabs>=3.4.1",
+    "sphinx-design>=0.5.0",
+    "furo>=2023.9.10",
+    "sphinx-autoapi>=3.0.0",
+]
+
+[project.scripts]
+tarzi = "tarzi:main"
 
 [tool.maturin]
 features = ["pyo3/extension-module"]
+module-name = "tarzi"
+strip = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = [
-    "-v",
-    "--tb=short",
-    "--strict-markers",
-    "--strict-config",
-]
+addopts = ["-v", "--tb=short"]
 markers = [
     "unit: Unit tests that don't require external dependencies",
-    "integration: Integration tests that require external services", 
-    "network: Tests that require network access",
-    "slow: Tests that may take a long time to run",
-    "api: Tests that require API keys or external API access",
+    "integration: Integration tests that require external services",
     "browser: Tests that require browser automation tools",
 ]
-filterwarnings = [
-    "ignore::DeprecationWarning",
-    "ignore::PendingDeprecationWarning",
-]
+filterwarnings = ["ignore::DeprecationWarning"]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["tarzi"]
 omit = ["*/tests/*"]
+branch = true
 
 [tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-]
+exclude_lines = ["pragma: no cover", "def __repr__", "raise NotImplementedError"]
+show_missing = true
 
 [tool.black]
 line-length = 88
@@ -82,4 +100,19 @@ target-version = ["py38"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py38" 
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "B"]
+ignore = ["E501", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.autoflake]
+remove-all-unused-imports = true
+remove-unused-variables = true 

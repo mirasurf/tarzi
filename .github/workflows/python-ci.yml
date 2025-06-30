@@ -1,0 +1,178 @@
+name: Python CI
+
+on:
+  push:
+    branches: [ main, feat/*, feature/* ]
+  pull_request:
+    branches: [ main, feat/*, feature/* ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint:
+    name: Lint Python Code
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install black ruff isort autoflake
+
+    - name: Check Python formatting with black
+      run: black --check examples tests/python
+
+    - name: Check import sorting with isort
+      run: isort --check-only examples tests/python
+
+    - name: Lint with ruff
+      run: ruff check examples tests/python
+
+  test:
+    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Reduce matrix size for faster CI - test all versions on Ubuntu, fewer on other OS
+          - os: windows-latest
+            python-version: '3.8'
+          - os: windows-latest
+            python-version: '3.9'
+          - os: macos-latest
+            python-version: '3.8'
+          - os: macos-latest
+            python-version: '3.9'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache Rust dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install maturin
+      run: pip install maturin[patchelf]
+
+    - name: Install test dependencies
+      run: pip install pytest pytest-cov pytest-mock pytest-asyncio
+
+    - name: Build Python extension
+      run: maturin develop --release
+
+    - name: Run Python unit tests
+      run: |
+        cd tests/python
+        pytest unit/ -v --cov=tarzi --cov-report=xml --cov-report=term
+      continue-on-error: true
+
+    - name: Run Python integration tests
+      run: |
+        cd tests/python
+        pytest integration/ -v -m "not slow"
+      continue-on-error: true
+
+    - name: Upload coverage to Codecov
+      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
+      uses: codecov/codecov-action@v3
+      with:
+        file: tests/python/coverage.xml
+        flags: python
+        name: python-coverage
+
+  build-wheels:
+    name: Build Python wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install maturin
+      run: pip install maturin[patchelf]
+
+    - name: Build wheels
+      run: maturin build --release --out dist
+
+    - name: Test wheel installation
+      shell: bash
+      run: |
+        wheel_file=$(ls dist/*.whl | head -1)
+        pip install "$wheel_file"
+        python -c "import tarzi; print('Wheel installed successfully')"
+
+    - name: Upload wheels as artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels-${{ matrix.os }}
+        path: dist/
+
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Install documentation dependencies
+      run: |
+        pip install -r docs/requirements.txt
+        pip install maturin
+
+    - name: Build Python extension for docs
+      run: maturin develop --release
+
+    - name: Build documentation
+      run: |
+        cd docs
+        make html
+
+    - name: Upload documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: docs/_build/html/

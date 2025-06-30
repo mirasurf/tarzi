@@ -124,20 +124,14 @@ format-check: ## Check Rust code formatting
 
 .PHONY: format-python
 format-python: ## Format Python code (autoflake, isort, black)
-	@echo "$(BLUE)🎨 Formatting Python code...$(RESET)"
-	@pip install -e .[dev] > /dev/null 2>&1
 	@autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES)
 	@isort $(PYTHON_MODULES)
 	@black $(PYTHON_MODULES)
-	@echo "$(GREEN)✅ Python code formatting complete!$(RESET)"
 
 .PHONY: format-python-check
 format-python-check: ## Check if Python code is properly formatted
-	@echo "$(BLUE)🔍 Checking Python code formatting...$(RESET)"
-	@pip install -e .[dev] > /dev/null 2>&1
 	@black --check $(PYTHON_MODULES) || (echo "$(RED)❌ Black formatting check failed. Run 'make format-python' to fix.$(RESET)" && exit 1)
 	@isort --check-only $(PYTHON_MODULES) || (echo "$(RED)❌ Import sorting check failed. Run 'make format-python' to fix.$(RESET)" && exit 1)
-	@echo "$(GREEN)✅ Python code formatting check passed!$(RESET)"
 
 .PHONY: format-all
 format-all: format format-python ## Format all code (Rust + Python)
@@ -147,29 +141,21 @@ format-check-all: format-check format-python-check ## Check all code formatting 
 
 .PHONY: lint
 lint: clippy format-check ## Lint Rust code
-	@echo "$(GREEN)✅ Rust linting passed!$(RESET)"
 
 .PHONY: lint-python
 lint-python: ## Lint Python code with ruff
-	@echo "$(BLUE)🔍 Running Python linters...$(RESET)"
-	@pip install -e .[dev] > /dev/null 2>&1
 	@ruff check $(PYTHON_MODULES)
-	@echo "$(GREEN)✅ Python linting passed!$(RESET)"
 
 .PHONY: lint-python-fix
 lint-python-fix: ## Auto-fix Python linting issues
-	@echo "$(BLUE)🔧 Auto-fixing Python linting issues...$(RESET)"
-	@pip install -e .[dev] > /dev/null 2>&1
 	@autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES)
 	@ruff check --fix $(PYTHON_MODULES)
-	@echo "$(GREEN)✅ Python linting fixes applied!$(RESET)"
 
 .PHONY: lint-all
 lint-all: lint lint-python ## Lint all code (Rust + Python)
 
 .PHONY: quality
 quality: format-check-all lint-all ## Run all quality checks
-	@echo "$(GREEN)🎉 All quality checks passed!$(RESET)"
 
 # =============================================================================
 # CLEAN COMMANDS
@@ -207,6 +193,20 @@ doc: ## Generate and open Rust documentation
 doc-build: ## Build Rust documentation without opening
 	$(CARGO) doc --no-deps
 
+.PHONY: docs-python
+docs-python: ## Build Python documentation with Sphinx
+	@cd docs && make html
+	@echo "$(GREEN)Documentation built: docs/_build/html/index.html$(RESET)"
+
+.PHONY: docs-python-serve
+docs-python-serve: docs-python ## Build and serve Python documentation locally
+	@echo "$(GREEN)Serving documentation at http://localhost:8000$(RESET)"
+	@cd docs/_build/html && python -m http.server 8000
+
+.PHONY: docs-clean
+docs-clean: ## Clean documentation build artifacts
+	@rm -rf docs/_build/
+
 # =============================================================================
 # RELEASE COMMANDS
 # =============================================================================
@@ -228,7 +228,38 @@ publish: ## Publish Rust crate to crates.io (use with caution!)
 
 .PHONY: publish-python
 publish-python: ## Publish Python package to PyPI
+	@if [ -z "$(shell ls -A target/wheels/ 2>/dev/null)" ]; then \
+		echo "$(RED)❌ No wheels found. Run 'make build-python' first.$(RESET)"; \
+		exit 1; \
+	fi
+	twine check $(PYTHON_PACKAGE)
 	twine upload $(PYTHON_PACKAGE)
+	@echo "$(GREEN)✅ Package published to PyPI$(RESET)"
+
+.PHONY: publish-python-test
+publish-python-test: ## Publish Python package to TestPyPI
+	@if [ -z "$(shell ls -A target/wheels/ 2>/dev/null)" ]; then \
+		echo "$(RED)❌ No wheels found. Run 'make build-python' first.$(RESET)"; \
+		exit 1; \
+	fi
+	twine check $(PYTHON_PACKAGE)
+	twine upload --repository testpypi $(PYTHON_PACKAGE)
+	@echo "$(GREEN)✅ Package published to TestPyPI$(RESET)"
+
+.PHONY: check-publish-prereqs
+check-publish-prereqs: ## Check prerequisites for publishing
+	@command -v twine >/dev/null 2>&1 || (echo "$(RED)❌ twine not found. Install with: pip install twine$(RESET)" && exit 1)
+	@python -c "import twine" 2>/dev/null || (echo "$(RED)❌ twine not available in Python. Install with: pip install twine$(RESET)" && exit 1)
+	@if [ -z "$${TWINE_USERNAME}" ] && [ -z "$${TWINE_PASSWORD}" ] && [ ! -f ~/.pypirc ]; then \
+		echo "$(RED)❌ PyPI credentials not found. Set TWINE_USERNAME/TWINE_PASSWORD or configure ~/.pypirc$(RESET)"; \
+		exit 1; \
+	fi
+
+.PHONY: build-and-publish-python
+build-and-publish-python: check-publish-prereqs build-python publish-python ## Build and publish Python package to PyPI
+
+.PHONY: build-and-publish-python-test
+build-and-publish-python-test: check-publish-prereqs build-python publish-python-test ## Build and publish Python package to TestPyPI
 
 # =============================================================================
 # UTILITY COMMANDS
@@ -242,16 +273,18 @@ update: ## Update Rust dependencies
 outdated: ## Check for outdated Rust dependencies
 	$(CARGO) outdated
 
-.PHONY: tree
-tree: ## Show Rust dependency tree
-	$(CARGO) tree
-
 .PHONY: setup
 setup: ## Setup development environment
 	rustup update
 	$(CARGO) install cargo-watch
 	$(CARGO) install cargo-outdated
 	pip install -e .[dev]
+	@echo "$(GREEN)✅ Development environment ready$(RESET)"
+
+.PHONY: setup-docs
+setup-docs: ## Setup documentation development environment
+	pip install -r docs/requirements.txt
+	@echo "$(GREEN)✅ Documentation environment ready$(RESET)"
 
 # =============================================================================
 # DEVELOPMENT COMMANDS
