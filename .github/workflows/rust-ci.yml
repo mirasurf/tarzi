@@ -16,20 +16,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install system dependencies (Linux)
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-dev python3-pip
-
-    - name: Set up Python environment for PyO3
-      run: |
-        echo "PYO3_PYTHON=$(which python)" >> $GITHUB_ENV
-        echo "PYTHON_SYS_EXECUTABLE=$(which python)" >> $GITHUB_ENV
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -66,26 +56,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install system dependencies (Linux)
-      if: runner.os == 'Linux'
+    - name: Install system dependencies
       run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-dev python3-pip
-
-    - name: Set up Python environment for PyO3
-      run: |
-        # Set environment variables for PyO3 to find Python
-        echo "PYO3_PYTHON=$(which python)" >> $GITHUB_ENV
-        echo "PYTHON_SYS_EXECUTABLE=$(which python)" >> $GITHUB_ENV
-        # Set deployment target for macOS to avoid version mismatch warnings
-        if [ "$RUNNER_OS" == "macOS" ]; then
-          echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get update
+          sudo apt-get install -y python3-dev python3-pip
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          brew install python@3.11
+          echo "PYO3_PYTHON=$(brew --prefix python@3.11)/bin/python3.11" >> $GITHUB_ENV
+          echo "PYTHON_LIB_DIR=$(brew --prefix python@3.11)/lib" >> $GITHUB_ENV
         fi
+      shell: bash
+
+    - name: Set PyO3 environment variables (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        echo "RUSTFLAGS=-L$PYTHON_LIB_DIR -lpython3.11" >> $GITHUB_ENV
+      shell: bash
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -118,20 +105,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Install system dependencies (Linux)
+    - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y python3-dev python3-pip
-
-    - name: Set up Python environment for PyO3
-      run: |
-        echo "PYO3_PYTHON=$(which python)" >> $GITHUB_ENV
-        echo "PYTHON_SYS_EXECUTABLE=$(which python)" >> $GITHUB_ENV
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
