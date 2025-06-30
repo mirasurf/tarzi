@@ -22,7 +22,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = ["web-scraping", "search-engine", "ai-tools", "rust", "browser-automation"]
-version = "0.0.4"
+version = "0.0.5"
 description = "Rust-native lite search for AI applications"
 readme = "README.md"
 license = {text = "Apache-2.0"}
@@ -66,13 +66,15 @@ docs = [
     "sphinx-autoapi>=3.0.0",
 ]
 
-[project.scripts]
-tarzi = "tarzi:main"
-
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "tarzi"
 strip = true
+bindings = "pyo3"
+python-source = "python"
+
+[project.scripts]
+tarzi = "tarzi.__main__:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]

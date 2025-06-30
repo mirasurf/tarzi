@@ -280,7 +280,6 @@ outdated: ## Check for outdated Rust dependencies
 .PHONY: setup
 setup: ## Setup development environment
 	rustup update
-	$(CARGO) install cargo-watch
 	$(CARGO) install cargo-outdated
 	pip install -e .[dev]
 	@echo "$(GREEN)✅ Development environment ready$(RESET)"
@@ -301,10 +300,6 @@ dev: ## Run in development mode (debug build)
 .PHONY: dev-release
 dev-release: ## Run in development mode (release build)
 	$(CARGO) run --release
-
-.PHONY: watch
-watch: ## Watch for changes and rebuild automatically
-	$(CARGO) watch -x run
 
 .PHONY: dev-check
 dev-check: check test-unit test-python-unit ## Quick development check (check + unit tests)
