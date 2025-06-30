@@ -33,7 +33,7 @@ pub struct Document {
     pub images: Vec<String>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Converter;
 
 impl Converter {

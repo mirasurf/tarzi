@@ -1,274 +1,147 @@
-# Tarzi Python Setup Guide
+# Tarzi Python Wrapper - Quick Start
 
-This guide helps you fix PyO3 linking issues and build the tarzi Python extension successfully.
+Fast setup guide for building and using the tarzi Python extension.
 
-## Current Status
+## Status ✅
 
-✅ **Core Rust Library**: Fully working (68/68 tests pass)  
-✅ **Python Bindings Code**: Enhanced with comprehensive features  
-❌ **PyO3 Linking**: Needs to be fixed for Python module import  
+✅ **Core Rust Library**: Working (68/68 tests pass)  
+✅ **Python Bindings**: Complete with enhanced features  
+✅ **PyO3 Build**: Fixed and working  
 
-## PyO3 Linking Issue
+## Quick Setup
 
-The main problem is that PyO3 cannot find the Python development headers during linking. This manifests as:
-
-```
-Undefined symbols for architecture arm64:
-  "_PyBytes_AsString", "_PyBytes_Size", "_PyErr_Fetch", ...
-```
-
-## Quick Fix Attempts
-
-### 1. Environment Variables Approach
+### 1. Build the Python Extension
 
 ```bash
-# Set Python path explicitly
-export PYO3_PYTHON=/Users/xiamingchen/.pyenv/versions/tarzi/bin/python3
+# Get your Python library info
+python3 -c "import sysconfig; print('Library:', sysconfig.get_config_var('LIBDIR')); print('Python lib:', sysconfig.get_config_var('LDLIBRARY'))"
 
-# Set library path
-export LIBRARY_PATH="/Users/xiamingchen/.pyenv/versions/3.11.10/lib:$LIBRARY_PATH"
-
-# Set include path
-export CPATH="/Users/xiamingchen/.pyenv/versions/3.11.10/include/python3.11:$CPATH"
-
-# Try building
-cargo build --features pyo3
-```
-
-### 2. Alternative Python Installation
-
-```bash
-# Install Python via Homebrew (sometimes works better than pyenv)
-brew install python@3.11
-
-# Set the Python path
-export PYO3_PYTHON=/opt/homebrew/bin/python3.11
-
-# Try building
-cargo build --features pyo3
-```
-
-### 3. Manual Library Linking
-
-```bash
-# Get Python config
-python3-config --ldflags
-python3-config --includes
-
-# Set linker flags manually
+# Set environment variables (adjust paths for your system)
 export RUSTFLAGS="-L/Users/xiamingchen/.pyenv/versions/3.11.10/lib -lpython3.11"
+export PYO3_PYTHON=/Users/xiamingchen/.pyenv/versions/3.11.10/envs/tarzi/bin/python3
 
-# Try building
-cargo build --features pyo3
-```
-
-## Comprehensive Solution
-
-### Step 1: Verify Python Installation
-
-```bash
-# Check Python version and location
-python3 --version
-which python3
-python3 -c "import sys; print(sys.executable)"
-
-# Check if development headers are available
-python3 -c "import sysconfig; print(sysconfig.get_config_var('INCLUDEPY'))"
-ls -la $(python3 -c "import sysconfig; print(sysconfig.get_config_var('INCLUDEPY'))")
-```
-
-### Step 2: Install Python Development Headers
-
-For macOS with Homebrew:
-```bash
-# Install Python development headers
-brew install python@3.11
-# or
-xcode-select --install
-```
-
-For pyenv installations:
-```bash
-# Reinstall Python with development headers
-env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install 3.11.10
-```
-
-### Step 3: Configure Build Environment
-
-Create a `.env` file in the project root:
-```bash
-# .env
-PYO3_PYTHON=/Users/xiamingchen/.pyenv/versions/tarzi/bin/python3
-LIBRARY_PATH=/Users/xiamingchen/.pyenv/versions/3.11.10/lib
-CPATH=/Users/xiamingchen/.pyenv/versions/3.11.10/include/python3.11
-```
-
-Load environment and build:
-```bash
-source .env
+# Build
 cargo clean
 cargo build --features pyo3
 ```
 
-### Step 4: Use Maturin (Recommended)
-
-```bash
-# Install maturin
-pip install maturin
-
-# Build and install the Python package
-maturin develop --features pyo3
-
-# Or build a wheel
-maturin build --features pyo3
-```
-
-## Testing the Fix
-
-Once the linking is resolved, test the Python module:
+### 2. Test the Module
 
 ```bash
 # Test import
-python3 -c "import tarzi; print('Success!')"
+python3 -c "import tarzi; print('✅ Success!')"
 
-# Run comprehensive tests
-python3 test_python_bindings.py
-
-# Try examples
-python3 examples/basic_usage.py
-python3 examples/search_engines.py
-python3 examples/enhanced_demo.py
+# Test basic functionality
+python3 -c "
+import tarzi
+converter = tarzi.PyConverter()
+result = converter.convert('<h1>Test</h1>', 'markdown')
+print('Result:', result)
+"
 ```
 
-## Alternative: Docker Development
+## Quick Usage Examples
 
-If linking issues persist, use Docker:
+### Basic HTML Conversion
+```python
+import tarzi
 
-```dockerfile
-FROM python:3.11-slim
+# Create converter
+converter = tarzi.PyConverter()
 
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    pkg-config \
-    libssl-dev
-
-# Copy project
-COPY . /app
-WORKDIR /app
-
-# Install maturin and build
-RUN pip install maturin
-RUN maturin develop --features pyo3
-
-# Test
-RUN python -c "import tarzi; print('Success!')"
+# Convert HTML to markdown
+html = '<h1>Hello</h1><p>World!</p>'
+markdown = converter.convert(html, 'markdown')
+print(markdown)  # # Hello\n\nWorld!
 ```
 
-## Manual Testing Commands
+### Web Fetching
+```python
+import tarzi
+
+# Create web fetcher
+fetcher = tarzi.PyWebFetcher()
+
+# Fetch and convert a webpage
+content = fetcher.fetch('https://example.com', 'plain_request', 'markdown')
+print(content)
+```
+
+### Web Search
+```python
+import tarzi
+
+# Create search engine
+engine = tarzi.PySearchEngine()
+
+# Search the web
+results = engine.search('python programming', 'webquery', 5)
+for result in results:
+    print(f"{result.title}: {result.url}")
+```
+
+## Available Classes and Functions
+
+### Classes
+- `PyConverter()` - HTML/text conversion
+- `PyWebFetcher()` - Web page fetching  
+- `PySearchEngine()` - Web search functionality
+- `PyConfig()` - Configuration management
+
+### Standalone Functions
+- `convert_html(html, format)` - Quick HTML conversion
+- `fetch_url(url, mode, format)` - Quick URL fetching
+- `search_web(query, mode, limit)` - Quick web search
+
+### Supported Formats
+- `html` - Raw HTML
+- `markdown` - Markdown text
+- `json` - JSON structure
+- `yaml` - YAML format
+
+### Fetch Modes
+- `plain_request` - Simple HTTP request
+- `browser_head` - Browser with head (faster)
+- `browser_headless` - Full headless browser
+
+## Development Commands
 
 ```bash
-# Test core functionality
+# Run Rust tests
 cargo test --features "default"
 
-# Test Python bindings (once linking is fixed)
+# Test Python bindings
 cargo test --features pyo3
 
-# Test with specific Python version
-PYO3_PYTHON=/path/to/python cargo test --features pyo3
-
-# Build Python wheel
+# Build release wheel
 maturin build --features pyo3 --release
+
+# Run examples
+python3 examples/basic_usage.py
+python3 examples/search_engines.py
 ```
-
-## Verification Steps
-
-1. **Core Tests**: `cargo test --features "default"` should pass (✅ Already working)
-2. **Python Linking**: `cargo build --features pyo3` should succeed
-3. **Module Import**: `python3 -c "import tarzi"` should work
-4. **Feature Tests**: `python3 test_python_bindings.py` should show 8/8 tests passing
-5. **Examples**: All Python examples should run without import errors
-
-## Enhanced Features Already Implemented
-
-Once the linking is fixed, the Python module will have:
-
-### 🎨 **Comprehensive Docstrings**
-- All classes and methods have detailed documentation
-- Parameter descriptions, return types, and exceptions documented
-- Accessible via `help()` function in Python
-
-### 🚨 **Enhanced Error Handling**
-- Specific error messages instead of generic ones
-- Context-aware error reporting
-- Proper exception types (ValueError, RuntimeError)
-
-### 🏷️ **String Representations**
-- All classes have proper `__repr__` and `__str__` methods
-- Debugging-friendly output
-- Formatted display for search results
-
-### ⚙️ **Configuration Management**
-- TOML-based configuration with validation
-- File and string-based config loading
-- Configuration persistence methods
-
-### 🔧 **API Improvements**
-- Cloneable converter objects
-- Comprehensive test coverage
-- Better parameter validation
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **"No module named 'tarzi'"**
-   - PyO3 linking not resolved
-   - Python module not built/installed
-
-2. **SSL/TLS errors in maturin**
-   - Try using system Python instead of pyenv
-   - Install certificates: `pip install --upgrade certifi`
-
-3. **Architecture mismatch**
-   - Ensure Python and Rust target same architecture
-   - Check with: `python3 -c "import platform; print(platform.machine())"`
-
-### Debug Commands
-
+### Build Issues
+If you get linking errors, adjust the paths in RUSTFLAGS:
 ```bash
-# Check Rust targets
-rustc --print target-list | grep darwin
+# For Homebrew Python
+export RUSTFLAGS="-L/opt/homebrew/lib -lpython3.11"
+export PYO3_PYTHON=/opt/homebrew/bin/python3.11
 
-# Check Python configuration
-python3-config --ldflags
-python3-config --includes
-python3-config --cflags
-
-# Check linking libraries
-otool -L target/debug/libtarzi.dylib  # After successful build
+# For system Python
+export RUSTFLAGS="-L/usr/lib -lpython3.11"
+export PYO3_PYTHON=/usr/bin/python3
 ```
 
-## Next Steps
+### Import Issues
+```bash
+# Check if module was built
+ls target/debug/deps/libtarzi.dylib
 
-1. **Fix PyO3 Linking**: Use the solutions above
-2. **Run Tests**: Verify all functionality works
-3. **Create Documentation**: Generate API docs
-4. **Performance Testing**: Benchmark with real workloads
-5. **Distribution**: Create wheels for PyPI
+# Check Python can find it
+python3 -c "import sys; print(sys.path)"
+```
 
-## Support
-
-If you continue to have issues:
-
-1. Check the error logs carefully
-2. Try different Python installations (Homebrew, system, pyenv)
-3. Verify development headers are installed
-4. Consider using Docker for a clean environment
-5. Check PyO3 documentation for platform-specific issues
-
-The Python wrapper is fully implemented and ready - we just need to resolve the linking issue to make it usable! 
+**Ready to use!** 🚀 
