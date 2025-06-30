@@ -421,6 +421,18 @@ api_key = "google_key_123"
 
     #[test]
     fn test_get_proxy_from_env_or_config() {
+        use std::sync::Mutex;
+
+        // Use a static mutex to serialize access to environment variables across tests
+        static ENV_LOCK: Mutex<()> = Mutex::new(());
+        let _guard = ENV_LOCK.lock().unwrap();
+
+        // Store original environment variables
+        let original_http_proxy = std::env::var("HTTP_PROXY").ok();
+        let original_https_proxy = std::env::var("HTTPS_PROXY").ok();
+        let original_http_proxy_lower = std::env::var("http_proxy").ok();
+        let original_https_proxy_lower = std::env::var("https_proxy").ok();
+
         // Clean up any existing environment variables first
         unsafe {
             std::env::remove_var("HTTP_PROXY");
@@ -445,14 +457,14 @@ api_key = "google_key_123"
         let result = get_proxy_from_env_or_config(&config_proxy);
         assert_eq!(result, Some("http://env-proxy:8080".to_string()));
 
-        // Test with HTTPS_PROXY (should take precedence over config)
+        // Test with HTTPS_PROXY (should take precedence over HTTP_PROXY)
         unsafe {
             std::env::set_var("HTTPS_PROXY", "http://https-proxy:8080");
         }
         let result = get_proxy_from_env_or_config(&config_proxy);
         assert_eq!(result, Some("http://https-proxy:8080".to_string()));
 
-        // Test with lowercase environment variable
+        // Test with lowercase environment variable (remove uppercase first)
         unsafe {
             std::env::remove_var("HTTP_PROXY");
             std::env::remove_var("HTTPS_PROXY");
@@ -461,17 +473,43 @@ api_key = "google_key_123"
         let result = get_proxy_from_env_or_config(&config_proxy);
         assert_eq!(result, Some("http://lowercase-proxy:8080".to_string()));
 
-        // Clean up environment variables
+        // Clean up and restore original environment variables
         unsafe {
             std::env::remove_var("HTTP_PROXY");
             std::env::remove_var("HTTPS_PROXY");
             std::env::remove_var("http_proxy");
             std::env::remove_var("https_proxy");
+
+            // Restore original values
+            if let Some(val) = original_http_proxy {
+                std::env::set_var("HTTP_PROXY", val);
+            }
+            if let Some(val) = original_https_proxy {
+                std::env::set_var("HTTPS_PROXY", val);
+            }
+            if let Some(val) = original_http_proxy_lower {
+                std::env::set_var("http_proxy", val);
+            }
+            if let Some(val) = original_https_proxy_lower {
+                std::env::set_var("https_proxy", val);
+            }
         }
     }
 
     #[test]
     fn test_get_proxy_from_env_or_config_empty_env() {
+        use std::sync::Mutex;
+
+        // Use a static mutex to serialize access to environment variables across tests
+        static ENV_LOCK: Mutex<()> = Mutex::new(());
+        let _guard = ENV_LOCK.lock().unwrap();
+
+        // Store original environment variables
+        let original_http_proxy = std::env::var("HTTP_PROXY").ok();
+        let original_https_proxy = std::env::var("HTTPS_PROXY").ok();
+        let original_http_proxy_lower = std::env::var("http_proxy").ok();
+        let original_https_proxy_lower = std::env::var("https_proxy").ok();
+
         // Clean up any existing environment variables first
         unsafe {
             std::env::remove_var("HTTP_PROXY");
@@ -488,9 +526,26 @@ api_key = "google_key_123"
         let result = get_proxy_from_env_or_config(&config_proxy);
         assert_eq!(result, config_proxy);
 
-        // Clean up
+        // Clean up and restore original environment variables
         unsafe {
             std::env::remove_var("HTTP_PROXY");
+            std::env::remove_var("HTTPS_PROXY");
+            std::env::remove_var("http_proxy");
+            std::env::remove_var("https_proxy");
+
+            // Restore original values
+            if let Some(val) = original_http_proxy {
+                std::env::set_var("HTTP_PROXY", val);
+            }
+            if let Some(val) = original_https_proxy {
+                std::env::set_var("HTTPS_PROXY", val);
+            }
+            if let Some(val) = original_http_proxy_lower {
+                std::env::set_var("http_proxy", val);
+            }
+            if let Some(val) = original_https_proxy_lower {
+                std::env::set_var("https_proxy", val);
+            }
         }
     }
 }
