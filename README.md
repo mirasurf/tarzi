@@ -37,13 +37,6 @@
   <a href="https://x.com/mirasurf_ai">
     <img src="https://img.shields.io/twitter/follow/mirasurf_ai?label=@mirasurf_ai&style=flat-square" alt="X Follow" />
   </a>
-  <!-- DeepWiki badge -->
-  <a href="https://deepwiki.com/mirasurf/tarzi.rs">
-    <img src="https://devin.ai/assets/deepwiki-badge.png" style="height: 18px; vertical-align: middle;" alt="Ask DeepWiki" />
-  </a>
-  <a href="https://crates.io/crates/tarzi">
-    <img src="https://img.shields.io/badge/AI%20Assisted-Yes-green?style=for-the-badge" style="height: 18px; vertical-align: middle;" alt="AI Assisted Yes" />
-  </a>
 </p>
 
 ## Features
