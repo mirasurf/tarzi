@@ -26,14 +26,14 @@ fn test_driver_binary_detection() {
     let chrome_result = manager.check_driver_binary(&DriverType::Chrome);
     match &chrome_result {
         Ok(()) => println!("ChromeDriver is available"),
-        Err(e) => println!("ChromeDriver not available: {}", e),
+        Err(e) => println!("ChromeDriver not available: {e}"),
     }
 
     // Test Firefox driver detection
     let firefox_result = manager.check_driver_binary(&DriverType::Firefox);
     match &firefox_result {
         Ok(()) => println!("GeckoDriver is available"),
-        Err(e) => println!("GeckoDriver not available: {}", e),
+        Err(e) => println!("GeckoDriver not available: {e}"),
     }
 
     // At least one of the results should provide useful error messages

@@ -42,7 +42,7 @@ impl SearchResultParser for DuckDuckGoParser {
                     if href.starts_with("http") {
                         href.to_string()
                     } else if href.starts_with("/") {
-                        format!("https://duckduckgo.com{}", href)
+                        format!("https://duckduckgo.com{href}")
                     } else {
                         href.to_string()
                     }

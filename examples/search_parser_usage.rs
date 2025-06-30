@@ -25,7 +25,7 @@ impl SearchResultParser for MyCustomParser {
             let rank = i + 1;
             results.push(SearchResult {
                 title: format!("{} - Custom Search Result #{}", self.name, rank),
-                url: format!("https://mycustomengine.com/result/{}", rank),
+                url: format!("https://mycustomengine.com/result/{rank}"),
                 snippet: format!(
                     "This is a custom search result snippet from {} for result #{}",
                     self.name, rank
@@ -69,9 +69,9 @@ async fn main() -> tarzi::Result<()> {
     ];
 
     for (engine_type, engine_name) in engines {
-        println!("  Testing {} parser:", engine_name);
+        println!("  Testing {engine_name} parser:");
         let parser = factory.get_parser(&engine_type);
-        let mock_html = format!("<html><body>Mock HTML for {}</body></html>", engine_name);
+        let mock_html = format!("<html><body>Mock HTML for {engine_name}</body></html>");
         let results = parser.parse(&mock_html, 3)?;
 
         for result in results {
@@ -120,7 +120,7 @@ async fn main() -> tarzi::Result<()> {
     for engine_name in engines {
         let custom_parser = Box::new(MyCustomParser::new(engine_name.to_string()));
         factory.register_custom_parser(engine_name.to_string(), custom_parser);
-        println!("  Registered custom parser: {}", engine_name);
+        println!("  Registered custom parser: {engine_name}");
     }
 
     // Test the registered custom parsers
@@ -129,7 +129,7 @@ async fn main() -> tarzi::Result<()> {
         let parser = factory.get_parser(&engine_type);
         let results = parser.parse("<html><body>Test</body></html>", 2)?;
 
-        println!("  Results from {}:", engine_name);
+        println!("  Results from {engine_name}:");
         for result in results {
             println!("    - {}", result.title);
         }

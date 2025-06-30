@@ -51,9 +51,7 @@ except ImportError:
                 if format_type == "markdown":
                     return "# Test Title\n\nTest **content** with [link](https://example.com)."
                 elif format_type == "json":
-                    return (
-                        '{"title": "Test Title", "content": "Test content with link"}'
-                    )
+                    return '{"title": "Test Title", "content": "Test content with link"}'
                 elif format_type == "yaml":
                     return "title: Test Title\ncontent: Test content with link"
             elif "Pipeline Test" in html:
@@ -147,9 +145,7 @@ except ImportError:
                 if format_type == "markdown":
                     return "# Test Title\n\nTest **content** with [link](https://example.com)."
                 elif format_type == "json":
-                    return (
-                        '{"title": "Test Title", "content": "Test content with link"}'
-                    )
+                    return '{"title": "Test Title", "content": "Test content with link"}'
                 elif format_type == "yaml":
                     return "title: Test Title\ncontent: Test content with link"
             elif "Pipeline Test" in html:

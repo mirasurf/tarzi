@@ -10,7 +10,7 @@ pub async fn is_webdriver_available() -> bool {
     // Try to connect to WebDriver with a short timeout
     match timeout(
         WEBDRIVER_CHECK_TIMEOUT,
-        reqwest::get(&format!("{}/status", webdriver_url)),
+        reqwest::get(&format!("{webdriver_url}/status")),
     )
     .await
     {

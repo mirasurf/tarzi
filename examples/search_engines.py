@@ -55,9 +55,7 @@ def main():
     try:
         # Search and fetch with plain request mode
         print("\nSearch and fetch with plain request mode:")
-        results_with_content = tarzi.search_and_fetch(
-            "web development", "webquery", 2, "plain_request", "markdown"
-        )
+        results_with_content = tarzi.search_and_fetch("web development", "webquery", 2, "plain_request", "markdown")
         print(f"Found {len(results_with_content)} results with content:")
         for i, (result, content) in enumerate(results_with_content):
             print(f"  {i+1}. {result.title}")
@@ -173,18 +171,14 @@ query_pattern = "https://www.google.com/search?q={query}"
 
     # Test invalid fetch mode
     try:
-        results = tarzi.search_and_fetch(
-            "test query", "webquery", 5, "invalid_fetch_mode", "html"
-        )
+        results = tarzi.search_and_fetch("test query", "webquery", 5, "invalid_fetch_mode", "html")
         print("Unexpected: search_and_fetch with invalid fetch mode succeeded")
     except Exception as e:
         print(f"Expected error for invalid fetch mode: {e}")
 
     # Test invalid format
     try:
-        content = tarzi.fetch_url(
-            "https://example.com", "plain_request", "invalid_format"
-        )
+        content = tarzi.fetch_url("https://example.com", "plain_request", "invalid_format")
         print("Unexpected: fetch with invalid format succeeded")
     except Exception as e:
         print(f"Expected error for invalid format: {e}")

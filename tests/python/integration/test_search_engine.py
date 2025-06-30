@@ -61,9 +61,7 @@ class TestSearchEngine:
     def test_search_and_fetch(self, engine, test_query):
         """Test search and fetch functionality."""
         try:
-            results = engine.search_and_fetch(
-                test_query, "webquery", 1, "plain_request", "markdown"
-            )
+            results = engine.search_and_fetch(test_query, "webquery", 1, "plain_request", "markdown")
             assert isinstance(results, list)
             for result, content in results:
                 assert isinstance(result, tarzi.SearchResult)
@@ -79,16 +77,12 @@ class TestSearchEngine:
     def test_invalid_fetch_mode_in_search_and_fetch(self, engine, test_query):
         """Test invalid fetch mode in search_and_fetch raises ValueError."""
         with pytest.raises(ValueError, match="Invalid fetch mode"):
-            engine.search_and_fetch(
-                test_query, "webquery", 1, "invalid_fetch_mode", "html"
-            )
+            engine.search_and_fetch(test_query, "webquery", 1, "invalid_fetch_mode", "html")
 
     def test_invalid_format_in_search_and_fetch(self, engine, test_query):
         """Test invalid format in search_and_fetch raises ValueError."""
         with pytest.raises(ValueError, match="Invalid format"):
-            engine.search_and_fetch(
-                test_query, "webquery", 1, "plain_request", "invalid_format"
-            )
+            engine.search_and_fetch(test_query, "webquery", 1, "plain_request", "invalid_format")
 
     def test_with_api_key(self, engine):
         """Test setting API key."""
@@ -131,9 +125,7 @@ def test_search_web_invalid_mode(test_query):
 def test_search_and_fetch_function(test_query):
     """Test search_and_fetch standalone function."""
     try:
-        results = tarzi.search_and_fetch(
-            test_query, "webquery", 1, "plain_request", "markdown"
-        )
+        results = tarzi.search_and_fetch(test_query, "webquery", 1, "plain_request", "markdown")
         assert isinstance(results, list)
         for result, content in results:
             assert isinstance(result, tarzi.SearchResult)
@@ -157,6 +149,4 @@ def test_search_and_fetch_invalid_fetch_mode(test_query):
 def test_search_and_fetch_invalid_format(test_query):
     """Test search_and_fetch with invalid format."""
     with pytest.raises(ValueError, match="Invalid format"):
-        tarzi.search_and_fetch(
-            test_query, "webquery", 1, "plain_request", "invalid_format"
-        )
+        tarzi.search_and_fetch(test_query, "webquery", 1, "plain_request", "invalid_format")

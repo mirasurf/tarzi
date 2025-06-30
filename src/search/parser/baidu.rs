@@ -60,7 +60,7 @@ impl SearchResultParser for BaiduParser {
                     if href.starts_with("http") {
                         href.to_string()
                     } else if href.starts_with("/") {
-                        format!("https://www.baidu.com{}", href)
+                        format!("https://www.baidu.com{href}")
                     } else {
                         href.to_string()
                     }

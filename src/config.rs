@@ -65,10 +65,10 @@ impl Config {
 
         if config_path.exists() {
             let content = fs::read_to_string(&config_path)
-                .map_err(|e| TarziError::Config(format!("Failed to read config file: {}", e)))?;
+                .map_err(|e| TarziError::Config(format!("Failed to read config file: {e}")))?;
 
             let config: Config = toml::from_str(&content)
-                .map_err(|e| TarziError::Config(format!("Failed to parse config file: {}", e)))?;
+                .map_err(|e| TarziError::Config(format!("Failed to parse config file: {e}")))?;
 
             Ok(config)
         } else {
@@ -96,15 +96,15 @@ impl Config {
         // Create parent directory if it doesn't exist
         if let Some(parent) = config_path.parent() {
             fs::create_dir_all(parent).map_err(|e| {
-                TarziError::Config(format!("Failed to create config directory: {}", e))
+                TarziError::Config(format!("Failed to create config directory: {e}"))
             })?;
         }
 
         let content = toml::to_string_pretty(self)
-            .map_err(|e| TarziError::Config(format!("Failed to serialize config: {}", e)))?;
+            .map_err(|e| TarziError::Config(format!("Failed to serialize config: {e}")))?;
 
         fs::write(&config_path, content)
-            .map_err(|e| TarziError::Config(format!("Failed to write config file: {}", e)))?;
+            .map_err(|e| TarziError::Config(format!("Failed to write config file: {e}")))?;
 
         Ok(())
     }
@@ -124,13 +124,11 @@ impl Config {
         let config_path = Self::get_dev_config_path();
 
         if config_path.exists() {
-            let content = fs::read_to_string(&config_path).map_err(|e| {
-                TarziError::Config(format!("Failed to read dev config file: {}", e))
-            })?;
+            let content = fs::read_to_string(&config_path)
+                .map_err(|e| TarziError::Config(format!("Failed to read dev config file: {e}")))?;
 
-            let config: Config = toml::from_str(&content).map_err(|e| {
-                TarziError::Config(format!("Failed to parse dev config file: {}", e))
-            })?;
+            let config: Config = toml::from_str(&content)
+                .map_err(|e| TarziError::Config(format!("Failed to parse dev config file: {e}")))?;
 
             Ok(config)
         } else {
@@ -143,10 +141,10 @@ impl Config {
         let config_path = Self::get_dev_config_path();
 
         let content = toml::to_string_pretty(self)
-            .map_err(|e| TarziError::Config(format!("Failed to serialize dev config: {}", e)))?;
+            .map_err(|e| TarziError::Config(format!("Failed to serialize dev config: {e}")))?;
 
         fs::write(&config_path, content)
-            .map_err(|e| TarziError::Config(format!("Failed to write dev config file: {}", e)))?;
+            .map_err(|e| TarziError::Config(format!("Failed to write dev config file: {e}")))?;
 
         Ok(())
     }

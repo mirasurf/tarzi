@@ -95,11 +95,11 @@ exclude_lines = ["pragma: no cover", "def __repr__", "raise NotImplementedError"
 show_missing = true
 
 [tool.black]
-line-length = 88
+line-length = 120
 target-version = ["py38"]
 
 [tool.ruff]
-line-length = 88
+line-length = 120
 target-version = "py38"
 
 [tool.ruff.lint]
@@ -111,7 +111,7 @@ ignore = ["E501", "B008"]
 
 [tool.isort]
 profile = "black"
-line_length = 88
+line_length = 120
 
 [tool.autoflake]
 remove-all-unused-imports = true

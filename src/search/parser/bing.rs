@@ -41,7 +41,7 @@ impl SearchResultParser for BingParser {
                     if href.starts_with("http") {
                         href.to_string()
                     } else if href.starts_with("/") {
-                        format!("https://www.bing.com{}", href)
+                        format!("https://www.bing.com{href}")
                     } else {
                         href.to_string()
                     }

@@ -42,7 +42,7 @@ impl SearchResultParser for BraveParser {
                     if href.starts_with("http") {
                         href.to_string()
                     } else if href.starts_with("/") {
-                        format!("https://search.brave.com{}", href)
+                        format!("https://search.brave.com{href}")
                     } else {
                         href.to_string()
                     }

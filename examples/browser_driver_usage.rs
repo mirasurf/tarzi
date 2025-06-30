@@ -25,13 +25,13 @@ async fn main() -> Result<()> {
     // Demo URL
     let test_url = tarzi::constants::HTTPBIN_HTML_URL;
 
-    println!("Testing browser integration with URL: {}", test_url);
+    println!("Testing browser integration with URL: {test_url}");
     println!();
 
     // Show current environment
     match env::var("TARZI_WEBDRIVER_URL") {
         Ok(url) if !url.is_empty() => {
-            println!("✓ TARZI_WEBDRIVER_URL is set: {}", url);
+            println!("✓ TARZI_WEBDRIVER_URL is set: {url}");
             println!("  → Will use this URL with highest priority");
         }
         _ => {
@@ -71,7 +71,7 @@ async fn main() -> Result<()> {
             }
         }
         Err(e) => {
-            println!("✗ Failed to fetch content: {}", e);
+            println!("✗ Failed to fetch content: {e}");
             println!();
             println!("This might happen if:");
             println!("- No WebDriver is available at TARZI_WEBDRIVER_URL");
@@ -92,7 +92,7 @@ async fn main() -> Result<()> {
         println!("Cleaning up managed driver...");
         match fetcher.cleanup_managed_driver().await {
             Ok(()) => println!("✓ Managed driver cleaned up successfully"),
-            Err(e) => println!("⚠ Warning: Failed to clean up managed driver: {}", e),
+            Err(e) => println!("⚠ Warning: Failed to clean up managed driver: {e}"),
         }
     }
 

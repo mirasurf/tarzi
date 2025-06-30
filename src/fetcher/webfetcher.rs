@@ -134,7 +134,7 @@ impl WebFetcher {
             }
             Ok(Err(e)) => {
                 error!("Failed to navigate to URL: {}", e);
-                return Err(TarziError::Browser(format!("Failed to navigate: {}", e)));
+                return Err(TarziError::Browser(format!("Failed to navigate: {e}")));
             }
             Err(_) => {
                 error!("Timeout while navigating to URL (30 seconds)");
@@ -163,7 +163,7 @@ impl WebFetcher {
             }
             Ok(Err(e)) => {
                 error!("Failed to get page content: {}", e);
-                return Err(TarziError::Browser(format!("Failed to get content: {}", e)));
+                return Err(TarziError::Browser(format!("Failed to get content: {e}")));
             }
             Err(_) => {
                 error!("Timeout while extracting page content (30 seconds)");
@@ -194,7 +194,7 @@ impl WebFetcher {
                     .proxy(reqwest::Proxy::http(proxy)?)
                     .build()
                     .map_err(|e| {
-                        TarziError::Config(format!("Failed to create proxy client: {}", e))
+                        TarziError::Config(format!("Failed to create proxy client: {e}"))
                     })?;
 
                 let url = Url::parse(url)?;
@@ -232,8 +232,7 @@ impl WebFetcher {
                     Ok(Err(e)) => {
                         error!("Failed to navigate to URL with proxy: {}", e);
                         return Err(TarziError::Browser(format!(
-                            "Failed to navigate with proxy: {}",
-                            e
+                            "Failed to navigate with proxy: {e}"
                         )));
                     }
                     Err(_) => {
@@ -260,8 +259,7 @@ impl WebFetcher {
                     Ok(Err(e)) => {
                         error!("Failed to get page content with proxy: {}", e);
                         return Err(TarziError::Browser(format!(
-                            "Failed to get content with proxy: {}",
-                            e
+                            "Failed to get content with proxy: {e}"
                         )));
                     }
                     Err(_) => {
@@ -353,7 +351,7 @@ impl WebFetcher {
             .browser_manager
             .get_browser(instance_id)
             .ok_or_else(|| {
-                TarziError::Browser(format!("Browser instance {} not found", instance_id))
+                TarziError::Browser(format!("Browser instance {instance_id} not found"))
             })?;
 
         info!("Using browser instance {} for fetching", instance_id);
@@ -377,7 +375,7 @@ impl WebFetcher {
                     "Failed to navigate to URL in browser instance {}: {}",
                     instance_id, e
                 );
-                return Err(TarziError::Browser(format!("Failed to navigate: {}", e)));
+                return Err(TarziError::Browser(format!("Failed to navigate: {e}")));
             }
             Err(_) => {
                 error!(
@@ -419,7 +417,7 @@ impl WebFetcher {
                     "Failed to get page content from browser instance {}: {}",
                     instance_id, e
                 );
-                return Err(TarziError::Browser(format!("Failed to get content: {}", e)));
+                return Err(TarziError::Browser(format!("Failed to get content: {e}")));
             }
             Err(_) => {
                 error!(

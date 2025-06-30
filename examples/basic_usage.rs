@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
         .await
     {
         Ok(content) => println!("   Plain request: {} characters", content.len()),
-        Err(e) => println!("   Plain request failed: {}", e),
+        Err(e) => println!("   Plain request failed: {e}"),
     }
 
     // Browser headless mode
@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
         .await
     {
         Ok(content) => println!("   Browser headless: {} characters", content.len()),
-        Err(e) => println!("   Browser headless failed: {}", e),
+        Err(e) => println!("   Browser headless failed: {e}"),
     }
 
     println!();
@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
                 println!("   {}. {} - {}", i + 1, result.title, result.url);
             }
         }
-        Err(e) => println!("   Search failed: {}", e),
+        Err(e) => println!("   Search failed: {e}"),
     }
 
     println!();
@@ -80,7 +80,7 @@ async fn main() -> Result<()> {
                 );
             }
         }
-        Err(e) => println!("   Search and fetch failed: {}", e),
+        Err(e) => println!("   Search and fetch failed: {e}"),
     }
 
     println!();
