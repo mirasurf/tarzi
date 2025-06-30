@@ -419,11 +419,10 @@ mod proxy_tests {
                     let error_str = format!("{e:?}");
                     if error_str.contains("502") {
                         println!(
-                            "Received 502 from httpbin.org for {} format - likely temporary issue, test considered passed",
-                            format_name
+                            "Received 502 from httpbin.org for {format_name} format - likely temporary issue, test considered passed"
                         );
                     } else {
-                        panic!("Failed to fetch {} format with proxy: {e:?}", format_name);
+                        panic!("Failed to fetch {format_name} format with proxy: {e:?}");
                     }
                 }
             }

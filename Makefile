@@ -112,7 +112,7 @@ check: ## Run cargo check (Rust only)
 
 .PHONY: clippy
 clippy: ## Run clippy linter (Rust only)
-	$(CARGO) clippy -- -D warnings
+	$(CARGO) clippy --all-targets --all-features -- -D warnings
 
 .PHONY: format
 format: ## Format Rust code with rustfmt
@@ -146,6 +146,10 @@ lint: clippy format-check ## Lint Rust code
 lint-python: ## Lint Python code with ruff
 	@ruff check $(PYTHON_MODULES)
 
+.PHONY: lint-fix
+lint-fix: ## Auto-fix Rust linting issues
+	$(CARGO) clippy --fix --allow-dirty --allow-staged --all-targets --all-features -- -D warnings
+
 .PHONY: lint-python-fix
 lint-python-fix: ## Auto-fix Python linting issues
 	@autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES)
@@ -154,8 +158,8 @@ lint-python-fix: ## Auto-fix Python linting issues
 .PHONY: lint-all
 lint-all: lint lint-python ## Lint all code (Rust + Python)
 
-.PHONY: quality
-quality: format-check-all lint-all ## Run all quality checks
+.PHONY: autofix
+autofix: lint-fix lint-python-fix ## Auto-fix all linting issues
 
 # =============================================================================
 # CLEAN COMMANDS
@@ -306,4 +310,4 @@ watch: ## Watch for changes and rebuild automatically
 dev-check: check test-unit test-python-unit ## Quick development check (check + unit tests)
 
 .PHONY: full-check
-full-check: quality test-all build-all ## Full development check (quality + all tests + build) 
+full-check: format-check-all lint-all test-all build-all ## Full development check (all check + all tests + build) 
