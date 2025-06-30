@@ -9,7 +9,6 @@ use thirtyfour::{By, DesiredCapabilities, Key, WebDriver};
 
 /// Integration tests for search parsers
 /// These tests require internet access and a running WebDriver server
-
 /// Perform a real Bing search using WebDriver and return the HTML
 async fn perform_bing_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
     let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
@@ -195,7 +194,7 @@ async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error
 
         // Try to accept cookies if prompted
         if let Ok(cookie_button) = driver.find(By::Css("button#L2AGLb")).await {
-            if let Ok(_) = cookie_button.click().await {
+            if (cookie_button.click().await).is_ok() {
                 println!("Accepted Google cookies");
                 tokio::time::sleep(Duration::from_millis(1000)).await;
             }

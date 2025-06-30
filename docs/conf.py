@@ -130,6 +130,9 @@ autoapi_ignore = [
     "*/examples/*",
     "*/.git/*",
     "*/__pycache__/*",
+    "*/.venv/*",
+    "*/venv/*",
+    "*/.pytest_cache/*",
 ]
 autoapi_options = [
     "members",

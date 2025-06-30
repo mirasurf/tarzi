@@ -81,20 +81,34 @@ jobs:
     - name: Install maturin
       run: pip install maturin[patchelf]
 
-    - name: Install test dependencies
-      run: pip install pytest pytest-cov pytest-mock pytest-asyncio
+    - name: Create virtual environment
+      run: python -m venv .venv
+
+    - name: Activate virtual environment and install dependencies
+      shell: bash
+      run: |
+        source .venv/bin/activate
+        pip install --upgrade pip
+        pip install pytest pytest-cov pytest-mock pytest-asyncio
 
     - name: Build Python extension
-      run: maturin develop --release
+      shell: bash
+      run: |
+        source .venv/bin/activate
+        maturin develop --release
 
     - name: Run Python unit tests
+      shell: bash
       run: |
+        source .venv/bin/activate
         cd tests/python
         pytest unit/ -v --cov=tarzi --cov-report=xml --cov-report=term
       continue-on-error: true
 
     - name: Run Python integration tests
+      shell: bash
       run: |
+        source .venv/bin/activate
         cd tests/python
         pytest integration/ -v -m "not slow"
       continue-on-error: true
@@ -134,6 +148,8 @@ jobs:
     - name: Test wheel installation
       shell: bash
       run: |
+        python -m venv test_env
+        source test_env/bin/activate
         wheel_file=$(ls dist/*.whl | head -1)
         pip install "$wheel_file"
         python -c "import tarzi; print('Wheel installed successfully')"
@@ -158,16 +174,25 @@ jobs:
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
 
-    - name: Install documentation dependencies
+    - name: Create virtual environment and install dependencies
+      shell: bash
       run: |
+        python -m venv .venv
+        source .venv/bin/activate
+        pip install --upgrade pip
         pip install -r docs/requirements.txt
         pip install maturin
 
     - name: Build Python extension for docs
-      run: maturin develop --release
+      shell: bash
+      run: |
+        source .venv/bin/activate
+        maturin develop --release
 
     - name: Build documentation
+      shell: bash
       run: |
+        source .venv/bin/activate
         cd docs
         make html
 

@@ -83,11 +83,13 @@ async fn main() -> tarzi::Result<()> {
 
     // 2. Custom parser configuration
     println!("2. Testing custom parser with configuration:");
-    let mut custom_config = CustomParserConfig::default();
-    custom_config.result_container_selector = ".my-search-result".to_string();
-    custom_config.title_selector = ".my-title".to_string();
-    custom_config.url_selector = ".my-url".to_string();
-    custom_config.snippet_selector = ".my-snippet".to_string();
+    let custom_config = CustomParserConfig {
+        result_container_selector: ".my-search-result".to_string(),
+        title_selector: ".my-title".to_string(),
+        url_selector: ".my-url".to_string(),
+        snippet_selector: ".my-snippet".to_string(),
+        ..Default::default()
+    };
 
     let custom_parser = CustomParser::with_config("MySearchEngine".to_string(), custom_config);
     let results = custom_parser.parse("<html><body>Custom HTML</body></html>", 2)?;

@@ -73,24 +73,19 @@ impl PyConverter {
     fn convert(&self, input: &str, format: &str) -> PyResult<String> {
         let format = Format::from_str(format).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid format '{}': {}",
-                format, e
+                "Invalid format '{format}': {e}"
             ))
         })?;
 
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to create async runtime: {}",
-                e
+                "Failed to create async runtime: {e}"
             ))
         })?;
 
         rt.block_on(async { self.inner.convert(input, format).await })
             .map_err(|e| {
-                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                    "Conversion failed: {}",
-                    e
-                ))
+                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Conversion failed: {e}"))
             })
     }
 
@@ -108,16 +103,14 @@ impl PyConverter {
     fn convert_with_config(&self, input: &str, config: &PyConfig) -> PyResult<String> {
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to create async runtime: {}",
-                e
+                "Failed to create async runtime: {e}"
             ))
         })?;
 
         rt.block_on(async { self.inner.convert_with_config(input, &config.inner).await })
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                    "Conversion with config failed: {}",
-                    e
+                    "Conversion with config failed: {e}"
                 ))
             })
     }
@@ -181,29 +174,25 @@ impl PyWebFetcher {
     fn fetch(&mut self, url: &str, mode: &str, format: &str) -> PyResult<String> {
         let mode = FetchMode::from_str(mode).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid fetch mode '{}': {}",
-                mode, e
+                "Invalid fetch mode '{mode}': {e}"
             ))
         })?;
         let format = Format::from_str(format).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid format '{}': {}",
-                format, e
+                "Invalid format '{format}': {e}"
             ))
         })?;
 
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to create async runtime: {}",
-                e
+                "Failed to create async runtime: {e}"
             ))
         })?;
 
         rt.block_on(async { self.inner.fetch(url, mode, format).await })
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                    "Failed to fetch '{}': {}",
-                    url, e
+                    "Failed to fetch '{url}': {e}"
                 ))
             })
     }
@@ -223,23 +212,20 @@ impl PyWebFetcher {
     fn fetch_raw(&mut self, url: &str, mode: &str) -> PyResult<String> {
         let mode = FetchMode::from_str(mode).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid fetch mode '{}': {}",
-                mode, e
+                "Invalid fetch mode '{mode}': {e}"
             ))
         })?;
 
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to create async runtime: {}",
-                e
+                "Failed to create async runtime: {e}"
             ))
         })?;
 
         rt.block_on(async { self.inner.fetch_raw(url, mode).await })
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                    "Failed to fetch raw content from '{}': {}",
-                    url, e
+                    "Failed to fetch raw content from '{url}': {e}"
                 ))
             })
     }
@@ -267,29 +253,25 @@ impl PyWebFetcher {
     ) -> PyResult<String> {
         let mode = FetchMode::from_str(mode).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid fetch mode '{}': {}",
-                mode, e
+                "Invalid fetch mode '{mode}': {e}"
             ))
         })?;
         let format = Format::from_str(format).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid format '{}': {}",
-                format, e
+                "Invalid format '{format}': {e}"
             ))
         })?;
 
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to create async runtime: {}",
-                e
+                "Failed to create async runtime: {e}"
             ))
         })?;
 
         rt.block_on(async { self.inner.fetch_with_proxy(url, proxy, mode, format).await })
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                    "Failed to fetch '{}' via proxy '{}': {}",
-                    url, proxy, e
+                    "Failed to fetch '{url}' via proxy '{proxy}': {e}"
                 ))
             })
     }
@@ -366,15 +348,13 @@ impl PySearchEngine {
     fn search(&mut self, query: &str, mode: &str, limit: usize) -> PyResult<Vec<PySearchResult>> {
         let mode = SearchMode::from_str(mode).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid search mode '{}': {}",
-                mode, e
+                "Invalid search mode '{mode}': {e}"
             ))
         })?;
 
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to create async runtime: {}",
-                e
+                "Failed to create async runtime: {e}"
             ))
         })?;
 
@@ -392,8 +372,7 @@ impl PySearchEngine {
             })
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                    "Search failed for query '{}': {}",
-                    query, e
+                    "Search failed for query '{query}': {e}"
                 ))
             })
     }
@@ -423,27 +402,23 @@ impl PySearchEngine {
     ) -> PyResult<Vec<(PySearchResult, String)>> {
         let mode = SearchMode::from_str(mode).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid search mode '{}': {}",
-                mode, e
+                "Invalid search mode '{mode}': {e}"
             ))
         })?;
         let fetch_mode = FetchMode::from_str(fetch_mode).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid fetch mode '{}': {}",
-                fetch_mode, e
+                "Invalid fetch mode '{fetch_mode}': {e}"
             ))
         })?;
         let format = Format::from_str(format).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid format '{}': {}",
-                format, e
+                "Invalid format '{format}': {e}"
             ))
         })?;
 
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to create async runtime: {}",
-                e
+                "Failed to create async runtime: {e}"
             ))
         })?;
 
@@ -470,8 +445,7 @@ impl PySearchEngine {
         })
         .map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Search and fetch failed for query '{}': {}",
-                query, e
+                "Search and fetch failed for query '{query}': {e}"
             ))
         })
     }
@@ -499,15 +473,13 @@ impl PySearchEngine {
     ) -> PyResult<Vec<PySearchResult>> {
         let mode = SearchMode::from_str(mode).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Invalid search mode '{}': {}",
-                mode, e
+                "Invalid search mode '{mode}': {e}"
             ))
         })?;
 
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to create async runtime: {}",
-                e
+                "Failed to create async runtime: {e}"
             ))
         })?;
 
@@ -529,8 +501,7 @@ impl PySearchEngine {
         })
         .map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Search with proxy failed for query '{}': {}",
-                query, e
+                "Search with proxy failed for query '{query}': {e}"
             ))
         })
     }
@@ -545,14 +516,13 @@ impl PySearchEngine {
     fn cleanup(&mut self) -> PyResult<()> {
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to create async runtime: {}",
-                e
+                "Failed to create async runtime: {e}"
             ))
         })?;
 
         rt.block_on(async { self.inner.cleanup().await })
             .map_err(|e| {
-                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Cleanup failed: {}", e))
+                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Cleanup failed: {e}"))
             })
     }
 
@@ -637,15 +607,13 @@ impl PyConfig {
 
         let content = fs::read_to_string(path).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to read config file '{}': {}",
-                path, e
+                "Failed to read config file '{path}': {e}"
             ))
         })?;
 
         let config: Config = toml::from_str(&content).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to parse config file '{}': {}",
-                path, e
+                "Failed to parse config file '{path}': {e}"
             ))
         })?;
 
@@ -666,8 +634,7 @@ impl PyConfig {
     fn from_str(_cls: &Bound<'_, PyType>, content: &str) -> PyResult<Self> {
         let config: Config = toml::from_str(content).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
-                "Failed to parse config: {}",
-                e
+                "Failed to parse config: {e}"
             ))
         })?;
         Ok(Self { inner: config })
@@ -682,7 +649,7 @@ impl PyConfig {
     ///     ValueError: If save fails
     fn save(&self) -> PyResult<()> {
         self.inner.save().map_err(|e| {
-            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Failed to save config: {}", e))
+            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Failed to save config: {e}"))
         })
     }
 
@@ -696,8 +663,7 @@ impl PyConfig {
     fn save_dev(&self) -> PyResult<()> {
         self.inner.save_dev().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Failed to save dev config: {}",
-                e
+                "Failed to save dev config: {e}"
             ))
         })
     }
