@@ -34,7 +34,7 @@ python3 -c "import tarzi; print('✅ Success!')"
 # Test basic functionality
 python3 -c "
 import tarzi
-converter = tarzi.PyConverter()
+converter = tarzi.Converter()
 result = converter.convert('<h1>Test</h1>', 'markdown')
 print('Result:', result)
 "
@@ -47,7 +47,7 @@ print('Result:', result)
 import tarzi
 
 # Create converter
-converter = tarzi.PyConverter()
+converter = tarzi.Converter()
 
 # Convert HTML to markdown
 html = '<h1>Hello</h1><p>World!</p>'
@@ -60,7 +60,7 @@ print(markdown)  # # Hello\n\nWorld!
 import tarzi
 
 # Create web fetcher
-fetcher = tarzi.PyWebFetcher()
+fetcher = tarzi.WebFetcher()
 
 # Fetch and convert a webpage
 content = fetcher.fetch('https://example.com', 'plain_request', 'markdown')
@@ -72,7 +72,7 @@ print(content)
 import tarzi
 
 # Create search engine
-engine = tarzi.PySearchEngine()
+engine = tarzi.SearchEngine()
 
 # Search the web
 results = engine.search('python programming', 'webquery', 5)
@@ -83,10 +83,10 @@ for result in results:
 ## Available Classes and Functions
 
 ### Classes
-- `PyConverter()` - HTML/text conversion
-- `PyWebFetcher()` - Web page fetching  
-- `PySearchEngine()` - Web search functionality
-- `PyConfig()` - Configuration management
+- `Converter()` - HTML/text conversion
+- `WebFetcher()` - Web page fetching  
+- `SearchEngine()` - Web search functionality
+- `Config()` - Configuration management
 
 ### Standalone Functions
 - `convert_html(html, format)` - Quick HTML conversion
@@ -110,8 +110,12 @@ for result in results:
 # Run Rust tests
 cargo test --features "default"
 
-# Test Python bindings
+# Test Python bindings (Rust tests)
 cargo test --features pyo3
+
+# Run Python unit tests
+python3 test_tarzi.py
+python3 run_python_tests.py --verbose
 
 # Build release wheel
 maturin build --features pyo3 --release
@@ -119,6 +123,9 @@ maturin build --features pyo3 --release
 # Run examples
 python3 examples/basic_usage.py
 python3 examples/search_engines.py
+
+# Run all tests (Rust + Python)
+make test-all
 ```
 
 ## Troubleshooting
@@ -144,4 +151,13 @@ ls target/debug/deps/libtarzi.dylib
 python3 -c "import sys; print(sys.path)"
 ```
 
-**Ready to use!** 🚀 
+## Next Steps
+
+1. **Run Python unit tests**: `python3 test_tarzi.py` for comprehensive testing
+2. **Try the example scripts**: `python3 examples/basic_usage.py` and `python3 examples/search_engines.py`
+3. **Check the API documentation**: `python3 -c "import tarzi; help(tarzi.Converter)"`
+4. **Run development tests**: `python3 run_python_tests.py --verbose`
+5. **Build wheels for distribution**: `maturin build --release`
+6. **Read testing guide**: See `PYTHON_TESTING.md` for detailed test information
+
+**Ready to develop!** 🚀 

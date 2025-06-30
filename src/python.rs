@@ -24,7 +24,7 @@ fn tarzi(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
 }
 
 /// HTML/text content converter
-#[pyclass]
+#[pyclass(name = "Converter")]
 #[derive(Clone)]
 pub struct PyConverter {
     inner: Converter,
@@ -36,7 +36,7 @@ impl PyConverter {
     /// Create a new converter with default settings
     ///
     /// Returns:
-    ///     PyConverter: A new converter instance
+    ///     Converter: A new converter instance
     #[new]
     fn new() -> Self {
         Self {
@@ -47,10 +47,10 @@ impl PyConverter {
     /// Create a converter from configuration
     ///
     /// Args:
-    ///     config (PyConfig): Configuration object
+    ///     config (Config): Configuration object
     ///     
     /// Returns:
-    ///     PyConverter: A new converter instance
+    ///     Converter: A new converter instance
     #[classmethod]
     fn from_config(_cls: &Bound<'_, PyType>, _config: &PyConfig) -> PyResult<Self> {
         Ok(Self {
@@ -98,7 +98,7 @@ impl PyConverter {
     ///
     /// Args:
     ///     input (str): Input HTML or text content
-    ///     config (PyConfig): Configuration object
+    ///     config (Config): Configuration object
     ///     
     /// Returns:
     ///     str: Converted content
@@ -123,7 +123,7 @@ impl PyConverter {
     }
 
     fn __repr__(&self) -> String {
-        "PyConverter()".to_string()
+        "Converter()".to_string()
     }
 
     fn __str__(&self) -> String {
@@ -132,7 +132,7 @@ impl PyConverter {
 }
 
 /// Web page fetcher with multiple modes
-#[pyclass]
+#[pyclass(name = "WebFetcher")]
 pub struct PyWebFetcher {
     inner: WebFetcher,
 }
@@ -143,7 +143,7 @@ impl PyWebFetcher {
     /// Create a new web fetcher with default settings
     ///
     /// Returns:
-    ///     PyWebFetcher: A new fetcher instance
+    ///     WebFetcher: A new fetcher instance
     #[new]
     fn new() -> Self {
         Self {
@@ -154,10 +154,10 @@ impl PyWebFetcher {
     /// Create a web fetcher from configuration
     ///
     /// Args:
-    ///     config (PyConfig): Configuration object
+    ///     config (Config): Configuration object
     ///     
     /// Returns:
-    ///     PyWebFetcher: A new fetcher instance
+    ///     WebFetcher: A new fetcher instance
     #[classmethod]
     fn from_config(_cls: &Bound<'_, PyType>, config: &PyConfig) -> PyResult<Self> {
         Ok(Self {
@@ -295,7 +295,7 @@ impl PyWebFetcher {
     }
 
     fn __repr__(&self) -> String {
-        "PyWebFetcher()".to_string()
+        "WebFetcher()".to_string()
     }
 
     fn __str__(&self) -> String {
@@ -304,7 +304,7 @@ impl PyWebFetcher {
 }
 
 /// Search engine with multiple providers and modes
-#[pyclass]
+#[pyclass(name = "SearchEngine")]
 pub struct PySearchEngine {
     inner: SearchEngine,
 }
@@ -315,7 +315,7 @@ impl PySearchEngine {
     /// Create a new search engine with default settings
     ///
     /// Returns:
-    ///     PySearchEngine: A new search engine instance
+    ///     SearchEngine: A new search engine instance
     #[new]
     fn new() -> Self {
         Self {
@@ -326,10 +326,10 @@ impl PySearchEngine {
     /// Create a search engine from configuration
     ///
     /// Args:
-    ///     config (PyConfig): Configuration object
+    ///     config (Config): Configuration object
     ///     
     /// Returns:
-    ///     PySearchEngine: A new search engine instance
+    ///     SearchEngine: A new search engine instance
     #[classmethod]
     fn from_config(_cls: &Bound<'_, PyType>, config: &PyConfig) -> PyResult<Self> {
         Ok(Self {
@@ -343,7 +343,7 @@ impl PySearchEngine {
     ///     api_key (str): API key for search services
     ///     
     /// Returns:
-    ///     PySearchEngine: Self for method chaining
+    ///     SearchEngine: Self for method chaining
     fn with_api_key(mut self_: PyRefMut<Self>, api_key: String) -> PyRefMut<Self> {
         let inner = std::mem::take(&mut self_.inner);
         self_.inner = inner.with_api_key(api_key);
@@ -358,7 +358,7 @@ impl PySearchEngine {
     ///     limit (int): Maximum number of results
     ///     
     /// Returns:
-    ///     List[PySearchResult]: List of search results
+    ///     List[SearchResult]: List of search results
     ///     
     /// Raises:
     ///     ValueError: If mode is invalid
@@ -408,7 +408,7 @@ impl PySearchEngine {
     ///     format (str): Output format ("html", "markdown", "json", "yaml")
     ///     
     /// Returns:
-    ///     List[Tuple[PySearchResult, str]]: List of (result, content) pairs
+    ///     List[Tuple[SearchResult, str]]: List of (result, content) pairs
     ///     
     /// Raises:
     ///     ValueError: If mode, fetch_mode, or format is invalid
@@ -485,7 +485,7 @@ impl PySearchEngine {
     ///     proxy (str): Proxy URL (e.g., "http://proxy:port")
     ///     
     /// Returns:
-    ///     List[PySearchResult]: List of search results
+    ///     List[SearchResult]: List of search results
     ///     
     /// Raises:
     ///     ValueError: If mode is invalid
@@ -557,7 +557,7 @@ impl PySearchEngine {
     }
 
     fn __repr__(&self) -> String {
-        "PySearchEngine()".to_string()
+        "SearchEngine()".to_string()
     }
 
     fn __str__(&self) -> String {
@@ -566,7 +566,7 @@ impl PySearchEngine {
 }
 
 /// Search result with metadata
-#[pyclass]
+#[pyclass(name = "SearchResult")]
 #[derive(Clone, Debug)]
 pub struct PySearchResult {
     /// Page title
@@ -587,7 +587,7 @@ pub struct PySearchResult {
 impl PySearchResult {
     fn __repr__(&self) -> String {
         format!(
-            "PySearchResult(title='{}', url='{}', snippet='{}', rank={})",
+            "SearchResult(title='{}', url='{}', snippet='{}', rank={})",
             self.title, self.url, self.snippet, self.rank
         )
     }
@@ -601,7 +601,7 @@ impl PySearchResult {
 }
 
 /// Configuration management
-#[pyclass]
+#[pyclass(name = "Config")]
 #[derive(Clone)]
 pub struct PyConfig {
     inner: Config,
@@ -613,7 +613,7 @@ impl PyConfig {
     /// Create a new configuration with default values
     ///
     /// Returns:
-    ///     PyConfig: A new configuration instance
+    ///     Config: A new configuration instance
     #[new]
     fn new() -> Self {
         Self {
@@ -627,7 +627,7 @@ impl PyConfig {
     ///     path (str): Path to configuration file
     ///     
     /// Returns:
-    ///     PyConfig: Configuration loaded from file
+    ///     Config: Configuration loaded from file
     ///     
     /// Raises:
     ///     RuntimeError: If file cannot be read or parsed
@@ -658,7 +658,7 @@ impl PyConfig {
     ///     content (str): TOML configuration content
     ///     
     /// Returns:
-    ///     PyConfig: Configuration parsed from string
+    ///     Config: Configuration parsed from string
     ///     
     /// Raises:
     ///     RuntimeError: If content cannot be parsed
@@ -703,7 +703,7 @@ impl PyConfig {
     }
 
     fn __repr__(&self) -> String {
-        "PyConfig()".to_string()
+        "Config()".to_string()
     }
 
     fn __str__(&self) -> String {
@@ -758,7 +758,7 @@ fn fetch_url(url: &str, mode: &str, format: &str) -> PyResult<String> {
 ///     limit (int): Maximum number of results
 ///     
 /// Returns:
-///     List[PySearchResult]: List of search results
+///     List[SearchResult]: List of search results
 ///     
 /// Raises:
 ///     ValueError: If mode is invalid
@@ -779,7 +779,7 @@ fn search_web(query: &str, mode: &str, limit: usize) -> PyResult<Vec<PySearchRes
 ///     format (str): Output format ("html", "markdown", "json", "yaml")
 ///     
 /// Returns:
-///     List[Tuple[PySearchResult, str]]: List of (result, content) pairs
+///     List[Tuple[SearchResult, str]]: List of (result, content) pairs
 ///     
 /// Raises:
 ///     ValueError: If mode, fetch_mode, or format is invalid

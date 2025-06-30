@@ -155,4 +155,4 @@ Apache License 2.0 - see LICENSE file for details.
 
 Thank you ❤ all human and non-human contributors.
 
-[![tarzi contributors](https://contrib.rocks/image?repo=mirasurf/tarzi "tarzi contributors")](https://github.com/mirasurf/tarzi/graphs/contributors)
+[![tarzi contributors](https://contrib.rocks/image?repo=mirasurf/tarzi.rs "tarzi contributors")](https://github.com/mirasurf/tarzi.rs/graphs/contributors)

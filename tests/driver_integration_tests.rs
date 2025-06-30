@@ -3,12 +3,12 @@
 //! These tests verify that the driver manager works correctly with actual driver binaries.
 //! Tests will be skipped if the required drivers are not installed.
 
-#[cfg(not(feature = "test-helpers"))]
-use tarzi::fetcher::driver::{DriverManager, DriverType};
-#[cfg(feature = "test-helpers")]
-use tarzi::fetcher::driver::{DriverConfig, DriverManager, DriverStatus, DriverType, test_helpers};
 #[cfg(feature = "test-helpers")]
 use std::time::Duration;
+#[cfg(feature = "test-helpers")]
+use tarzi::fetcher::driver::{DriverConfig, DriverManager, DriverStatus, DriverType, test_helpers};
+#[cfg(not(feature = "test-helpers"))]
+use tarzi::fetcher::driver::{DriverManager, DriverType};
 
 /// Test that we can create a driver manager
 #[test]

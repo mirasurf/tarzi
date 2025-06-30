@@ -19,8 +19,67 @@ authors = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mirasurf/tarzi"
-Repository = "https://github.com/mirasurf/tarzi"
+Homepage = "https://github.com/mirasurf/tarzi.rs"
+Repository = "https://github.com/mirasurf/tarzi.rs"
+
+[project.optional-dependencies]
+dev = [
+    "maturin>=1.0,<2.0",
+    "pytest>=6.0",
+    "pytest-cov>=4.0",
+    "black>=22.0",
+    "ruff>=0.1.0",
+    "isort>=5.0",
+    "autoflake>=2.0",
+]
+test = [
+    "pytest>=6.0",
+    "pytest-cov>=4.0",
+]
 
 [tool.maturin]
-features = ["pyo3/extension-module"] 
+features = ["pyo3/extension-module"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "unit: Unit tests that don't require external dependencies",
+    "integration: Integration tests that require external services", 
+    "network: Tests that require network access",
+    "slow: Tests that may take a long time to run",
+    "api: Tests that require API keys or external API access",
+    "browser: Tests that require browser automation tools",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["tarzi"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py38" 
