@@ -63,15 +63,32 @@ jobs:
           sudo apt-get install -y python3-dev python3-pip
         elif [ "$RUNNER_OS" == "macOS" ]; then
           brew install python@3.11
-          echo "PYO3_PYTHON=$(brew --prefix python@3.11)/bin/python3.11" >> $GITHUB_ENV
-          echo "PYTHON_LIB_DIR=$(brew --prefix python@3.11)/lib" >> $GITHUB_ENV
+          # Set up Python environment for PyO3
+          PYTHON_PREFIX=$(brew --prefix python@3.11)
+          PYTHON_BIN="$PYTHON_PREFIX/bin/python3.11"
+          echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
+          
+          # Use Python to get the correct library configuration
+          PYTHON_LIBDIR=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+          PYTHON_LDLIBRARY=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LDLIBRARY'))")
+          
+          echo "PYTHON_LIB_DIR=$PYTHON_LIBDIR" >> $GITHUB_ENV
+          echo "PYTHON_LDLIBRARY=$PYTHON_LDLIBRARY" >> $GITHUB_ENV
+          
+          # Debug: Print the paths we found
+          echo "Python library directory: $PYTHON_LIBDIR"
+          echo "Python library name: $PYTHON_LDLIBRARY"
+          ls -la "$PYTHON_LIBDIR" || echo "Directory not found: $PYTHON_LIBDIR"
         fi
       shell: bash
 
     - name: Set PyO3 environment variables (macOS)
       if: runner.os == 'macOS'
       run: |
-        echo "RUSTFLAGS=-L$PYTHON_LIB_DIR -lpython3.11" >> $GITHUB_ENV
+        # Extract library name without 'lib' prefix and file extension
+        LIBNAME=$(echo "$PYTHON_LDLIBRARY" | sed 's/^lib//' | sed 's/\.[^.]*$//')
+        echo "RUSTFLAGS=-L$PYTHON_LIB_DIR -l$LIBNAME" >> $GITHUB_ENV
+        echo "Using RUSTFLAGS: -L$PYTHON_LIB_DIR -l$LIBNAME"
       shell: bash
 
     - name: Install Rust toolchain
