@@ -52,7 +52,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        
+        python-version: [3.11]
+
     steps:
     - uses: actions/checkout@v4
 
@@ -61,14 +62,15 @@ jobs:
         if [ "$RUNNER_OS" == "Linux" ]; then
           sudo apt-get update
           sudo apt-get install -y python3-dev python3-pip
+          PYTHON_BIN=$(which python${{ matrix.python-version }})
         elif [ "$RUNNER_OS" == "macOS" ]; then
-          brew install python@3.11
-          PYTHON_PREFIX=$(brew --prefix python@3.11)
-          PYTHON_BIN="$PYTHON_PREFIX/bin/python3.11"
-          PYTHON_LIBDIR=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
-          echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
-          echo "RUSTFLAGS=-L$PYTHON_LIBDIR -lpython3.11" >> $GITHUB_ENV
+          brew install python@${{ matrix.python-version }}
+          PYTHON_PREFIX=$(brew --prefix python@${{ matrix.python-version }})
+          PYTHON_BIN="$PYTHON_PREFIX/bin/python${{ matrix.python-version }}"
         fi
+        PYTHON_LIBDIR=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+        echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
+        echo "RUSTFLAGS=-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" >> $GITHUB_ENV
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
