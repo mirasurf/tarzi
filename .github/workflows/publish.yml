@@ -15,9 +15,41 @@ on:
         - pypi
 
 jobs:
+  build-wheels:
+    name: Build wheels on ${{ matrix.os }} for Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+    
+    - name: Install maturin
+      run: pip install maturin[patchelf]
+    
+    - name: Build wheels
+      run: maturin build --release --out dist --interpreter python${{ matrix.python-version }}
+    
+    - name: Upload wheels
+      uses: actions/upload-artifact@v3
+      with:
+        name: wheels-${{ matrix.os }}-py${{ matrix.python-version }}
+        path: dist
+
   publish-python:
     name: Publish Python Package
     runs-on: ubuntu-latest
+    needs: build-wheels
     environment: ${{ github.event.inputs.environment || 'pypi' }}
     
     steps:
@@ -28,14 +60,17 @@ jobs:
       with:
         python-version: '3.11'
     
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
+    - name: Download all wheels
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
     
-    - name: Install maturin
-      run: pip install maturin[patchelf]
-    
-    - name: Build wheels
-      run: maturin build --release --out dist
+    - name: Collect wheels
+      run: |
+        mkdir -p dist
+        find artifacts -name "*.whl" -exec cp {} dist/ \;
+        find artifacts -name "*.tar.gz" -exec cp {} dist/ \;
+        ls -la dist/
     
     - name: Install twine
       run: pip install twine
@@ -71,34 +106,4 @@ jobs:
     - name: Publish to crates.io
       env:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      run: cargo publish
-
-  build-wheels:
-    name: Build wheels on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-    
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-    
-    - name: Install maturin
-      run: pip install maturin[patchelf]
-    
-    - name: Build wheels
-      run: maturin build --release --out dist
-    
-    - name: Upload wheels
-      uses: actions/upload-artifact@v3
-      with:
-        name: wheels-${{ matrix.os }}
-        path: dist 
+      run: cargo publish 
