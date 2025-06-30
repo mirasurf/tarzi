@@ -1,0 +1,48 @@
+# .readthedocs.yaml
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# Required
+version: 2
+
+# Set the OS, set the version to Ubuntu 22.04
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.11"
+    rust: "latest"
+  jobs:
+    post_checkout:
+      # Recursive clone to get submodules
+      - git submodule update --init --recursive
+    pre_build:
+      # Install Rust toolchain
+      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+      - source ~/.cargo/env
+      # Install maturin for building Python wheels
+      - pip install maturin
+      # Build the Python extension
+      - maturin develop
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+  configuration: docs/conf.py
+  builder: html
+  fail_on_warning: true
+
+# Optionally build your docs in additional formats such as PDF and ePub
+formats:
+  - pdf
+  - epub
+
+# Optional but recommended, declare the Python requirements required
+# to build your documentation
+# See https://docs.readthedocs.io/en/stable/guides/reproducible-builds.html
+python:
+  install:
+    - requirements: docs/requirements.txt
+    - method: pip
+      path: .
+      extra_requirements:
+        - dev
+        - test 

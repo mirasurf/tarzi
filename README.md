@@ -16,12 +16,18 @@
   <a href="https://crates.io/crates/tarzi">
     <img src="https://img.shields.io/crates/d/tarzi.svg?style=flat-square" alt="Crate Downloads" />
   </a>
+  <a href="https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml">
+    <img src="https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml/badge.svg" alt="Rust CI" />
+  </a>
   <!-- PyPI package: version and monthly downloads -->
   <a href="https://pypi.org/project/tarzi/">
     <img src="https://img.shields.io/pypi/v/tarzi.svg?style=flat-square" alt="PyPI Version" />
   </a>
   <a href="https://pypistats.org/packages/tarzi">
     <img src="https://img.shields.io/pypi/dm/tarzi.svg?style=flat-square" alt="PyPI Downloads" />
+  </a>
+  <a href="https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml">
+    <img src="https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml/badge.svg" alt="Python CI" />
   </a>
   <!-- License -->
   <a href="https://www.apache.org/licenses/LICENSE-2.0">
@@ -34,6 +40,9 @@
   <!-- DeepWiki badge -->
   <a href="https://deepwiki.com/mirasurf/tarzi.rs">
     <img src="https://devin.ai/assets/deepwiki-badge.png" style="height: 18px; vertical-align: middle;" alt="Ask DeepWiki" />
+  </a>
+  <a href="https://crates.io/crates/tarzi">
+    <img src="https://img.shields.io/badge/AI%20Assisted-Yes-green?style=for-the-badge" style="height: 18px; vertical-align: middle;" alt="AI Assisted Yes" />
   </a>
 </p>
 
@@ -152,4 +161,4 @@ Apache License 2.0 - see LICENSE file for details.
 
 Thank you ❤ all human and non-human contributors.
 
-[![tarzi contributors](https://contrib.rocks/image?repo=mirasurf/tarzi "tarzi contributors")](https://github.com/mirasurf/tarzi/graphs/contributors)
+[![tarzi contributors](https://contrib.rocks/image?repo=mirasurf/tarzi.rs "tarzi contributors")](https://github.com/mirasurf/tarzi.rs/graphs/contributors)

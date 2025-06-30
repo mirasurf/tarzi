@@ -5,6 +5,7 @@ Basic usage example for the tarzi Python library.
 
 import tarzi
 
+
 def main():
     print("=== Tarzi Python Basic Usage Example ===\n")
 
@@ -20,7 +21,7 @@ def main():
             </body>
         </html>
     """
-    
+
     markdown = tarzi.convert_html(html_input, "markdown")
     print(f"Markdown output:\n{markdown}\n")
 
@@ -35,7 +36,7 @@ def main():
         # Plain request mode
         content = tarzi.fetch_url("https://httpbin.org/html", "plain_request", "html")
         print(f"Plain request mode - Successfully fetched page ({len(content)} characters)")
-        
+
         # Convert to markdown
         markdown = tarzi.convert_html(content, "markdown")
         print(f"Converted to markdown (first 200 chars):\n{markdown[:200]}...\n")
@@ -52,7 +53,7 @@ def main():
             print(f"  {i+1}. {result.title} ({result.url})")
             print(f"     {result.snippet}")
         print()
-        
+
         # API query mode
         results = tarzi.search_web("Python programming", "apiquery", 2)
         print(f"API query mode - Found {len(results)} search results:")
@@ -66,9 +67,7 @@ def main():
     # 5. Search and fetch functionality
     print("5. Search and fetch functionality:")
     try:
-        results_with_content = tarzi.search_and_fetch(
-            "web scraping", "webquery", 2, "plain_request", "markdown"
-        )
+        results_with_content = tarzi.search_and_fetch("web scraping", "webquery", 2, "plain_request", "markdown")
         print(f"Found {len(results_with_content)} results with content:")
         for i, (result, content) in enumerate(results_with_content):
             print(f"  {i+1}. {result.title} ({result.url})")
@@ -79,31 +78,31 @@ def main():
 
     # 6. Using the class-based API
     print("6. Using class-based API:")
-    
+
     # Converter
-    converter = tarzi.PyConverter()
+    converter = tarzi.Converter()
     yaml_output = converter.convert(html_input, "yaml")
     print(f"YAML output:\n{yaml_output}\n")
-    
+
     # WebFetcher with different modes
-    fetcher = tarzi.PyWebFetcher()
+    fetcher = tarzi.WebFetcher()
     try:
         # Plain request mode
         content = fetcher.fetch("https://httpbin.org/html", "plain_request", "html")
         print(f"Plain request - Fetched content length: {len(content)}")
-        
+
         # Raw fetch mode
         raw_content = fetcher.fetch_raw("https://httpbin.org/html", "plain_request")
         print(f"Raw fetch - Content length: {len(raw_content)}")
     except Exception as e:
         print(f"Fetch failed: {e}")
-    
+
     # SearchEngine with API key
-    search_engine = tarzi.PySearchEngine()
+    search_engine = tarzi.SearchEngine()
     try:
         # Set API key (if available)
         # search_engine = search_engine.with_api_key("your-api-key")
-        
+
         results = search_engine.search("machine learning", "webquery", 2)
         print(f"Found {len(results)} search results:")
         for i, result in enumerate(results):
@@ -128,21 +127,22 @@ engine = "bing"
 api_key = ""
 query_pattern = "https://www.bing.com/search?q={query}"
 """
-        config = tarzi.PyConfig.from_str(config_str)
+        config = tarzi.Config.from_str(config_str)
         print("Created config from string successfully")
-        
+
         # Use config with fetcher
-        config_fetcher = tarzi.PyWebFetcher.from_config(config)
+        tarzi.WebFetcher.from_config(config)
         print("Created fetcher from config successfully")
-        
+
         # Use config with search engine
-        config_search_engine = tarzi.PySearchEngine.from_config(config)
+        tarzi.SearchEngine.from_config(config)
         print("Created search engine from config successfully")
-        
+
     except Exception as e:
         print(f"Configuration usage failed: {e}")
 
     print("\n=== Example completed successfully! ===")
 
+
 if __name__ == "__main__":
-    main() 
+    main()

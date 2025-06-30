@@ -2,19 +2,24 @@ name: Rust CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, feat/*, feature/* ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, feat/*, feature/* ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
-    name: Test
+  check:
+    name: Check and Format
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-dev python3-pip
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -22,7 +27,7 @@ jobs:
         components: rustfmt, clippy
 
     - name: Cache dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/.cargo/registry
@@ -35,14 +40,102 @@ jobs:
     - name: Check formatting
       run: cargo fmt --all -- --check
 
+    - name: Check code
+      run: cargo check --all-targets --all-features
+
     - name: Run clippy
       run: cargo clippy --all-targets --all-features -- -D warnings
+
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.11]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install system dependencies
+      run: |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:deadsnakes/ppa -y
+          sudo apt-get update
+          sudo apt-get install -y python${{ matrix.python-version }} python${{ matrix.python-version }}-dev python${{ matrix.python-version }}-venv
+          PYTHON_BIN=$(which python${{ matrix.python-version }})
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          brew install python@${{ matrix.python-version }}
+          PYTHON_PREFIX=$(brew --prefix python@${{ matrix.python-version }})
+          PYTHON_BIN="$PYTHON_PREFIX/bin/python${{ matrix.python-version }}"
+        fi
+        PYTHON_LIBDIR=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+        echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
+        echo "RUSTFLAGS=-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" >> $GITHUB_ENV
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
 
     - name: Run unit tests
       run: cargo test --lib --all-features
 
-    - name: Build
-      run: cargo build --all-targets --all-features
+    - name: Run integration tests
+      run: cargo test --test '*' --all-features
+      continue-on-error: true
+
+    - name: Run doctests
+      run: cargo test --doc --all-features
+
+  build:
+    name: Build Release
+    runs-on: ubuntu-latest
+    needs: [check, test]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-dev python3-pip
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Build release binary
+      run: cargo build --release --all-features
 
     - name: Build with Python bindings
-      run: cargo build --all-targets --features pyo3 
+      run: cargo build --release --features pyo3
+
+    - name: Test binary works
+      run: ./target/release/tarzi --version
+
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: tarzi-binary-${{ runner.os }}
+        path: target/release/tarzi 

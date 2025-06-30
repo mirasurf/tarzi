@@ -3,11 +3,12 @@
 //! These tests verify that the driver manager works correctly with actual driver binaries.
 //! Tests will be skipped if the required drivers are not installed.
 
+#[cfg(feature = "test-helpers")]
 use std::time::Duration;
-#[cfg(not(feature = "test-helpers"))]
-use tarzi::fetcher::driver::{DriverConfig, DriverManager, DriverStatus, DriverType};
 #[cfg(feature = "test-helpers")]
 use tarzi::fetcher::driver::{DriverConfig, DriverManager, DriverStatus, DriverType, test_helpers};
+#[cfg(not(feature = "test-helpers"))]
+use tarzi::fetcher::driver::{DriverManager, DriverType};
 
 /// Test that we can create a driver manager
 #[test]
@@ -25,14 +26,14 @@ fn test_driver_binary_detection() {
     let chrome_result = manager.check_driver_binary(&DriverType::Chrome);
     match &chrome_result {
         Ok(()) => println!("ChromeDriver is available"),
-        Err(e) => println!("ChromeDriver not available: {}", e),
+        Err(e) => println!("ChromeDriver not available: {e}"),
     }
 
     // Test Firefox driver detection
     let firefox_result = manager.check_driver_binary(&DriverType::Firefox);
     match &firefox_result {
         Ok(()) => println!("GeckoDriver is available"),
-        Err(e) => println!("GeckoDriver not available: {}", e),
+        Err(e) => println!("GeckoDriver not available: {e}"),
     }
 
     // At least one of the results should provide useful error messages
@@ -82,7 +83,7 @@ fn test_chrome_driver_lifecycle() {
             assert_eq!(info.config.port, port);
             assert_eq!(info.status, DriverStatus::Running);
             assert!(info.pid.is_some());
-            assert_eq!(info.endpoint, format!("http://127.0.0.1:{}", port));
+            assert_eq!(info.endpoint, format!("http://127.0.0.1:{port}"));
 
             // Verify the driver is listed
             let drivers = manager.list_drivers();
@@ -104,11 +105,9 @@ fn test_chrome_driver_lifecycle() {
             println!("Chrome driver test completed successfully");
         }
         Err(e) => {
-            println!("Failed to start Chrome driver: {}", e);
+            println!("Failed to start Chrome driver: {e}");
             // The test is still successful if we got a meaningful error
-            assert!(
-                format!("{}", e).contains("chromedriver") || format!("{}", e).contains("Chrome")
-            );
+            assert!(format!("{e}").contains("chromedriver") || format!("{e}").contains("Chrome"));
         }
     }
 }
@@ -131,11 +130,8 @@ fn test_nonexistent_driver() {
     assert!(result.is_err());
 
     if let Err(e) = result {
-        let error_msg = format!("{}", e);
+        let error_msg = format!("{e}");
         assert!(error_msg.contains("not found") || error_msg.contains("nonexistent-driver"));
-        println!(
-            "Non-existent driver error handling works correctly: {}",
-            error_msg
-        );
+        println!("Non-existent driver error handling works correctly: {error_msg}");
     }
 }

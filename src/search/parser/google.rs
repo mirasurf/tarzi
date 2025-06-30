@@ -42,7 +42,7 @@ impl SearchResultParser for GoogleParser {
                     if href.starts_with("http") {
                         href.to_string()
                     } else if href.starts_with("/") {
-                        format!("https://www.google.com{}", href)
+                        format!("https://www.google.com{href}")
                     } else {
                         href.to_string()
                     }

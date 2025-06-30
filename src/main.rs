@@ -126,7 +126,7 @@ async fn main() -> Result<()> {
                 std::fs::write(&output_path, result)?;
                 info!("Output written to file: {}", output_path);
             } else {
-                println!("{}", result);
+                println!("{result}");
             }
         }
         Commands::Fetch {
@@ -159,7 +159,7 @@ async fn main() -> Result<()> {
                 std::fs::write(&output_path, result)?;
                 info!("Output written to file: {}", output_path);
             } else {
-                println!("{}", result);
+                println!("{result}");
             }
         }
         Commands::Search {
@@ -197,7 +197,7 @@ async fn main() -> Result<()> {
                 std::fs::write(&output_path, result)?;
                 info!("Output written to file: {}", output_path);
             } else {
-                println!("{}", result);
+                println!("{result}");
             }
         }
         Commands::SearchAndFetch {
@@ -246,7 +246,7 @@ async fn main() -> Result<()> {
                 std::fs::write(&output_path, result)?;
                 info!("Output written to file: {}", output_path);
             } else {
-                println!("{}", result);
+                println!("{result}");
             }
         }
     }

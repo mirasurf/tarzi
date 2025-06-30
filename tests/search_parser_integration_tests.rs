@@ -9,7 +9,6 @@ use thirtyfour::{By, DesiredCapabilities, Key, WebDriver};
 
 /// Integration tests for search parsers
 /// These tests require internet access and a running WebDriver server
-
 /// Perform a real Bing search using WebDriver and return the HTML
 async fn perform_bing_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
     let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
@@ -37,7 +36,7 @@ async fn perform_bing_search(query: &str) -> Result<String, Box<dyn std::error::
         search_box.clear().await?;
         search_box.send_keys(query).await?;
         search_box.send_keys(Key::Enter).await?;
-        println!("Submitted search query: '{}'", query);
+        println!("Submitted search query: '{query}'");
 
         // Wait for search results to load
         let mut search_results_loaded = false;
@@ -69,7 +68,7 @@ async fn perform_bing_search(query: &str) -> Result<String, Box<dyn std::error::
 
     // Always quit the driver
     if let Err(e) = driver.quit().await {
-        eprintln!("Warning: Failed to quit WebDriver: {}", e);
+        eprintln!("Warning: Failed to quit WebDriver: {e}");
     }
 
     result
@@ -114,7 +113,7 @@ async fn perform_duckduckgo_search(query: &str) -> Result<String, Box<dyn std::e
 
         search_box.clear().await?;
         search_box.send_keys(query).await?;
-        println!("Entered search query: '{}'", query);
+        println!("Entered search query: '{query}'");
 
         // Try to submit with Enter key first (more natural)
         match search_box.send_keys(Key::Enter).await {
@@ -162,7 +161,7 @@ async fn perform_duckduckgo_search(query: &str) -> Result<String, Box<dyn std::e
 
     // Always quit the driver
     if let Err(e) = driver.quit().await {
-        eprintln!("Warning: Failed to quit WebDriver: {}", e);
+        eprintln!("Warning: Failed to quit WebDriver: {e}");
     }
 
     result
@@ -195,7 +194,7 @@ async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error
 
         // Try to accept cookies if prompted
         if let Ok(cookie_button) = driver.find(By::Css("button#L2AGLb")).await {
-            if let Ok(_) = cookie_button.click().await {
+            if (cookie_button.click().await).is_ok() {
                 println!("Accepted Google cookies");
                 tokio::time::sleep(Duration::from_millis(1000)).await;
             }
@@ -215,7 +214,7 @@ async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error
 
         search_box.clear().await?;
         search_box.send_keys(query).await?;
-        println!("Entered search query: '{}'", query);
+        println!("Entered search query: '{query}'");
 
         // Submit with Enter key
         search_box.send_keys(Key::Enter).await?;
@@ -251,7 +250,7 @@ async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error
 
     // Always quit the driver
     if let Err(e) = driver.quit().await {
-        eprintln!("Warning: Failed to quit WebDriver: {}", e);
+        eprintln!("Warning: Failed to quit WebDriver: {e}");
     }
 
     result
@@ -296,7 +295,7 @@ async fn perform_brave_search(query: &str) -> Result<String, Box<dyn std::error:
 
         search_box.clear().await?;
         search_box.send_keys(query).await?;
-        println!("Entered search query: '{}'", query);
+        println!("Entered search query: '{query}'");
 
         // Submit with Enter key
         search_box.send_keys(Key::Enter).await?;
@@ -332,7 +331,7 @@ async fn perform_brave_search(query: &str) -> Result<String, Box<dyn std::error:
 
     // Always quit the driver
     if let Err(e) = driver.quit().await {
-        eprintln!("Warning: Failed to quit WebDriver: {}", e);
+        eprintln!("Warning: Failed to quit WebDriver: {e}");
     }
 
     result
@@ -367,7 +366,7 @@ async fn perform_baidu_search(query: &str) -> Result<String, Box<dyn std::error:
         let search_box = driver.find(By::Id("kw")).await?;
         search_box.clear().await?;
         search_box.send_keys(query).await?;
-        println!("Entered search query: '{}'", query);
+        println!("Entered search query: '{query}'");
 
         // Submit search
         let submit_button = driver.find(By::Id("su")).await?;
@@ -404,7 +403,7 @@ async fn perform_baidu_search(query: &str) -> Result<String, Box<dyn std::error:
 
     // Always quit the driver
     if let Err(e) = driver.quit().await {
-        eprintln!("Warning: Failed to quit WebDriver: {}", e);
+        eprintln!("Warning: Failed to quit WebDriver: {e}");
     }
 
     result
@@ -426,8 +425,8 @@ async fn test_bing_parser_real_world_integration() {
     let html_content = match perform_bing_search(search_query).await {
         Ok(html) => html,
         Err(e) => {
-            eprintln!("Failed to perform Bing search: {}", e);
-            panic!("Integration test failed: {}", e);
+            eprintln!("Failed to perform Bing search: {e}");
+            panic!("Integration test failed: {e}");
         }
     };
 
@@ -447,13 +446,13 @@ async fn test_bing_parser_real_world_integration() {
     let results = match parser.parse(&html_content, limit) {
         Ok(results) => results,
         Err(e) => {
-            eprintln!("Failed to parse Bing HTML: {}", e);
+            eprintln!("Failed to parse Bing HTML: {e}");
             // Save HTML for debugging if needed
             if std::env::var("TARZI_DEBUG").is_ok() {
                 std::fs::write("debug_bing.html", &html_content).ok();
                 println!("Debug HTML saved to debug_bing.html");
             }
-            panic!("Parser failed: {}", e);
+            panic!("Parser failed: {e}");
         }
     };
 
@@ -529,7 +528,7 @@ async fn test_bing_parser_performance() {
     let html = match perform_bing_search("performance test").await {
         Ok(html) => html,
         Err(e) => {
-            println!("Skipping performance test: {}", e);
+            println!("Skipping performance test: {e}");
             return;
         }
     };
@@ -547,7 +546,7 @@ async fn test_bing_parser_performance() {
     let elapsed = start_time.elapsed();
     let avg_time = elapsed / iterations;
 
-    println!("Average parsing time: {:?}", avg_time);
+    println!("Average parsing time: {avg_time:?}");
     assert!(
         avg_time < Duration::from_millis(500),
         "Parsing should be reasonably fast"
@@ -577,7 +576,7 @@ async fn test_duckduckgo_parser_real_world_integration() {
     {
         Ok(Ok(html)) => html,
         Ok(Err(e)) => {
-            println!("⚠️  DuckDuckGo search failed: {}", e);
+            println!("⚠️  DuckDuckGo search failed: {e}");
             println!("This is likely due to DuckDuckGo's anti-automation measures.");
             println!("The DuckDuckGoParser logic is tested separately in unit tests.");
             return; // Skip the test gracefully
@@ -606,13 +605,13 @@ async fn test_duckduckgo_parser_real_world_integration() {
     let results = match parser.parse(&html_content, limit) {
         Ok(results) => results,
         Err(e) => {
-            eprintln!("Failed to parse DuckDuckGo HTML: {}", e);
+            eprintln!("Failed to parse DuckDuckGo HTML: {e}");
             // Save HTML for debugging if needed
             if std::env::var("TARZI_DEBUG").is_ok() {
                 std::fs::write("debug_duckduckgo.html", &html_content).ok();
                 println!("Debug HTML saved to debug_duckduckgo.html");
             }
-            panic!("Parser failed: {}", e);
+            panic!("Parser failed: {e}");
         }
     };
 
@@ -710,7 +709,7 @@ async fn test_google_parser_real_world_integration() {
     {
         Ok(Ok(html)) => html,
         Ok(Err(e)) => {
-            println!("⚠️  Google search failed: {}", e);
+            println!("⚠️  Google search failed: {e}");
             println!("This is likely due to Google's anti-automation measures or CAPTCHA.");
             println!("The GoogleParser logic is tested separately in unit tests.");
             return; // Skip the test gracefully
@@ -739,13 +738,13 @@ async fn test_google_parser_real_world_integration() {
     let results = match parser.parse(&html_content, limit) {
         Ok(results) => results,
         Err(e) => {
-            eprintln!("Failed to parse Google HTML: {}", e);
+            eprintln!("Failed to parse Google HTML: {e}");
             // Save HTML for debugging if needed
             if std::env::var("TARZI_DEBUG").is_ok() {
                 std::fs::write("debug_google.html", &html_content).ok();
                 println!("Debug HTML saved to debug_google.html");
             }
-            panic!("Parser failed: {}", e);
+            panic!("Parser failed: {e}");
         }
     };
 
@@ -843,7 +842,7 @@ async fn test_brave_parser_real_world_integration() {
     {
         Ok(Ok(html)) => html,
         Ok(Err(e)) => {
-            println!("⚠️  Brave search failed: {}", e);
+            println!("⚠️  Brave search failed: {e}");
             println!("This is likely due to Brave's anti-automation measures or CAPTCHA.");
             println!("The BraveParser logic is tested separately in unit tests.");
             return; // Skip the test gracefully
@@ -872,13 +871,13 @@ async fn test_brave_parser_real_world_integration() {
     let results = match parser.parse(&html_content, limit) {
         Ok(results) => results,
         Err(e) => {
-            eprintln!("Failed to parse Brave HTML: {}", e);
+            eprintln!("Failed to parse Brave HTML: {e}");
             // Save HTML for debugging if needed
             if std::env::var("TARZI_DEBUG").is_ok() {
                 std::fs::write("debug_brave.html", &html_content).ok();
                 println!("Debug HTML saved to debug_brave.html");
             }
-            panic!("Parser failed: {}", e);
+            panic!("Parser failed: {e}");
         }
     };
 
@@ -976,7 +975,7 @@ async fn test_baidu_parser_real_world_integration() {
     {
         Ok(Ok(html)) => html,
         Ok(Err(e)) => {
-            println!("⚠️  Baidu search failed: {}", e);
+            println!("⚠️  Baidu search failed: {e}");
             println!(
                 "This is likely due to Baidu's anti-automation measures or regional restrictions."
             );
@@ -1009,13 +1008,13 @@ async fn test_baidu_parser_real_world_integration() {
     let results = match parser.parse(&html_content, limit) {
         Ok(results) => results,
         Err(e) => {
-            eprintln!("Failed to parse Baidu HTML: {}", e);
+            eprintln!("Failed to parse Baidu HTML: {e}");
             // Save HTML for debugging if needed
             if std::env::var("TARZI_DEBUG").is_ok() {
                 std::fs::write("debug_baidu.html", &html_content).ok();
                 println!("Debug HTML saved to debug_baidu.html");
             }
-            panic!("Parser failed: {}", e);
+            panic!("Parser failed: {e}");
         }
     };
 

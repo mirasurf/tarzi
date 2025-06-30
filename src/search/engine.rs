@@ -179,15 +179,15 @@ impl SearchEngine {
         // In practice, you would make actual API calls here
         let mock_results = vec![
             SearchResult {
-                title: format!("Search result for: {}", query),
+                title: format!("Search result for: {query}"),
                 url: "https://example.com/result1".to_string(),
-                snippet: format!("This is a mock search result for the query: {}", query),
+                snippet: format!("This is a mock search result for the query: {query}"),
                 rank: 1,
             },
             SearchResult {
-                title: format!("Another result for: {}", query),
+                title: format!("Another result for: {query}"),
                 url: "https://example.com/result2".to_string(),
-                snippet: format!("Another mock search result for: {}", query),
+                snippet: format!("Another mock search result for: {query}"),
                 rank: 2,
             },
         ];
@@ -272,7 +272,7 @@ impl SearchEngine {
                     .build()
                     .map_err(|e| {
                         error!("Failed to create proxy client: {}", e);
-                        TarziError::Config(format!("Failed to create proxy client: {}", e))
+                        TarziError::Config(format!("Failed to create proxy client: {e}"))
                     })?;
 
                 info!(

@@ -31,7 +31,7 @@ impl std::fmt::Display for DriverType {
         match self {
             DriverType::Chrome => write!(f, "chromedriver"),
             DriverType::Firefox => write!(f, "geckodriver"),
-            DriverType::Generic(name) => write!(f, "{}", name),
+            DriverType::Generic(name) => write!(f, "{name}"),
         }
     }
 }
@@ -237,12 +237,12 @@ impl DriverManager {
         if let Some(mut driver_process) = drivers.remove(&port) {
             // Try to terminate gracefully first
             if let Err(e) = driver_process.child.kill() {
-                log::warn!("Failed to kill driver process: {}", e);
+                log::warn!("Failed to kill driver process: {e}");
             }
 
             // Wait for process to exit
             if let Err(e) = driver_process.child.wait() {
-                log::warn!("Failed to wait for driver process to exit: {}", e);
+                log::warn!("Failed to wait for driver process to exit: {e}");
             }
 
             log::info!(
@@ -253,8 +253,7 @@ impl DriverManager {
             Ok(())
         } else {
             Err(TarziError::Driver(format!(
-                "No driver running on port {}",
-                port
+                "No driver running on port {port}"
             )))
         }
     }
@@ -268,7 +267,7 @@ impl DriverManager {
 
         for port in ports {
             if let Err(e) = self.stop_driver(port) {
-                log::warn!("Failed to stop driver on port {}: {}", port, e);
+                log::warn!("Failed to stop driver on port {port}: {e}");
             }
         }
 
@@ -280,7 +279,7 @@ impl DriverManager {
         let drivers = self.drivers.lock().unwrap();
 
         drivers.get(&port).map(|driver_process| {
-            let status = if self.is_driver_healthy(&format!("http://127.0.0.1:{}", port)) {
+            let status = if self.is_driver_healthy(&format!("http://127.0.0.1:{port}")) {
                 DriverStatus::Running
             } else {
                 DriverStatus::Failed("Driver not responding".to_string())
@@ -291,7 +290,7 @@ impl DriverManager {
                 status,
                 pid: Some(driver_process.child.id()),
                 started_at: driver_process.started_at,
-                endpoint: format!("http://127.0.0.1:{}", port),
+                endpoint: format!("http://127.0.0.1:{port}"),
             }
         })
     }
@@ -314,7 +313,7 @@ impl DriverManager {
                     status,
                     pid: Some(driver_process.child.id()),
                     started_at: driver_process.started_at,
-                    endpoint: format!("http://127.0.0.1:{}", port),
+                    endpoint: format!("http://127.0.0.1:{port}"),
                 }
             })
             .collect()
@@ -327,7 +326,7 @@ impl DriverManager {
         // Try to find the binary in PATH
         match which::which(&binary_name) {
             Ok(path) => {
-                log::debug!("Found {} at {:?}", binary_name, path);
+                log::debug!("Found {binary_name} at {path:?}");
                 Ok(())
             }
             Err(_) => {
@@ -340,15 +339,13 @@ impl DriverManager {
                     }
                     DriverType::Generic(name) => {
                         return Err(TarziError::DriverNotFound(format!(
-                            "Driver '{}' not found in PATH. Please ensure it's installed and available.",
-                            name
+                            "Driver '{name}' not found in PATH. Please ensure it's installed and available."
                         )));
                     }
                 };
 
                 Err(TarziError::DriverNotFound(format!(
-                    "{} not found in PATH. {}",
-                    binary_name, install_message
+                    "{binary_name} not found in PATH. {install_message}"
                 )))
             }
         }
@@ -368,7 +365,7 @@ impl DriverManager {
             .build()
             .unwrap_or_else(|_| reqwest::blocking::Client::new());
 
-        match client.get(format!("{}/status", endpoint)).send() {
+        match client.get(format!("{endpoint}/status")).send() {
             Ok(response) => response.status().is_success(),
             Err(_) => false,
         }
@@ -390,7 +387,7 @@ impl DriverManager {
                 .build()
                 .unwrap_or_else(|_| reqwest::blocking::Client::new());
 
-            if let Err(e) = client.get(format!("{}/status", endpoint)).send() {
+            if let Err(e) = client.get(format!("{endpoint}/status")).send() {
                 last_error = Some(e.to_string());
             }
 
@@ -440,7 +437,7 @@ impl Drop for DriverManager {
     fn drop(&mut self) {
         // Clean up all running drivers when the manager is dropped
         if let Err(e) = self.stop_all_drivers() {
-            log::warn!("Failed to stop all drivers during cleanup: {}", e);
+            log::warn!("Failed to stop all drivers during cleanup: {e}");
         }
     }
 }

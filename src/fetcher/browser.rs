@@ -68,20 +68,20 @@ impl BrowserManager {
         if headless {
             caps.add_arg("--headless").map_err(|e| {
                 error!("Failed to add headless arg: {}", e);
-                TarziError::Browser(format!("Failed to add headless arg: {}", e))
+                TarziError::Browser(format!("Failed to add headless arg: {e}"))
             })?;
         }
         caps.add_arg("--disable-gpu").map_err(|e| {
             error!("Failed to add disable-gpu arg: {}", e);
-            TarziError::Browser(format!("Failed to add disable-gpu arg: {}", e))
+            TarziError::Browser(format!("Failed to add disable-gpu arg: {e}"))
         })?;
         caps.add_arg("--disable-dev-shm-usage").map_err(|e| {
             error!("Failed to add disable-dev-shm-usage arg: {}", e);
-            TarziError::Browser(format!("Failed to add disable-dev-shm-usage arg: {}", e))
+            TarziError::Browser(format!("Failed to add disable-dev-shm-usage arg: {e}"))
         })?;
         caps.add_arg("--no-sandbox").map_err(|e| {
             error!("Failed to add no-sandbox arg: {}", e);
-            TarziError::Browser(format!("Failed to add no-sandbox arg: {}", e))
+            TarziError::Browser(format!("Failed to add no-sandbox arg: {e}"))
         })?;
 
         // Add proxy configuration if available
@@ -90,10 +90,10 @@ impl BrowserManager {
             if let Some(proxy_url) = proxy {
                 if !proxy_url.is_empty() {
                     info!("Configuring browser with proxy: {}", proxy_url);
-                    caps.add_arg(&format!("--proxy-server={}", proxy_url))
+                    caps.add_arg(&format!("--proxy-server={proxy_url}"))
                         .map_err(|e| {
                             error!("Failed to add proxy-server arg: {}", e);
-                            TarziError::Browser(format!("Failed to add proxy-server arg: {}", e))
+                            TarziError::Browser(format!("Failed to add proxy-server arg: {e}"))
                         })?;
                 }
             }
@@ -103,18 +103,18 @@ impl BrowserManager {
             let user_data_arg = format!("--user-data-dir={}", user_data_path.to_string_lossy());
             caps.add_arg(&user_data_arg).map_err(|e| {
                 error!("Failed to add user-data-dir arg: {}", e);
-                TarziError::Browser(format!("Failed to add user-data-dir arg: {}", e))
+                TarziError::Browser(format!("Failed to add user-data-dir arg: {e}"))
             })?;
             None
         } else {
             let temp = TempDir::new().map_err(|e| {
                 error!("Failed to create temporary directory: {}", e);
-                TarziError::Browser(format!("Failed to create temporary directory: {}", e))
+                TarziError::Browser(format!("Failed to create temporary directory: {e}"))
             })?;
             let user_data_arg = format!("--user-data-dir={}", temp.path().to_string_lossy());
             caps.add_arg(&user_data_arg).map_err(|e| {
                 error!("Failed to add user-data-dir arg: {}", e);
-                TarziError::Browser(format!("Failed to add user-data-dir arg: {}", e))
+                TarziError::Browser(format!("Failed to add user-data-dir arg: {e}"))
             })?;
             Some(temp)
         };
@@ -131,8 +131,7 @@ impl BrowserManager {
             Ok(Err(e)) => {
                 error!("Failed to create browser: {}", e);
                 return Err(TarziError::Browser(format!(
-                    "Failed to create browser: {}",
-                    e
+                    "Failed to create browser: {e}"
                 )));
             }
             Err(_) => {
@@ -171,7 +170,7 @@ impl BrowserManager {
             info!("Removed browser instance: {}", instance_id);
             driver.quit().await.map_err(|e| {
                 error!("Failed to quit browser: {}", e);
-                TarziError::Browser(format!("Failed to quit browser: {}", e))
+                TarziError::Browser(format!("Failed to quit browser: {e}"))
             })?;
             // The temp_dir will be automatically cleaned up when dropped
             Ok(true)
@@ -211,7 +210,7 @@ impl BrowserManager {
         let mut instance_ids = Vec::new();
 
         for i in 0..count {
-            let instance_id = format!("{}_{}", base_id, i);
+            let instance_id = format!("{base_id}_{i}");
             let id = self
                 .create_browser_with_user_data(None, headless, Some(instance_id.clone()))
                 .await?;
@@ -251,8 +250,7 @@ impl BrowserManager {
                         webdriver_url
                     );
                     return Err(TarziError::Browser(format!(
-                        "WebDriver server is not available at {}. Please start the WebDriver server.",
-                        webdriver_url
+                        "WebDriver server is not available at {webdriver_url}. Please start the WebDriver server."
                     )));
                 }
             }
@@ -367,8 +365,7 @@ impl BrowserManager {
                 Err(e) => {
                     warn!("Failed to stop managed driver: {}", e);
                     return Err(TarziError::Browser(format!(
-                        "Failed to stop managed driver: {}",
-                        e
+                        "Failed to stop managed driver: {e}"
                     )));
                 }
             }
@@ -423,7 +420,7 @@ async fn is_webdriver_available_at_url(url: &str) -> bool {
 
     match timeout(
         WEBDRIVER_CHECK_TIMEOUT,
-        reqwest::get(&format!("{}/status", url)),
+        reqwest::get(&format!("{url}/status")),
     )
     .await
     {

@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Perform a search
     let query = "Rust programming language";
-    println!("\nSearching for: '{}'", query);
+    println!("\nSearching for: '{query}'");
 
     let results = search_engine
         .search(query, SearchMode::WebQuery, config.search.limit)

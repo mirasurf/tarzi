@@ -33,7 +33,7 @@ pub struct Document {
     pub images: Vec<String>,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Converter;
 
 impl Converter {
@@ -246,7 +246,7 @@ mod tests {
 
         // Test empty HTML
         let result = converter.html_to_json("").await.unwrap();
-        println!("[DEBUG] JSON output for empty HTML: {}", result);
+        println!("[DEBUG] JSON output for empty HTML: {result}");
         // Accept as long as content field exists
         assert!(
             result.contains("\"content\":"),
