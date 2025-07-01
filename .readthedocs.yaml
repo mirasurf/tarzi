@@ -15,24 +15,10 @@ build:
     post_checkout:
       # Recursive clone to get submodules
       - git submodule update --init --recursive
-    pre_build:
-      # Set up Python environment for PyO3
-      - set -x
-      - PYTHON_BIN=$(which python3)
-      - PYTHON_LIBDIR=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
-      - export PYO3_PYTHON=$PYTHON_BIN
-      - export RUSTFLAGS=-L$PYTHON_LIBDIR -lpython3.11
-      # Install Rust toolchain
-      - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-      - export PATH="$HOME/.cargo/bin:$PATH"
-      - export CARGO_HOME="$HOME/.cargo"
-      - export RUSTUP_HOME="$HOME/.rustup"
     post_install:
       # Build and install the Python package
-      - pip install maturin[patchelf]
       - maturin build --release
       - pip install $(find target/wheels -name "tarzi-*-cp311-cp311-manylinux_2_34_x86_64.whl" | head -1)
-
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:

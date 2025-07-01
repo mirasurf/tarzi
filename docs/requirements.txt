@@ -13,6 +13,7 @@ furo>=2023.9.10
 
 # For building the Python extension during documentation build
 maturin>=1.0.0
+maturin[patchelf]>=1.0.0
 
 # Required for the project itself (for API docs)
 pytest>=6.0
