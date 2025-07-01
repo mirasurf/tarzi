@@ -14,7 +14,7 @@ You're working on **Tarzi**—a rust-native lite search for AI applications.
 - Always make sure the existing unittests and integration tests are passed.
 - Always perfer modularized design for each module.
 - Always declared contants value modules to contain magic values. DO NOT treat error messages as constants.
-- For Makefile, always classify subcommands into category and unify subcommands pattern: make foo (to run foo for Rust), make foo-python (to run foo for python), make foo-all (to run foo for Rust and Python)
+- For Makefile, always classify subcommands into category and unify subcommands pattern: make foo (to run foo for Rust and Python), make foo-python (to run foo for python), make foo-rust (to run foo for Rust)
 
 ## IMPL. CONSIDERATIONS OF RUST
 

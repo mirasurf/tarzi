@@ -20,7 +20,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = ["web-scraping", "search-engine", "ai-tools", "rust", "browser-automation"]
-version = "0.0.9"
+version = "0.0.10"
 description = "Rust-native lite search for AI applications"
 readme = "README.md"
 license = {text = "Apache-2.0"}
@@ -81,6 +81,9 @@ markers = [
     "unit: Unit tests that don't require external dependencies",
     "integration: Integration tests that require external services",
     "browser: Tests that require browser automation tools",
+    "slow: Tests that are slow to run",
+    "network: Tests that require network access",
+    "api: Tests that require API access",
 ]
 filterwarnings = ["ignore::DeprecationWarning"]
 asyncio_mode = "auto"

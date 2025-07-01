@@ -32,7 +32,7 @@ def main():
     # Search subcommand
     search_parser = subparsers.add_parser("search", help="Search using search engines")
     search_parser.add_argument("-q", "--query", required=True, help="Search query")
-    search_parser.add_argument("-m", "--mode", default="browser", help="Search mode: browser or api")
+    search_parser.add_argument("-m", "--mode", default="webquery", help="Search mode: webquery or apiquery")
     search_parser.add_argument("-l", "--limit", type=int, default=10, help="Number of results to return")
     search_parser.add_argument("-f", "--format", default="json", help="Output format: json or yaml")
     search_parser.add_argument("-o", "--output", help="Output file path (optional)")
@@ -41,7 +41,7 @@ def main():
     # Search and fetch subcommand
     search_fetch_parser = subparsers.add_parser("search-and-fetch", help="Search and fetch content for each result")
     search_fetch_parser.add_argument("-q", "--query", required=True, help="Search query")
-    search_fetch_parser.add_argument("--search-mode", default="browser", help="Search mode: browser or api")
+    search_fetch_parser.add_argument("--search-mode", default="webquery", help="Search mode: webquery or apiquery")
     search_fetch_parser.add_argument("--fetch-mode", default="plain_request", help="Fetch mode: plain_request, browser_head, or browser_headless")
     search_fetch_parser.add_argument("-l", "--limit", type=int, default=5, help="Number of results to return")
     search_fetch_parser.add_argument("-f", "--format", default="markdown", help="Output format: html, markdown, json, or yaml")
@@ -57,6 +57,19 @@ def main():
     
     try:
         import tarzi
+        import os
+        
+        # Load configuration from ~/.tarzi.toml if it exists
+        config = None
+        config_path = os.path.expanduser("~/.tarzi.toml")
+        if os.path.exists(config_path):
+            try:
+                config = tarzi.Config.from_file(config_path)
+                if args.verbose:
+                    print(f"Loaded configuration from {config_path}")
+            except Exception as e:
+                if args.verbose:
+                    print(f"Warning: Failed to load config from {config_path}: {e}")
         
         if args.command == "convert":
             converter = tarzi.Converter()
@@ -71,7 +84,10 @@ def main():
                 print(result)
                 
         elif args.command == "fetch":
-            fetcher = tarzi.WebFetcher()
+            if config:
+                fetcher = tarzi.WebFetcher.from_config(config)
+            else:
+                fetcher = tarzi.WebFetcher()
             result = fetcher.fetch(args.url, args.mode, args.format)
             
             if args.output:
@@ -83,7 +99,10 @@ def main():
                 print(result)
                 
         elif args.command == "search":
-            engine = tarzi.SearchEngine()
+            if config:
+                engine = tarzi.SearchEngine.from_config(config)
+            else:
+                engine = tarzi.SearchEngine()
             results = engine.search(args.query, args.mode, args.limit)
             
             # Convert results to the requested format
@@ -107,7 +126,10 @@ def main():
                 print(result)
                 
         elif args.command == "search-and-fetch":
-            engine = tarzi.SearchEngine()
+            if config:
+                engine = tarzi.SearchEngine.from_config(config)
+            else:
+                engine = tarzi.SearchEngine()
             results = engine.search_and_fetch(args.query, args.search_mode, args.limit, args.fetch_mode, args.format)
             
             # Format the combined results

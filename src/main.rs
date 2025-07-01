@@ -57,8 +57,8 @@ enum Commands {
         /// Search query
         #[arg(short, long)]
         query: String,
-        /// Search mode: browser or api
-        #[arg(short, long, default_value = "browser")]
+        /// Search mode: webquery or apiquery
+        #[arg(short, long, default_value = "webquery")]
         mode: String,
         /// Number of results to return
         #[arg(short, long, default_value = "10")]
@@ -78,8 +78,8 @@ enum Commands {
         /// Search query
         #[arg(short, long)]
         query: String,
-        /// Search mode: browser or api
-        #[arg(short, long, default_value = "browser")]
+        /// Search mode: webquery or apiquery
+        #[arg(short, long, default_value = "webquery")]
         search_mode: String,
         /// Fetch mode: plain_request, browser_head, or browser_headless
         #[arg(short, long, default_value = "plain_request")]

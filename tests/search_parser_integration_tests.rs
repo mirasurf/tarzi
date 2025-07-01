@@ -4,7 +4,6 @@ use tarzi::search::parser::{
 };
 use tarzi::search::types::SearchEngineType;
 use tarzi::utils::is_webdriver_available;
-use thirtyfour::prelude::*;
 use thirtyfour::{By, DesiredCapabilities, Key, WebDriver};
 
 /// Integration tests for search parsers
@@ -14,8 +13,8 @@ async fn perform_bing_search(query: &str) -> Result<String, Box<dyn std::error::
     let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
         .unwrap_or_else(|_| "http://localhost:4444".to_string());
 
-    // Setup Chrome capabilities for head browser
-    let mut caps = DesiredCapabilities::chrome();
+    // Setup Firefox capabilities for geckodriver (default)
+    let mut caps = DesiredCapabilities::firefox();
     caps.add_arg("--disable-blink-features=AutomationControlled")?;
     caps.add_arg("--disable-web-security")?;
     caps.add_arg("--disable-features=VizDisplayCompositor")?;
@@ -79,8 +78,8 @@ async fn perform_duckduckgo_search(query: &str) -> Result<String, Box<dyn std::e
     let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
         .unwrap_or_else(|_| "http://localhost:4444".to_string());
 
-    // Setup Chrome capabilities for head browser with additional stealth options
-    let mut caps = DesiredCapabilities::chrome();
+    // Setup Firefox capabilities for geckodriver (default)
+    let mut caps = DesiredCapabilities::firefox();
     caps.add_arg("--disable-blink-features=AutomationControlled")?;
     caps.add_arg("--disable-web-security")?;
     caps.add_arg("--disable-features=VizDisplayCompositor")?;
@@ -172,8 +171,8 @@ async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error
     let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
         .unwrap_or_else(|_| "http://localhost:4444".to_string());
 
-    // Setup Chrome capabilities for head browser with additional stealth options
-    let mut caps = DesiredCapabilities::chrome();
+    // Setup Firefox capabilities for geckodriver (default)
+    let mut caps = DesiredCapabilities::firefox();
     caps.add_arg("--disable-blink-features=AutomationControlled")?;
     caps.add_arg("--disable-web-security")?;
     caps.add_arg("--disable-features=VizDisplayCompositor")?;
@@ -261,8 +260,8 @@ async fn perform_brave_search(query: &str) -> Result<String, Box<dyn std::error:
     let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
         .unwrap_or_else(|_| "http://localhost:4444".to_string());
 
-    // Setup Chrome capabilities for head browser with additional stealth options
-    let mut caps = DesiredCapabilities::chrome();
+    // Setup Firefox capabilities for geckodriver (default)
+    let mut caps = DesiredCapabilities::firefox();
     caps.add_arg("--disable-blink-features=AutomationControlled")?;
     caps.add_arg("--disable-web-security")?;
     caps.add_arg("--disable-features=VizDisplayCompositor")?;
@@ -342,8 +341,8 @@ async fn perform_baidu_search(query: &str) -> Result<String, Box<dyn std::error:
     let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
         .unwrap_or_else(|_| "http://localhost:4444".to_string());
 
-    // Setup Chrome capabilities for head browser with additional stealth options
-    let mut caps = DesiredCapabilities::chrome();
+    // Setup Firefox capabilities for geckodriver (default)
+    let mut caps = DesiredCapabilities::firefox();
     caps.add_arg("--disable-blink-features=AutomationControlled")?;
     caps.add_arg("--disable-web-security")?;
     caps.add_arg("--disable-features=VizDisplayCompositor")?;
@@ -414,7 +413,7 @@ async fn test_bing_parser_real_world_integration() {
     // Skip test if WebDriver is not available
     if !is_webdriver_available().await {
         println!("Skipping real-world integration test: WebDriver not available");
-        println!("To run this test, start a WebDriver server (e.g., chromedriver on port 4444)");
+        println!("To run this test, start a WebDriver server (e.g., geckodriver on port 4444)");
         return;
     }
 
@@ -560,7 +559,7 @@ async fn test_duckduckgo_parser_real_world_integration() {
     // Skip test if WebDriver is not available
     if !is_webdriver_available().await {
         println!("Skipping DuckDuckGo real-world integration test: WebDriver not available");
-        println!("To run this test, start a WebDriver server (e.g., chromedriver on port 4444)");
+        println!("To run this test, start a WebDriver server (e.g., geckodriver on port 4444)");
         return;
     }
 
@@ -693,7 +692,7 @@ async fn test_google_parser_real_world_integration() {
     // Skip test if WebDriver is not available
     if !is_webdriver_available().await {
         println!("Skipping Google real-world integration test: WebDriver not available");
-        println!("To run this test, start a WebDriver server (e.g., chromedriver on port 4444)");
+        println!("To run this test, start a WebDriver server (e.g., geckodriver on port 4444)");
         return;
     }
 
@@ -826,7 +825,7 @@ async fn test_brave_parser_real_world_integration() {
     // Skip test if WebDriver is not available
     if !is_webdriver_available().await {
         println!("Skipping Brave real-world integration test: WebDriver not available");
-        println!("To run this test, start a WebDriver server (e.g., chromedriver on port 4444)");
+        println!("To run this test, start a WebDriver server (e.g., geckodriver on port 4444)");
         return;
     }
 
@@ -959,7 +958,7 @@ async fn test_baidu_parser_real_world_integration() {
     // Skip test if WebDriver is not available
     if !is_webdriver_available().await {
         println!("Skipping Baidu real-world integration test: WebDriver not available");
-        println!("To run this test, start a WebDriver server (e.g., chromedriver on port 4444)");
+        println!("To run this test, start a WebDriver server (e.g., geckodriver on port 4444)");
         return;
     }
 

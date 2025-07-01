@@ -3,12 +3,10 @@ use crate::{
     Result,
     config::Config,
     constants::{
-        BROWSER_LAUNCH_TIMEOUT, CHROME_DRIVER_ARGS, CHROMEDRIVER_DEFAULT_PORT,
-        CHROMEDRIVER_DEFAULT_URL, DEFAULT_TIMEOUT, FIREFOX_DRIVER_ARGS, GECKODRIVER_DEFAULT_PORT,
-        WEBDRIVER_CHECK_TIMEOUT,
+        BROWSER_LAUNCH_TIMEOUT, CHROME_DRIVER_ARGS, CHROMEDRIVER_DEFAULT_PORT, DEFAULT_TIMEOUT,
+        FIREFOX_DRIVER_ARGS, GECKODRIVER_DEFAULT_PORT, WEBDRIVER_CHECK_TIMEOUT,
     },
     error::TarziError,
-    utils::is_webdriver_available,
 };
 use std::{collections::HashMap, path::PathBuf};
 use tempfile::TempDir;
@@ -62,67 +60,97 @@ impl BrowserManager {
         );
 
         // For thirtyfour, we need a WebDriver server running
-        // We'll use the default ChromeDriver endpoint
+        // Determine which capabilities to use based on configuration
 
-        let mut caps = DesiredCapabilities::chrome();
-        if headless {
-            caps.add_arg("--headless").map_err(|e| {
-                error!("Failed to add headless arg: {}", e);
-                TarziError::Browser(format!("Failed to add headless arg: {e}"))
-            })?;
-        }
-        caps.add_arg("--disable-gpu").map_err(|e| {
-            error!("Failed to add disable-gpu arg: {}", e);
-            TarziError::Browser(format!("Failed to add disable-gpu arg: {e}"))
-        })?;
-        caps.add_arg("--disable-dev-shm-usage").map_err(|e| {
-            error!("Failed to add disable-dev-shm-usage arg: {}", e);
-            TarziError::Browser(format!("Failed to add disable-dev-shm-usage arg: {e}"))
-        })?;
-        caps.add_arg("--no-sandbox").map_err(|e| {
-            error!("Failed to add no-sandbox arg: {}", e);
-            TarziError::Browser(format!("Failed to add no-sandbox arg: {e}"))
-        })?;
-
-        // Add proxy configuration if available
-        if let Some(config) = &self.config {
-            let proxy = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
-            if let Some(proxy_url) = proxy {
-                if !proxy_url.is_empty() {
-                    info!("Configuring browser with proxy: {}", proxy_url);
-                    caps.add_arg(&format!("--proxy-server={proxy_url}"))
-                        .map_err(|e| {
-                            error!("Failed to add proxy-server arg: {}", e);
-                            TarziError::Browser(format!("Failed to add proxy-server arg: {e}"))
-                        })?;
+        let driver_type = if let Some(config) = &self.config {
+            match config.fetcher.web_driver.as_str() {
+                "geckodriver" | "firefox" => {
+                    info!("Using Firefox capabilities for geckodriver");
+                    "firefox"
+                }
+                "chromedriver" | "chrome" => {
+                    info!("Using Chrome capabilities for chromedriver");
+                    "chrome"
+                }
+                _ => {
+                    info!("Unknown driver type, using Chrome capabilities as fallback");
+                    "chrome"
                 }
             }
-        }
+        } else {
+            info!("No configuration available, using Chrome capabilities as fallback");
+            "chrome"
+        };
 
-        let temp_dir = if let Some(user_data_path) = user_data_dir {
-            let user_data_arg = format!("--user-data-dir={}", user_data_path.to_string_lossy());
-            caps.add_arg(&user_data_arg).map_err(|e| {
-                error!("Failed to add user-data-dir arg: {}", e);
-                TarziError::Browser(format!("Failed to add user-data-dir arg: {e}"))
-            })?;
+        // Create capabilities based on driver type
+        let browser_result = match driver_type {
+            "firefox" => {
+                let mut caps = DesiredCapabilities::firefox();
+                if headless {
+                    caps.add_arg("--headless").map_err(|e| {
+                        error!("Failed to add headless arg: {}", e);
+                        TarziError::Browser(format!("Failed to add headless arg: {e}"))
+                    })?;
+                }
+                tokio::time::timeout(BROWSER_LAUNCH_TIMEOUT, WebDriver::new(&webdriver_url, caps))
+                    .await
+            }
+            _ => {
+                let mut caps = DesiredCapabilities::chrome();
+                if headless {
+                    caps.add_arg("--headless").map_err(|e| {
+                        error!("Failed to add headless arg: {}", e);
+                        TarziError::Browser(format!("Failed to add headless arg: {e}"))
+                    })?;
+                }
+                caps.add_arg("--disable-gpu").map_err(|e| {
+                    error!("Failed to add disable-gpu arg: {}", e);
+                    TarziError::Browser(format!("Failed to add disable-gpu arg: {e}"))
+                })?;
+                caps.add_arg("--disable-dev-shm-usage").map_err(|e| {
+                    error!("Failed to add disable-dev-shm-usage arg: {}", e);
+                    TarziError::Browser(format!("Failed to add disable-dev-shm-usage arg: {e}"))
+                })?;
+                caps.add_arg("--no-sandbox").map_err(|e| {
+                    error!("Failed to add no-sandbox arg: {}", e);
+                    TarziError::Browser(format!("Failed to add no-sandbox arg: {e}"))
+                })?;
+
+                // Add proxy configuration if available
+                if let Some(config) = &self.config {
+                    let proxy = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
+                    if let Some(proxy_url) = proxy {
+                        if !proxy_url.is_empty() {
+                            info!("Configuring browser with proxy: {}", proxy_url);
+                            caps.add_arg(&format!("--proxy-server={proxy_url}"))
+                                .map_err(|e| {
+                                    error!("Failed to add proxy-server arg: {}", e);
+                                    TarziError::Browser(format!(
+                                        "Failed to add proxy-server arg: {e}"
+                                    ))
+                                })?;
+                        }
+                    }
+                }
+
+                tokio::time::timeout(BROWSER_LAUNCH_TIMEOUT, WebDriver::new(&webdriver_url, caps))
+                    .await
+            }
+        };
+
+        info!("Browser config created successfully");
+
+        // Create temp directory for browser data
+        let temp_dir = if let Some(_user_data_path) = user_data_dir {
             None
         } else {
             let temp = TempDir::new().map_err(|e| {
                 error!("Failed to create temporary directory: {}", e);
                 TarziError::Browser(format!("Failed to create temporary directory: {e}"))
             })?;
-            let user_data_arg = format!("--user-data-dir={}", temp.path().to_string_lossy());
-            caps.add_arg(&user_data_arg).map_err(|e| {
-                error!("Failed to add user-data-dir arg: {}", e);
-                TarziError::Browser(format!("Failed to add user-data-dir arg: {e}"))
-            })?;
             Some(temp)
         };
 
-        info!("Browser config created successfully");
-        let browser_result =
-            tokio::time::timeout(BROWSER_LAUNCH_TIMEOUT, WebDriver::new(&webdriver_url, caps))
-                .await;
         let browser = match browser_result {
             Ok(Ok(result)) => {
                 info!("Browser launched successfully with ID: {}", instance_id);
@@ -234,37 +262,55 @@ impl BrowserManager {
     /// Get or create a webdriver endpoint, prioritizing TARZI_WEBDRIVER_URL
     /// If TARZI_WEBDRIVER_URL is not set and no webdriver is available, use DriverManager
     async fn get_or_create_webdriver_endpoint(&mut self) -> Result<String> {
-        // First, check if TARZI_WEBDRIVER_URL is set
-        if let Ok(webdriver_url) = std::env::var("TARZI_WEBDRIVER_URL") {
-            if !webdriver_url.is_empty() {
-                info!("Using TARZI_WEBDRIVER_URL: {}", webdriver_url);
-
-                // Check if the specified webdriver is available
-                info!("Checking WebDriver availability at: {}", webdriver_url);
-                if is_webdriver_available().await {
-                    info!("WebDriver server is available and ready");
-                    return Ok(webdriver_url);
-                } else {
-                    warn!(
-                        "TARZI_WEBDRIVER_URL is set but WebDriver is not available at: {}",
-                        webdriver_url
-                    );
-                    return Err(TarziError::Browser(format!(
-                        "WebDriver server is not available at {webdriver_url}. Please start the WebDriver server."
-                    )));
+        // Use web_driver_url from config if set
+        if let Some(config) = &self.config {
+            if let Some(ref url) = config.fetcher.web_driver_url {
+                if !url.is_empty() {
+                    info!("Using web_driver_url from config: {}", url);
+                    if is_webdriver_available_at_url(url).await {
+                        info!("WebDriver server is available and ready at: {}", url);
+                        return Ok(url.clone());
+                    } else {
+                        warn!(
+                            "web_driver_url is set but WebDriver is not available at: {}",
+                            url
+                        );
+                        return Err(TarziError::Browser(format!(
+                            "WebDriver server is not available at {url}. Please start the WebDriver server."
+                        )));
+                    }
                 }
             }
         }
 
-        // If TARZI_WEBDRIVER_URL is not set or empty, try default WebDriver URL
-        let default_url = CHROMEDRIVER_DEFAULT_URL.to_string();
+        // If web_driver_url is not set, try configured WebDriver URL
+        let default_url = if let Some(config) = &self.config {
+            let web_driver = &config.fetcher.web_driver;
+
+            match web_driver.as_str() {
+                "geckodriver" | "firefox" => {
+                    format!("http://localhost:{GECKODRIVER_DEFAULT_PORT}")
+                }
+                "chromedriver" | "chrome" => {
+                    format!("http://localhost:{CHROMEDRIVER_DEFAULT_PORT}")
+                }
+                _ => {
+                    // Fallback to GeckoDriver for unknown driver types
+                    format!("http://localhost:{GECKODRIVER_DEFAULT_PORT}")
+                }
+            }
+        } else {
+            // No config available, use GeckoDriver as default
+            format!("http://localhost:{GECKODRIVER_DEFAULT_PORT}")
+        };
+
         info!(
-            "TARZI_WEBDRIVER_URL not set, checking default WebDriver at: {}",
+            "TARZI_WEBDRIVER_URL not set, checking configured WebDriver at: {}",
             default_url
         );
 
         if is_webdriver_available_at_url(&default_url).await {
-            info!("WebDriver server found at default URL: {}", default_url);
+            info!("WebDriver server found at configured URL: {}", default_url);
             return Ok(default_url);
         }
 
@@ -280,14 +326,44 @@ impl BrowserManager {
         // Try to start a driver using DriverManager
         let driver_manager = self.driver_manager.as_ref().unwrap();
 
-        // First check if chromedriver is available
-        match driver_manager.check_driver_binary(&DriverType::Chrome) {
+        // Determine which driver to try first based on configuration
+        let (primary_driver, fallback_driver) = if let Some(config) = &self.config {
+            match config.fetcher.web_driver.as_str() {
+                "geckodriver" | "firefox" => {
+                    info!("Configuration specifies geckodriver, trying Firefox first");
+                    (DriverType::Firefox, DriverType::Chrome)
+                }
+                "chromedriver" | "chrome" => {
+                    info!("Configuration specifies chromedriver, trying Chrome first");
+                    (DriverType::Chrome, DriverType::Firefox)
+                }
+                _ => {
+                    info!("Unknown driver type in config, trying Firefox first");
+                    (DriverType::Firefox, DriverType::Chrome)
+                }
+            }
+        } else {
+            info!("No configuration available, trying Firefox first");
+            (DriverType::Firefox, DriverType::Chrome)
+        };
+
+        // Try the primary driver first
+        match driver_manager.check_driver_binary(&primary_driver) {
             Ok(()) => {
-                info!("ChromeDriver found, starting driver with DriverManager");
+                info!(
+                    "{:?} found, starting driver with DriverManager",
+                    primary_driver
+                );
+                let (port, args) = match &primary_driver {
+                    DriverType::Chrome => (CHROMEDRIVER_DEFAULT_PORT, CHROME_DRIVER_ARGS),
+                    DriverType::Firefox => (GECKODRIVER_DEFAULT_PORT, FIREFOX_DRIVER_ARGS),
+                    _ => (GECKODRIVER_DEFAULT_PORT, FIREFOX_DRIVER_ARGS),
+                };
+
                 let config = DriverConfig {
-                    driver_type: DriverType::Chrome,
-                    port: CHROMEDRIVER_DEFAULT_PORT,
-                    args: CHROME_DRIVER_ARGS.iter().map(|s| s.to_string()).collect(),
+                    driver_type: primary_driver.clone(),
+                    port,
+                    args: args.iter().map(|s| s.to_string()).collect(),
                     timeout: DEFAULT_TIMEOUT,
                     verbose: false,
                 };
@@ -295,30 +371,42 @@ impl BrowserManager {
                 match driver_manager.start_driver_with_config(config) {
                     Ok(driver_info) => {
                         info!(
-                            "Successfully started ChromeDriver at: {}",
-                            driver_info.endpoint
+                            "Successfully started {:?} at: {}",
+                            primary_driver, driver_info.endpoint
                         );
                         self.managed_driver_info = Some(driver_info.clone());
                         return Ok(driver_info.endpoint);
                     }
                     Err(e) => {
-                        warn!("Failed to start ChromeDriver with DriverManager: {}", e);
+                        warn!(
+                            "Failed to start {:?} with DriverManager: {}",
+                            primary_driver, e
+                        );
                     }
                 }
             }
             Err(e) => {
-                warn!("ChromeDriver not available: {}", e);
+                warn!("{:?} not available: {}", primary_driver, e);
             }
         }
 
-        // Try Firefox as fallback
-        match driver_manager.check_driver_binary(&DriverType::Firefox) {
+        // Try the fallback driver
+        match driver_manager.check_driver_binary(&fallback_driver) {
             Ok(()) => {
-                info!("GeckoDriver found, starting driver with DriverManager");
+                info!(
+                    "{:?} found, starting driver with DriverManager",
+                    fallback_driver
+                );
+                let (port, args) = match &fallback_driver {
+                    DriverType::Chrome => (CHROMEDRIVER_DEFAULT_PORT, CHROME_DRIVER_ARGS),
+                    DriverType::Firefox => (GECKODRIVER_DEFAULT_PORT, FIREFOX_DRIVER_ARGS),
+                    _ => (GECKODRIVER_DEFAULT_PORT, FIREFOX_DRIVER_ARGS),
+                };
+
                 let config = DriverConfig {
-                    driver_type: DriverType::Firefox,
-                    port: GECKODRIVER_DEFAULT_PORT,
-                    args: FIREFOX_DRIVER_ARGS.iter().map(|s| s.to_string()).collect(),
+                    driver_type: fallback_driver.clone(),
+                    port,
+                    args: args.iter().map(|s| s.to_string()).collect(),
                     timeout: DEFAULT_TIMEOUT,
                     verbose: false,
                 };
@@ -326,19 +414,22 @@ impl BrowserManager {
                 match driver_manager.start_driver_with_config(config) {
                     Ok(driver_info) => {
                         info!(
-                            "Successfully started GeckoDriver at: {}",
-                            driver_info.endpoint
+                            "Successfully started {:?} at: {}",
+                            fallback_driver, driver_info.endpoint
                         );
                         self.managed_driver_info = Some(driver_info.clone());
                         return Ok(driver_info.endpoint);
                     }
                     Err(e) => {
-                        warn!("Failed to start GeckoDriver with DriverManager: {}", e);
+                        warn!(
+                            "Failed to start {:?} with DriverManager: {}",
+                            fallback_driver, e
+                        );
                     }
                 }
             }
             Err(e) => {
-                warn!("GeckoDriver not available: {}", e);
+                warn!("{:?} not available: {}", fallback_driver, e);
             }
         }
 

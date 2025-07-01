@@ -10,10 +10,10 @@
 [general]
 # Logging level for the application
 # Options: trace, debug, info, warn, error
-log_level = "info"
+# log_level = "info"
 
 # Request timeout in seconds
-timeout = 30
+# timeout = 30
 
 # -----------------------------------------------------------------------------
 # Web Fetcher Settings
@@ -21,11 +21,11 @@ timeout = 30
 [fetcher]
 # Fetcher mode - how to retrieve web content
 # Options: "browser_headless", "browser_headed", "http"
-mode = "browser_headless"
+# mode = "browser_headless"
 
 # Output format for fetched content
 # Options: "markdown", "html", "text"
-format = "markdown"
+# format = "markdown"
 
 # HTTP proxy server (optional)
 # Uncomment and configure if you need to use a proxy
@@ -33,10 +33,10 @@ format = "markdown"
 
 # Web driver executable
 # Options: "chromedriver", "geckodriver"
-web_driver = "chromedriver"
+# web_driver = "geckodriver"
 
-# Port for the web driver service
-web_driver_port = 9515
+# Optional: Use an external WebDriver endpoint (overrides driver/port logic if set)
+# web_driver_url = "http://localhost:4444"  # Example: connect to a remote geckodriver
 
 # -----------------------------------------------------------------------------
 # Search Engine Settings
@@ -44,19 +44,19 @@ web_driver_port = 9515
 [search]
 # Search mode - how to perform searches
 # Options: "webquery" (scrape search results), "apiquery" (use search API)
-mode = "webquery"
+# mode = "webquery"
 
 # Search engine to use
 # Options: "google", "bing", "duckduckgo", "brave", "baidu"
-engine = "bing"
+# engine = "bing"
 
 # URL pattern for search queries
 # Use {query} as placeholder for the search term
 # query_pattern = "https://www.bing.com/search?q={query}"
 
 # Maximum number of search results to return
-limit = 5
+# limit = 5
 
 # API key for search engines that require authentication
 # Required when using apiquery mode with certain search engines
-api_key = "your-api-key-for-apiquery-mode"
+# api_key = "your-api-key-for-apiquery-mode"

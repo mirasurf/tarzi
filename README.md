@@ -68,6 +68,12 @@
 - 🤖 **Agent Integration (MCP)**: Connect with agent frameworks for context-aware, distributed task execution  
 - 📊 **Observability**: Monitor success rate, latency, CAPTCHA frequency, and export logs for analysis
 
+## Install
+
+```
+pip install tarzi
+```
+
 ## Usage Examples
 
 * Examples in Python and Rust: [examples](/examples/)

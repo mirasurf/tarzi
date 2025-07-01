@@ -34,8 +34,7 @@ pub struct FetcherConfig {
     pub proxy: Option<String>,
     #[serde(default = "default_web_driver")]
     pub web_driver: String,
-    #[serde(default = "default_web_driver_port")]
-    pub web_driver_port: u16,
+    pub web_driver_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -169,7 +168,7 @@ impl Default for FetcherConfig {
             timeout: default_fetch_timeout(),
             proxy: None,
             web_driver: default_web_driver(),
-            web_driver_port: default_web_driver_port(),
+            web_driver_url: None,
         }
     }
 }
@@ -234,11 +233,7 @@ fn default_result_limit() -> usize {
 }
 
 fn default_web_driver() -> String {
-    "chromedriver".to_string()
-}
-
-fn default_web_driver_port() -> u16 {
-    crate::constants::CHROMEDRIVER_DEFAULT_PORT
+    "geckodriver".to_string()
 }
 
 /// Get proxy configuration with environment variable override
@@ -351,7 +346,7 @@ user_agent = "Custom User Agent"
 timeout = 45
 proxy = "http://example.com:8080"
 web_driver = "chrome"
-web_driver_port = 9515
+web_driver_url = "http://example.com/driver"
 
 [search]
 mode = "api"
@@ -374,12 +369,30 @@ api_key = "google_key_123"
             Some("http://example.com:8080".to_string())
         );
         assert_eq!(config.fetcher.web_driver, "chrome");
-        assert_eq!(config.fetcher.web_driver_port, 9515);
+        assert_eq!(
+            config.fetcher.web_driver_url,
+            Some("http://example.com/driver".to_string())
+        );
         assert_eq!(config.search.mode, "api");
         assert_eq!(config.search.engine, "google.com");
         assert_eq!(config.search.query_pattern, ".*");
         assert_eq!(config.search.limit, 5);
         assert_eq!(config.search.api_key, Some("google_key_123".to_string()));
+    }
+
+    #[test]
+    fn test_config_with_only_web_driver_url() {
+        let config_str = r#"
+[fetcher]
+web_driver_url = "http://localhost:9999"
+"#;
+        let config: Config = toml::from_str(config_str).unwrap();
+        // Should use default for web_driver
+        assert_eq!(config.fetcher.web_driver, "geckodriver");
+        assert_eq!(
+            config.fetcher.web_driver_url,
+            Some("http://localhost:9999".to_string())
+        );
     }
 
     #[test]
@@ -413,10 +426,8 @@ api_key = "google_key_123"
             "https://www.bing.com/search?q={query}"
         );
         assert_eq!(config.search.limit, 5);
-        assert_eq!(
-            config.search.api_key,
-            Some("your-api-key-for-apiquery-mode".to_string())
-        );
+        // api_key should be None by default (commented out in tarzi.toml)
+        assert_eq!(config.search.api_key, None);
     }
 
     #[test]

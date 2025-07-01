@@ -30,7 +30,10 @@ help: ## Show this help message
 # =============================================================================
 
 .PHONY: build
-build: ## Build Rust binary in release mode
+build: build-rust build-python ## Build everything (Rust + Python)
+
+.PHONY: build-rust
+build-rust: ## Build Rust binary in release mode
 	$(CARGO) build --release
 
 .PHONY: build-debug
@@ -41,15 +44,15 @@ build-debug: ## Build Rust binary in debug mode
 build-python: ## Build Python wheel
 	$(MATURIN) build --release
 
-.PHONY: build-all
-build-all: build build-python ## Build everything (Rust + Python)
-
 # =============================================================================
 # INSTALL COMMANDS
 # =============================================================================
 
 .PHONY: install
-install: build ## Install Rust binary
+install: install-rust install-python ## Install everything (Rust + Python)
+
+.PHONY: install-rust
+install-rust: build-rust ## Install Rust binary
 	cp $(RUST_TARGET) /usr/local/bin/tarzi
 
 .PHONY: install-python
@@ -60,23 +63,29 @@ install-python: build-python ## Install Python package
 install-python-dev: ## Install Python package in development mode
 	$(MATURIN) develop --release
 
-.PHONY: install-all
-install-all: install install-python ## Install everything (Rust + Python)
-
 # =============================================================================
 # TEST COMMANDS
 # =============================================================================
 
 .PHONY: test
-test: ## Run all Rust tests
+test: test-rust test-python ## Run all tests (Rust + Python)
+
+.PHONY: test-rust
+test-rust: ## Run all Rust tests
 	$(CARGO) test --features test-helpers
 
 .PHONY: test-unit
-test-unit: ## Run Rust unit tests only
+test-unit: test-unit-rust test-unit-python ## Run all unit tests (Rust + Python)
+
+.PHONY: test-unit-rust
+test-unit-rust: ## Run Rust unit tests only
 	$(CARGO) test --lib --features test-helpers
 
 .PHONY: test-integration
-test-integration: ## Run Rust integration tests
+test-integration: test-integration-rust test-integration-python ## Run all integration tests (Rust + Python)
+
+.PHONY: test-integration-rust
+test-integration-rust: ## Run Rust integration tests
 	$(CARGO) test --test '*' --features test-helpers
 
 .PHONY: test-python
@@ -84,13 +93,13 @@ test-python: install-python-dev ## Run all Python tests
 	pip install -e .[test]
 	cd $(PYTHON_TEST_DIR) && $(PYTEST)
 
-.PHONY: test-python-unit
-test-python-unit: ## Run Python unit tests only
+.PHONY: test-unit-python
+test-unit-python: ## Run Python unit tests only
 	pip install -e .[test]
 	cd $(PYTHON_TEST_DIR) && $(PYTEST) unit/ -m unit
 
-.PHONY: test-python-integration
-test-python-integration: install-python-dev ## Run Python integration tests
+.PHONY: test-integration-python
+test-integration-python: install-python-dev ## Run Python integration tests
 	pip install -e .[test]
 	cd $(PYTHON_TEST_DIR) && $(PYTEST) integration/ -m integration
 
@@ -99,15 +108,15 @@ test-python-coverage: install-python-dev ## Run Python tests with coverage
 	pip install -e .[test]
 	cd $(PYTHON_TEST_DIR) && $(PYTEST) --cov=tarzi --cov-report=html --cov-report=term
 
-.PHONY: test-all
-test-all: test test-python ## Run all tests (Rust + Python)
-
 # =============================================================================
 # CODE QUALITY COMMANDS
 # =============================================================================
 
 .PHONY: check
-check: ## Run cargo check (Rust only)
+check: check-rust format-check lint clippy
+
+.PHONY: check-rust
+check-rust: ## Run cargo check (Rust only)
 	$(CARGO) check
 
 .PHONY: clippy
@@ -115,12 +124,11 @@ clippy: ## Run clippy linter (Rust only)
 	$(CARGO) clippy --all-targets --all-features -- -D warnings
 
 .PHONY: format
-format: ## Format Rust code with rustfmt
-	$(CARGO) fmt
+format: format-rust format-python ## Format all code (Rust + Python)
 
-.PHONY: format-check
-format-check: ## Check Rust code formatting
-	$(CARGO) fmt -- --check
+.PHONY: format-rust
+format-rust: ## Format Rust code with rustfmt
+	$(CARGO) fmt
 
 .PHONY: format-python
 format-python: ## Format Python code (autoflake, isort, black)
@@ -128,45 +136,53 @@ format-python: ## Format Python code (autoflake, isort, black)
 	@isort $(PYTHON_MODULES)
 	@black $(PYTHON_MODULES)
 
-.PHONY: format-python-check
+.PHONY: format-check
+format-check: format-check-rust format-check-python ## Check all code formatting (Rust + Python)
+
+.PHONY: format-check-rust
+format-check-rust: ## Check Rust code formatting
+	$(CARGO) fmt -- --check
+
+.PHONY: format-check-python
 format-python-check: ## Check if Python code is properly formatted
 	@black --check $(PYTHON_MODULES) || (echo "$(RED)❌ Black formatting check failed. Run 'make format-python' to fix.$(RESET)" && exit 1)
 	@isort --check-only $(PYTHON_MODULES) || (echo "$(RED)❌ Import sorting check failed. Run 'make format-python' to fix.$(RESET)" && exit 1)
 
-.PHONY: format-all
-format-all: format format-python ## Format all code (Rust + Python)
-
-.PHONY: format-check-all
-format-check-all: format-check format-python-check ## Check all code formatting (Rust + Python)
-
 .PHONY: lint
-lint: clippy format-check ## Lint Rust code
+lint: lint-rust lint-python ## Lint all code (Rust + Python)
+
+.PHONY: lint-rust
+lint-rust: clippy format-check-rust ## Lint Rust code
 
 .PHONY: lint-python
 lint-python: ## Lint Python code with ruff
 	@ruff check $(PYTHON_MODULES)
 
-.PHONY: lint-fix
-lint-fix: ## Auto-fix Rust linting issues
+.PHONY: autofix
+autofix: autofix-rust autofix-python ## Auto-fix all linting issues
+
+.PHONY: autofix-rust
+autofix-rust: ## Auto-fix Rust linting issues
 	$(CARGO) clippy --fix --allow-dirty --allow-staged --all-targets --all-features -- -D warnings
 
-.PHONY: lint-python-fix
-lint-python-fix: ## Auto-fix Python linting issues
+.PHONY: autofix-python
+autofix-python: ## Auto-fix Python linting issues
 	@autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES)
 	@ruff check --fix $(PYTHON_MODULES)
-
-.PHONY: lint-all
-lint-all: lint lint-python ## Lint all code (Rust + Python)
-
-.PHONY: autofix
-autofix: lint-fix lint-python-fix ## Auto-fix all linting issues
 
 # =============================================================================
 # CLEAN COMMANDS
 # =============================================================================
 
 .PHONY: clean
-clean: ## Clean Rust build artifacts
+clean: clean-rust clean-python ## Clean everything including dependencies
+	rm -rf target/
+	rm -rf .venv/
+	rm -rf __pycache__/
+	rm -rf *.egg-info/
+
+.PHONY: clean-rust
+clean-rust: ## Clean Rust build artifacts
 	$(CARGO) clean
 	rm -rf target/wheels/
 
@@ -178,23 +194,24 @@ clean-python: ## Clean Python test artifacts
 	find $(PYTHON_TEST_DIR) -name "__pycache__" -type d -exec rm -rf {} +
 	find $(PYTHON_TEST_DIR) -name "*.pyc" -delete
 
-.PHONY: clean-all
-clean-all: clean clean-python ## Clean everything including dependencies
-	rm -rf target/
-	rm -rf .venv/
-	rm -rf __pycache__/
-	rm -rf *.egg-info/
-
 # =============================================================================
 # DOCUMENTATION COMMANDS
 # =============================================================================
 
 .PHONY: doc
-doc: ## Generate and open Rust documentation
+doc: doc-rust ## Generate and open Rust documentation
+	$(CARGO) doc --no-deps --open
+
+.PHONY: doc-rust
+doc-rust: ## Generate and open Rust documentation
 	$(CARGO) doc --no-deps --open
 
 .PHONY: doc-build
-doc-build: ## Build Rust documentation without opening
+doc-build: doc-build-rust ## Build Rust documentation without opening
+	$(CARGO) doc --no-deps
+
+.PHONY: doc-build-rust
+doc-build-rust: ## Build Rust documentation without opening
 	$(CARGO) doc --no-deps
 
 .PHONY: docs-python
@@ -216,18 +233,22 @@ docs-clean: ## Clean documentation build artifacts
 # =============================================================================
 
 .PHONY: release
-release: ## Build release artifacts (Rust binary)
+release: release-rust release-python ## Build all release artifacts (Rust + Python)
+
+.PHONY: release-rust
+release-rust: ## Build release artifacts (Rust binary)
 	$(CARGO) build --release
 
 .PHONY: release-python
 release-python: ## Build Python release artifacts
 	$(MATURIN) build --release
 
-.PHONY: release-all
-release-all: release release-python ## Build all release artifacts (Rust + Python)
-
 .PHONY: publish
-publish: ## Publish Rust crate to crates.io (use with caution!)
+publish: publish-rust ## Publish Rust crate to crates.io (use with caution!)
+	$(CARGO) publish
+
+.PHONY: publish-rust
+publish-rust: ## Publish Rust crate to crates.io (use with caution!)
 	$(CARGO) publish
 
 .PHONY: publish-python
@@ -320,7 +341,7 @@ dev-release: ## Run in development mode (release build)
 	$(CARGO) run --release
 
 .PHONY: dev-check
-dev-check: check test-unit test-python-unit ## Quick development check (check + unit tests)
+dev-check: check test-unit ## Quick development check (check + unit tests)
 
 .PHONY: full-check
-full-check: format-check-all lint-all test-all build-all ## Full development check (all check + all tests + build) 
+full-check: format-check lint test build ## Full development check (all check + all tests + build) 
