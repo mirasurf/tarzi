@@ -21,61 +21,64 @@ on:
 
 jobs:
   build-linux-wheels:
-    name: Build manylinux wheels for Python ${{ matrix.python-version }}
+    name: Build manylinux wheels for Python ${{ matrix.python-version }}-${{ matrix.arch }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.10']
-        arch: [x64, arm64]
+        python-version: ['3.10', '3.11', '3.12']
+        arch: [x86_64, aarch64]
         include:
-          - arch: x64
-            manylinux: manylinux2014
-            platform: x86_64
-          - arch: arm64
-            manylinux: manylinux2014
-            platform: aarch64
-    
+          - arch: x86_64
+            manylinux: manylinux2014_x86_64
+          - arch: aarch64
+            manylinux: manylinux2014_aarch64
+
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
+    - name: Set up QEMU for cross-platform builds
+      if: matrix.arch == 'aarch64'
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: arm64
+
+    - name: Install Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
 
     - name: Install cibuildwheel
-      run: python -m pip install pipx cibuildwheel==3.0.0
+      run: python -m pip install cibuildwheel==2.21.2
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
-        # Install OpenSSL development packages
-        yum install -y openssl-devel libssl-dev
-    
-    - name: Build manylinux wheels
-      run: python -m cibuildwheel --output-dir dist
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+
+    - name: Install Rust
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Build wheels
+      run: python -m cibuildwheel --output-dir wheelhouse
       env:
-        OPENSSL_DIR: /usr/local
-        PKG_CONFIG_PATH: /usr/local/lib/pkgconfig
-        OPENSSL_LIB_DIR: /usr/local/lib
-        OPENSSL_INCLUDE_DIR: /usr/local/include
-        RUSTUP_HOME: /usr/local/rustup
-        CARGO_HOME: /usr/local/cargo
-        PATH: /usr/local/cargo/bin:$PATH
-      with:
-        before-all: |
-          # Install Rust
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
-          source $HOME/.cargo/env
-          # Set OpenSSL environment variables
-          export OPENSSL_DIR=/usr/local
-          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
-          export OPENSSL_LIB_DIR=/usr/local/lib
-          export OPENSSL_INCLUDE_DIR=/usr/local/include
-          # Ensure Rust is in PATH
-          export PATH=$HOME/.cargo/bin:$PATH
-    
-    - name: Upload manylinux wheels
+        CIBW_BUILD: cp${{ matrix.python-version.replace('.', '') }}-manylinux_${{ matrix.arch }}
+        CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+        CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
+        CIBW_ARCHS: ${{ matrix.arch }}
+        CIBW_ENVIRONMENT: >
+          OPENSSL_DIR=/usr
+          PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/lib64/pkgconfig
+          OPENSSL_LIB_DIR=/usr/lib
+          OPENSSL_INCLUDE_DIR=/usr/include
+          PATH=$HOME/.cargo/bin:$PATH
+
+    - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
         name: manylinux-wheels-${{ matrix.arch }}-py${{ matrix.python-version }}
-        path: dist
+        path: wheelhouse/*.whl
 
   publish-python:
     name: Publish Python Package
