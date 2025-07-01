@@ -92,6 +92,11 @@ jobs:
     
     - name: Build manylinux wheels
       uses: pypa/cibuildwheel@v2.16.2
+      env:
+        OPENSSL_DIR: /usr/local
+        PKG_CONFIG_PATH: /usr/local/lib/pkgconfig
+        OPENSSL_LIB_DIR: /usr/local/lib
+        OPENSSL_INCLUDE_DIR: /usr/local/include
       with:
         platform: linux
         archs: ${{ matrix.arch }}
@@ -101,6 +106,14 @@ jobs:
         repair-wheel-command: |
           python -m pip install auditwheel
           auditwheel repair --plat {platform} -w {dest_dir} {wheel}
+        before-all: |
+          # Install OpenSSL development packages
+          yum install -y openssl-devel libssl-dev
+          # Set OpenSSL environment variables
+          export OPENSSL_DIR=/usr/local
+          export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+          export OPENSSL_LIB_DIR=/usr/local/lib
+          export OPENSSL_INCLUDE_DIR=/usr/local/include
     
     - name: Upload manylinux wheels
       uses: actions/upload-artifact@v4
