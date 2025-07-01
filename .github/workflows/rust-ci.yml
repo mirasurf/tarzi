@@ -70,12 +70,12 @@ jobs:
         python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.arch }}
 
-    - name: Required environment variables for PyO3
+    - name: Set up Python environment for PyO3
       run: |
         PYTHON_BIN=$(which python${{ matrix.python-version }})
         PYTHON_LIBDIR=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
         echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
-        echo "RUSTFLAGS=-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" >> $GITHUB_ENV
+        echo "PYTHON_LIBDIR=$PYTHON_LIBDIR" >> $GITHUB_ENV
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -92,14 +92,14 @@ jobs:
           ${{ runner.os }}-${{ matrix.arch }}-cargo-
 
     - name: Run unit tests
-      run: cargo test --lib --all-features
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --lib --all-features
 
     - name: Run integration tests
-      run: cargo test --test '*' --all-features
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --test '*' --all-features
       continue-on-error: true
 
     - name: Run doctests
-      run: cargo test --doc --all-features
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --doc --all-features
 
   build:
     name: Build Release on ${{ matrix.os }} (${{ matrix.arch }})
@@ -110,17 +110,20 @@ jobs:
         include:
           - os: ubuntu-latest
             arch: x64
+            python-version: 3.11
           - os: macos-latest
             arch: x64
+            python-version: 3.11
           - os: macos-latest
             arch: arm64
+            python-version: 3.11
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python 3.11 (${{ matrix.arch }})
+    - name: Set up Python ${{ matrix.python-version }} (${{ matrix.arch }})
       uses: actions/setup-python@v4
       with:
-        python-version: 3.11
+        python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.arch }}
 
     - name: Required environment variables for PyO3
@@ -128,7 +131,7 @@ jobs:
         PYTHON_BIN=$(which python${{ matrix.python-version }})
         PYTHON_LIBDIR=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
         echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
-        echo "RUSTFLAGS=-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" >> $GITHUB_ENV
+        echo "PYTHON_LIBDIR=$PYTHON_LIBDIR" >> $GITHUB_ENV
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -145,10 +148,10 @@ jobs:
           ${{ runner.os }}-${{ matrix.arch }}-cargo-
 
     - name: Build release binary
-      run: cargo build --release --all-features
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --all-features
 
     - name: Build with Python bindings
-      run: cargo build --release --features pyo3
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --features pyo3
 
     - name: Test binary works
       run: ./target/release/tarzi --version

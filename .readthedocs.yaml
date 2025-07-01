@@ -21,6 +21,14 @@ build:
       - export PATH="$HOME/.cargo/bin:$PATH"
       - export CARGO_HOME="$HOME/.cargo"
       - export RUSTUP_HOME="$HOME/.rustup"
+      - PYTHON_BIN=$(which python3.11)
+      - PYTHON_LIBDIR=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+      - export PYO3_PYTHON=$PYTHON_BIN
+      - export RUSTFLAGS=-L$PYTHON_LIBDIR -lpython3.11
+    post_install:
+      # Build and install the Python package
+      - maturin build --release
+      - pip install target/wheels/*.whl
 
 
 # Build documentation in the docs/ directory with Sphinx
@@ -45,6 +53,4 @@ python:
       extra_requirements:
         - dev
         - test
-        - docs
-      pip_install_options:
-        - --no-build-isolation 
+        - docs 
