@@ -52,22 +52,46 @@ jobs:
         CIBW_ARCHS: x86_64 aarch64
         CIBW_ENVIRONMENT: >
           OPENSSL_ROOT_DIR=/usr
+          OPENSSL_DIR=/usr
+          OPENSSL_LIB_DIR=/usr/lib64
+          OPENSSL_INCLUDE_DIR=/usr/include/openssl
+          PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
           RUSTFLAGS="-C target-feature=-crt-static"
           PATH=/root/.cargo/bin:$PATH
           CARGO_HOME=/root/.cargo
         CIBW_BEFORE_ALL: |
-          # Install OpenSSL development headers
-          yum install -y openssl-devel pkg-config
-          # Verify OpenSSL installation
+          echo "=== Installing OpenSSL dependencies ==="
+          yum update -y
+          yum install -y openssl-devel pkg-config gcc
+          # Alternative installation if the above fails
+          if [ ! -f /usr/include/openssl/opensslv.h ]; then
+            echo "OpenSSL headers not found, trying alternative installation..."
+            yum install -y openssl-devel-1.0.2k-19.el7.x86_64 || yum install -y openssl-devel
+          fi
           echo "=== OpenSSL Installation Check ==="
-          ls -la /usr/include/openssl/
-          pkg-config --libs openssl
-          pkg-config --cflags openssl
+          ls -la /usr/include/openssl/ || echo "OpenSSL headers not found"
+          find /usr -name "openssl.pc" 2>/dev/null || echo "openssl.pc not found"
+          pkg-config --libs openssl || echo "pkg-config failed for openssl"
+          pkg-config --cflags openssl || echo "pkg-config failed for openssl"
           # Set environment variables for OpenSSL
           export OPENSSL_DIR=/usr
           export OPENSSL_LIB_DIR=/usr/lib64
           export OPENSSL_INCLUDE_DIR=/usr/include/openssl
           export PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
+          # Fallback: try to find OpenSSL in common locations
+          if [ ! -f /usr/include/openssl/opensslv.h ]; then
+            echo "Looking for OpenSSL in alternative locations..."
+            # Try to find OpenSSL headers
+            OPENSSL_INCLUDE=$(find /usr -name "opensslv.h" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "/usr/include/openssl")
+            OPENSSL_LIB=$(find /usr -name "libssl.so*" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "/usr/lib64")
+            OPENSSL_PC=$(find /usr -name "openssl.pc" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "/usr/lib64/pkgconfig")
+            echo "Found OpenSSL include: $OPENSSL_INCLUDE"
+            echo "Found OpenSSL lib: $OPENSSL_LIB"
+            echo "Found OpenSSL pkg-config: $OPENSSL_PC"
+            export OPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE
+            export OPENSSL_LIB_DIR=$OPENSSL_LIB
+            export PKG_CONFIG_PATH="$OPENSSL_PC:$PKG_CONFIG_PATH"
+          fi
           # Install Rust
           echo "=== Installing Rust ==="
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
