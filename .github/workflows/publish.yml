@@ -123,20 +123,6 @@ jobs:
           export OPENSSL_LIB_DIR=/usr/lib64
           export OPENSSL_INCLUDE_DIR=/usr/include/openssl
           export PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
-          # Fallback: try to find OpenSSL in common locations
-          if [ ! -f /usr/include/openssl/opensslv.h ]; then
-            echo "Looking for OpenSSL in alternative locations..."
-            # Try to find OpenSSL headers
-            OPENSSL_INCLUDE=$(find /usr -name "opensslv.h" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "/usr/include/openssl")
-            OPENSSL_LIB=$(find /usr -name "libssl.so*" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "/usr/lib64")
-            OPENSSL_PC=$(find /usr -name "openssl.pc" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "/usr/lib64/pkgconfig")
-            echo "Found OpenSSL include: $OPENSSL_INCLUDE"
-            echo "Found OpenSSL lib: $OPENSSL_LIB"
-            echo "Found OpenSSL pkg-config: $OPENSSL_PC"
-            export OPENSSL_INCLUDE_DIR=$OPENSSL_INCLUDE
-            export OPENSSL_LIB_DIR=$OPENSSL_LIB
-            export PKG_CONFIG_PATH="$OPENSSL_PC:$PKG_CONFIG_PATH"
-          fi
           # Install Rust
           echo "=== Installing Rust ==="
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
