@@ -1,6 +1,9 @@
 Installation
 ============
 
+.. note::
+   tarzi supports only Linux and macOS. Windows is not supported.
+
 tarzi is available as both a Python package and a Rust crate, with optional CLI tools.
 Choose the installation method that best fits your use case.
 
@@ -60,7 +63,7 @@ Python Requirements
 ~~~~~~~~~~~~~~~~~~~
 
 - Python 3.10 or higher
-- Operating system: Linux, macOS, or Windows
+- Operating system: Linux, macOS
 
 Optional dependencies for development:
 
@@ -157,17 +160,6 @@ For browser-based fetching, you'll need a WebDriver:
          brew install chromium
          brew install chromedriver
 
-   .. tab:: Windows
-
-      .. code-block:: bash
-
-         # Using Chocolatey
-         choco install chromium
-         choco install chromedriver
-
-         # Or download manually from:
-         # https://chromedriver.chromium.org/
-
 **Firefox** (Alternative):
 
 .. tabs::
@@ -192,146 +184,48 @@ For browser-based fetching, you'll need a WebDriver:
          brew install firefox
          brew install geckodriver
 
-   .. tab:: Windows
-
-      .. code-block:: bash
-
-         # Download from Mozilla
-         # https://github.com/mozilla/geckodriver/releases
-
-Proxy Configuration (Optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you're behind a corporate proxy, configure it in your `tarzi.toml`:
-
-.. code-block:: toml
-
-   [fetcher]
-   proxy = "http://proxy.company.com:8080"
-
-Or set environment variables:
-
-.. code-block:: bash
-
-   export HTTP_PROXY=http://proxy.company.com:8080
-   export HTTPS_PROXY=http://proxy.company.com:8080
-
 Verification
 ------------
 
-Python Verification
-~~~~~~~~~~~~~~~~~~~~
+After installation, verify that tarzi is working correctly:
 
-.. code-block:: bash
+Python
+~~~~~~~
 
-   python -c "import tarzi; print('tarzi version:', tarzi.__version__)"
+.. code-block:: python
 
-Rust Verification
-~~~~~~~~~~~~~~~~~
+   import tarzi
+   print(tarzi.__version__)
 
-Create a simple test file `test.rs`:
+   # Test basic functionality
+   html = "<h1>Test</h1>"
+   result = tarzi.convert_html(html, "markdown")
+   print(result)
+
+Rust
+~~~~
 
 .. code-block:: rust
 
    use tarzi::Converter;
 
    #[tokio::main]
-   async fn main() -> Result<(), Box<dyn std::error::Error>> {
+   async fn main() {
        let converter = Converter::new();
-       let result = converter.convert("<h1>Test</h1>", tarzi::Format::Markdown).await?;
-       println!("Converted: {}", result);
-       Ok(())
+       let html = "<h1>Test</h1>";
+       match converter.convert(html, tarzi::Format::Markdown).await {
+           Ok(result) => println!("{}", result),
+           Err(e) => eprintln!("Error: {}", e),
+       }
    }
 
-Run it:
-
-.. code-block:: bash
-
-   rustc test.rs && ./test
-
-CLI Verification
-~~~~~~~~~~~~~~~~
+CLI
+~~~
 
 .. code-block:: bash
 
    tarzi --version
-   tarzi --help
-
-Docker Installation
--------------------
-
-For containerized environments, use our official Docker image:
-
-.. code-block:: bash
-
-   # Pull the image
-   docker pull ghcr.io/mirasurf/tarzi:latest
-
-   # Run with Python
-   docker run -it --rm ghcr.io/mirasurf/tarzi:latest python -c "import tarzi; print('Ready!')"
-
-   # Run CLI
-   docker run -it --rm ghcr.io/mirasurf/tarzi:latest tarzi --help
-
-Dockerfile Example
-~~~~~~~~~~~~~~~~~~
-
-.. code-block:: dockerfile
-
-   FROM python:3.11-slim
-
-   # Install system dependencies
-   RUN apt-get update && apt-get install -y \
-       chromium \
-       chromium-driver \
-       && rm -rf /var/lib/apt/lists/*
-
-   # Install tarzi
-   RUN pip install tarzi
-
-   # Your application
-   COPY . /app
-   WORKDIR /app
-
-   CMD ["python", "your_app.py"]
-
-Troubleshooting
----------------
-
-Common Issues
-~~~~~~~~~~~~~
-
-**Import Error on Python**:
-
-.. code-block:: bash
-
-   # Reinstall with verbose output
-   pip install --force-reinstall -v tarzi
-
-**Browser Driver Not Found**:
-
-.. code-block:: bash
-
-   # Check if chromedriver is in PATH
-   which chromedriver
-
-   # Or specify the path in configuration
-   export CHROMEDRIVER_PATH=/path/to/chromedriver
-
-**Permission Denied on Linux**:
-
-.. code-block:: bash
-
-   # Make chromedriver executable
-   chmod +x /usr/local/bin/chromedriver
-
-**Proxy Issues**:
-
-.. code-block:: bash
-
-   # Test without proxy first
-   unset HTTP_PROXY HTTPS_PROXY
-   python -c "import tarzi; print('Success!')"
+   tarzi convert --input "<h1>Test</h1>" --format markdown
 
 Getting Help
 ~~~~~~~~~~~~

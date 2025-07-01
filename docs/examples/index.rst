@@ -3,17 +3,6 @@ Examples
 
 Real-world examples and use cases for tarzi.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Examples:
-
-   basic_usage
-   web_scraping
-   data_collection
-   research_automation
-   content_aggregation
-   advanced_patterns
-
 Example Categories
 ------------------
 

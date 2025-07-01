@@ -7,6 +7,10 @@ import os
 import sys
 from pathlib import Path
 
+# Add the project root to the Python path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
@@ -32,7 +36,6 @@ extensions = [
     "myst_parser",
     "sphinx_tabs.tabs",
     "sphinx_design",
-    # "autoapi.extension",  # Temporarily disabled for ReadTheDocs build
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -119,33 +122,6 @@ always_document_param_types = True
 typehints_fully_qualified = False
 typehints_document_rtype = True
 
-# -- Options for sphinx-autoapi extension -----------------------------------
-autoapi_type = "python"
-autoapi_dirs = ["../"]
-autoapi_root = "api"
-autoapi_ignore = [
-    "*tests*",
-    "*test_*",
-    "*/target/*",
-    "*/examples/*",
-    "*/.git/*",
-    "*/__pycache__/*",
-    "*/.venv/*",
-    "*/venv/*",
-    "*/.pytest_cache/*",
-    "*/python/tarzi/*",  # Ignore the Python package directory to avoid import issues
-]
-autoapi_options = [
-    "members",
-    "undoc-members",
-    "show-inheritance",
-    "show-module-summary",
-    "imported-members",
-]
-autoapi_python_class_content = "both"
-autoapi_member_order = "bysource"
-autoapi_generate_api_docs = True
-
 # -- Options for myst-parser extension ---------------------------------------
 myst_enable_extensions = [
     "colon_fence",
@@ -154,7 +130,6 @@ myst_enable_extensions = [
     "fieldlist",
     "html_admonition",
     "html_image",
-    "linkify",
     "replacements",
     "smartquotes",
     "strikethrough",

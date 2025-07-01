@@ -3,17 +3,6 @@ Rust API Reference
 
 Complete reference for the tarzi Rust API.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Rust API:
-
-   converter
-   fetcher
-   search
-   config
-   errors
-   types
-
 Quick Reference
 ---------------
 
@@ -31,17 +20,6 @@ Quick Reference
    - ``Format`` - Output formats (Markdown, JSON, YAML, HTML)
    - ``FetchMode`` - Fetching strategies
    - ``SearchMode`` - Search strategies
-
-Installation
-------------
-
-Add to your ``Cargo.toml``:
-
-.. code-block:: toml
-
-   [dependencies]
-   tarzi = "0.0.4"
-   tokio = { version = "1.0", features = ["full"] }
 
 Basic Usage
 -----------
@@ -62,7 +40,7 @@ Basic Usage
 
        // Search web
        let mut search_engine = SearchEngine::new();
-       let results = search_engine.search("rust programming", SearchMode::WebQuery, 10).await?;
+       let results = search_engine.search("agentic AI", SearchMode::WebQuery, 10).await?;
 
        Ok(())
    } 

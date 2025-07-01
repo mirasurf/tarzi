@@ -1,26 +1,15 @@
 Overview
 ========
 
+.. note::
+   tarzi supports only Linux and macOS. Windows is not supported.
+
 What is tarzi?
 --------------
 
-tarzi is a powerful, Rust-native search library designed specifically for AI applications. 
-It provides a comprehensive toolkit for content conversion, web fetching, and search engine 
-integration with both browser-based and API-based approaches.
+**Tarzi** is a unified search interface designed for **Retrieval-Augmented Generation (RAG)** and **agentic systems** built on large language models. Search is a core functionality in these systems, yet most search engine providers impose API paywalls or strict rate limits—even for light or research-driven usage.
 
-Core Philosophy
----------------
-
-tarzi is built around three core principles:
-
-**Performance First**
-   Written in Rust for maximum performance and memory safety, with zero-cost abstractions
-
-**AI-Native Design**
-   Purpose-built for AI applications with structured data output and batch processing capabilities
-
-**Developer Experience**
-   Simple APIs with comprehensive error handling and extensive documentation
+**Tarzi** removes these barriers by supporting both token-based APIs and free web queries across multiple search engines. With a single dependency, you can integrate and switch between different Search Engine Providers (SEPs) as needed—seamlessly and efficiently.
 
 Key Components
 --------------
@@ -94,24 +83,6 @@ Key features:
 - Snippet extraction
 - URL validation and cleaning
 
-Architecture Benefits
----------------------
-
-**Modularity**
-   Each component can be used independently or combined for complex workflows
-
-**Performance**
-   Rust's zero-cost abstractions ensure maximum performance
-
-**Reliability**
-   Comprehensive error handling and graceful degradation
-
-**Extensibility**
-   Plugin architecture for custom search engines and formats
-
-**Cross-Platform**
-   Works on Linux, macOS, and Windows
-
 Use Cases
 ---------
 
@@ -130,7 +101,7 @@ Collect and process web content for AI model training:
    # Fetch and convert each result
    training_data = []
    for result in results:
-       content = tarzi.fetch_url(result.url, mode="browser_headless", format="markdown")
+       content = tarzi.fetch_url(result.url, "browser_headless", "markdown")
        training_data.append({
            "title": result.title,
            "url": result.url,
@@ -167,84 +138,6 @@ Automate research workflows for business intelligence:
        // Process structured content
        analyze_report(content).await?;
    }
-
-Content Aggregation Systems
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Build content aggregation systems with automatic format conversion:
-
-.. code-block:: python
-
-   import tarzi
-
-   # Configure for news aggregation
-   config = tarzi.Config.from_str("""
-   [fetcher]
-   timeout = 30
-   format = "json"
-   
-   [search]
-   engine = "bing"
-   limit = 100
-   """)
-
-   search_engine = tarzi.SearchEngine.from_config(config)
-   
-   # Aggregate news articles
-   articles = search_engine.search_and_fetch(
-       "technology news today",
-       "browser",
-       50,
-       "plain_request",
-       "json"
-   )
-
-Performance Characteristics
----------------------------
-
-**Memory Efficiency**
-   Streaming processing for large documents with minimal memory footprint
-
-**Speed**
-   Rust's performance with optimized HTML parsing and network handling
-
-**Concurrency**
-   Built-in async/await support for handling multiple requests concurrently
-
-**Scalability**
-   Designed to handle thousands of requests per minute
-
-Comparison with Alternatives
-----------------------------
-
-vs. Traditional Web Scraping Libraries
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-========================= =============== ======================
-Feature                   tarzi           Traditional Libraries
-========================= =============== ======================
-Performance               Rust-native     Python/Node.js overhead
-Memory Usage              Minimal         High memory allocation
-Error Handling            Comprehensive   Basic error reporting
-AI Integration            Built-in        Manual integration
-Search Engine Support     Multiple        Limited or none
-Format Conversion         Built-in        Requires external tools
-Async Support             Native          Varies by library
-========================= =============== ======================
-
-vs. Browser Automation Tools
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-========================= =============== ======================
-Feature                   tarzi           Browser Automation
-========================= =============== ======================
-Setup Complexity          Simple          Complex configuration
-Resource Usage            Optimized       High CPU/memory usage
-Anti-Detection            Built-in        Requires custom setup
-Content Processing        Integrated      Manual processing
-Multi-Format Output       Yes             No
-API Alternative           Available       Browser-only
-========================= =============== ======================
 
 Getting Started
 ---------------

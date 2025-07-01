@@ -4,6 +4,9 @@ Quick Start Guide
 This guide will get you up and running with tarzi in just a few minutes. 
 We'll cover the most common use cases and basic functionality.
 
+.. note::
+   tarzi supports only Linux and macOS. Windows is not supported.
+
 Your First tarzi Program
 -------------------------
 
@@ -88,7 +91,7 @@ Here's the equivalent Rust program:
        // 3. Search the web
        let mut search_engine = SearchEngine::new();
        match search_engine.search(
-           "rust programming",
+           "agentic AI",
            SearchMode::WebQuery,
            3
        ).await {
@@ -126,7 +129,7 @@ You can also use the command-line interface:
    tarzi fetch --url "https://httpbin.org/html" --format markdown
 
    # Search the web
-   tarzi search --query "rust programming" --limit 3
+   tarzi search --query "agentic AI" --limit 3
 
 Core Concepts
 -------------
@@ -201,257 +204,38 @@ Two approaches to web search:
        limit=10
    )
 
-Class-Based API
----------------
-
-For more advanced usage, use the class-based API:
-
-Python
-~~~~~~
-
-.. code-block:: python
-
-   import tarzi
-
-   # Create instances for reuse
-   converter = tarzi.Converter()
-   fetcher = tarzi.WebFetcher()
-   search_engine = tarzi.SearchEngine()
-
-   # Configure with API key (if available)
-   # search_engine = search_engine.with_api_key("your-api-key")
-
-   # Batch conversion
-   html_documents = [
-       "<h1>Doc 1</h1><p>Content 1</p>",
-       "<h1>Doc 2</h1><p>Content 2</p>",
-   ]
-
-   converted_docs = []
-   for html in html_documents:
-       markdown = converter.convert(html, "markdown")
-       converted_docs.append(markdown)
-
-   # Search and fetch pipeline
-   query = "web scraping best practices"
-   search_results = search_engine.search(query, "webquery", 5)
-
-   enriched_results = []
-   for result in search_results:
-       try:
-           content = fetcher.fetch(result.url, "plain_request", "markdown")
-           enriched_results.append({
-               "title": result.title,
-               "url": result.url,
-               "snippet": result.snippet,
-               "full_content": content
-           })
-       except Exception as e:
-           print(f"Failed to fetch {result.url}: {e}")
-
-Rust
-~~~~
-
-.. code-block:: rust
-
-   use tarzi::{Converter, WebFetcher, SearchEngine, Format, FetchMode, SearchMode};
-
-   #[tokio::main]
-   async fn main() -> Result<(), Box<dyn std::error::Error>> {
-       // Create instances for reuse
-       let converter = Converter::new();
-       let mut fetcher = WebFetcher::new();
-       let mut search_engine = SearchEngine::new();
-
-       // Batch conversion
-       let html_documents = vec![
-           "<h1>Doc 1</h1><p>Content 1</p>",
-           "<h1>Doc 2</h1><p>Content 2</p>",
-       ];
-
-       let mut converted_docs = Vec::new();
-       for html in html_documents {
-           let markdown = converter.convert(html, Format::Markdown).await?;
-           converted_docs.push(markdown);
-       }
-
-       // Search and fetch pipeline
-       let search_results = search_engine.search(
-           "rust async programming",
-           SearchMode::WebQuery,
-           5
-       ).await?;
-
-       let mut enriched_results = Vec::new();
-       for result in search_results {
-           match fetcher.fetch(&result.url, FetchMode::PlainRequest, Format::Markdown).await {
-               Ok(content) => {
-                   enriched_results.push((result, content));
-               }
-               Err(e) => {
-                   eprintln!("Failed to fetch {}: {}", result.url, e);
-               }
-           }
-       }
-
-       println!("Processed {} results", enriched_results.len());
-       Ok(())
-   }
-
 Configuration
 -------------
 
-For advanced usage, create a configuration file:
+Basic configuration can be done through environment variables or a `tarzi.toml` file:
 
 .. code-block:: toml
 
-   # tarzi.toml
-   [general]
-   log_level = "info"
+   [search]
+   default_engine = "google"
    timeout = 30
 
    [fetcher]
-   mode = "browser_headless"
-   format = "markdown"
-   user_agent = "tarzi/0.0.4"
-   
-   [search]
-   engine = "bing"
-   mode = "webquery"
-   limit = 10
+   user_agent = "Mozilla/5.0 (compatible; Tarzi/1.0)"
+   timeout = 30
 
-Load and use the configuration:
+   [proxy]
+   http = "http://proxy.example.com:8080"
+   https = "http://proxy.example.com:8080"
 
-.. code-block:: python
-
-   # Load from file
-   config = tarzi.Config.from_file("tarzi.toml")
-   
-   # Or create from string
-   config_str = """
-   [fetcher]
-   timeout = 60
-   format = "json"
-   """
-   config = tarzi.Config.from_str(config_str)
-
-   # Use with components
-   fetcher = tarzi.WebFetcher.from_config(config)
-   search_engine = tarzi.SearchEngine.from_config(config)
-
-Error Handling
---------------
-
-tarzi provides comprehensive error handling:
-
-.. code-block:: python
-
-   import tarzi
-
-   try:
-       # This might fail due to network issues
-       content = tarzi.fetch_url("https://invalid-url.example", mode="plain_request")
-   except tarzi.TarziError as e:
-       print(f"tarzi error: {e}")
-   except Exception as e:
-       print(f"Unexpected error: {e}")
-
-   try:
-       # This might fail due to invalid HTML
-       result = tarzi.convert_html("<<invalid html>>", "markdown")
-   except Exception as e:
-       print(f"Conversion error: {e}")
-
-Common Patterns
----------------
-
-Web Research Pipeline
+Environment Variables
 ~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: python
+.. code-block:: bash
 
-   import tarzi
-
-   def research_topic(query, num_results=10):
-       """Research a topic and return structured data."""
-       
-       # Search for relevant content
-       results = tarzi.search_web(query, "webquery", num_results)
-       
-       # Fetch and process each result
-       research_data = []
-       for result in results:
-           try:
-               # Fetch content in JSON format for structured data
-               content = tarzi.fetch_url(result.url, "plain_request", "json")
-               
-               research_data.append({
-                   "query": query,
-                   "title": result.title,
-                   "url": result.url,
-                   "snippet": result.snippet,
-                   "rank": result.rank,
-                   "content": content,
-                   "timestamp": "2024-01-01T00:00:00Z"  # Add actual timestamp
-               })
-           except Exception as e:
-               print(f"Failed to process {result.url}: {e}")
-       
-       return research_data
-
-   # Use the pipeline
-   data = research_topic("sustainable energy technologies", 5)
-   print(f"Collected {len(data)} research items")
-
-Content Aggregation
-~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   import tarzi
-
-   def aggregate_news(topics, articles_per_topic=5):
-       """Aggregate news articles on multiple topics."""
-       
-       all_articles = []
-       
-       for topic in topics:
-           print(f"Searching for: {topic}")
-           
-           # Search for news articles
-           results = tarzi.search_web(f"{topic} news", "webquery", articles_per_topic)
-           
-           for result in results:
-               try:
-                   # Convert to markdown for readability
-                   content = tarzi.fetch_url(result.url, "plain_request", "markdown")
-                   
-                   all_articles.append({
-                       "topic": topic,
-                       "title": result.title,
-                       "url": result.url,
-                       "content": content
-                   })
-               except Exception as e:
-                   print(f"Skipping {result.url}: {e}")
-       
-       return all_articles
-
-   # Aggregate news on multiple topics
-   topics = ["artificial intelligence", "climate change", "space exploration"]
-   articles = aggregate_news(topics, 3)
-   print(f"Aggregated {len(articles)} articles")
+   export HTTP_PROXY=http://proxy.example.com:8080
+   export HTTPS_PROXY=http://proxy.example.com:8080
+   export TARZI_DEBUG=1
 
 Next Steps
 ----------
 
-Now that you understand the basics, explore these advanced topics:
-
-- :doc:`user_guide/index` - Comprehensive usage guide
-- :doc:`configuration` - Advanced configuration options
-- :doc:`examples/index` - Real-world examples and use cases
-- :doc:`python_api/index` - Complete Python API reference
-- :doc:`rust_api/index` - Complete Rust API reference
-
-Ready to build something amazing? Check out our :doc:`examples/index` for 
-inspiration and practical implementations. 
+- Read the configuration and development guides for detailed usage patterns
+- Check out the :doc:`examples/index` for more examples
+- Explore the :doc:`python_api/index` or :doc:`rust_api/index` for API reference
+- Configure advanced options in :doc:`configuration` 

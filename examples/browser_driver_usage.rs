@@ -1,4 +1,3 @@
-use std::env;
 use tarzi::{
     Result,
     config::Config,
@@ -28,17 +27,20 @@ async fn main() -> Result<()> {
     println!("Testing browser integration with URL: {test_url}");
     println!();
 
-    // Show current environment
-    match env::var("TARZI_WEBDRIVER_URL") {
-        Ok(url) if !url.is_empty() => {
-            println!("✓ TARZI_WEBDRIVER_URL is set: {url}");
+    // Show current configuration
+    if let Some(web_driver_url) = &config.fetcher.web_driver_url {
+        if !web_driver_url.is_empty() {
+            println!("✓ WebDriver URL is configured: {web_driver_url}");
             println!("  → Will use this URL with highest priority");
-        }
-        _ => {
-            println!("ℹ TARZI_WEBDRIVER_URL is not set");
+        } else {
+            println!("ℹ WebDriver URL is not configured");
             println!("  → Will check for default webdriver at localhost:9515");
             println!("  → If not found, will try to start one with DriverManager");
         }
+    } else {
+        println!("ℹ WebDriver URL is not configured");
+        println!("  → Will check for default webdriver at localhost:9515");
+        println!("  → If not found, will try to start one with DriverManager");
     }
     println!();
 
@@ -74,7 +76,7 @@ async fn main() -> Result<()> {
             println!("✗ Failed to fetch content: {e}");
             println!();
             println!("This might happen if:");
-            println!("- No WebDriver is available at TARZI_WEBDRIVER_URL");
+            println!("- No WebDriver is available at the configured URL");
             println!("- No WebDriver is running at the default port (9515)");
             println!("- ChromeDriver or GeckoDriver is not installed");
             println!("- Network connectivity issues");
@@ -82,7 +84,7 @@ async fn main() -> Result<()> {
             println!("To fix this:");
             println!("1. Install ChromeDriver: https://chromedriver.chromium.org/");
             println!("2. Or install GeckoDriver: https://github.com/mozilla/geckodriver/releases");
-            println!("3. Or set TARZI_WEBDRIVER_URL to your WebDriver endpoint");
+            println!("3. Or configure web_driver_url in your tarzi.toml file");
         }
     }
 

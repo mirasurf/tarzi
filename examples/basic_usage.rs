@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
     println!("2. Searching and fetching content:");
 
     let mut search_engine = SearchEngine::new();
-    let query = "rust programming";
+    let query = "agentic AI";
 
     // Search for results
     match search_engine.search(query, SearchMode::WebQuery, 3).await {

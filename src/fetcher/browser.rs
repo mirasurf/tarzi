@@ -259,8 +259,8 @@ impl BrowserManager {
         self.browsers.values().next().map(|(browser, _)| browser)
     }
 
-    /// Get or create a webdriver endpoint, prioritizing TARZI_WEBDRIVER_URL
-    /// If TARZI_WEBDRIVER_URL is not set and no webdriver is available, use DriverManager
+    /// Get or create a webdriver endpoint, using configuration or DriverManager
+    /// If no webdriver is available, use DriverManager to start one
     async fn get_or_create_webdriver_endpoint(&mut self) -> Result<String> {
         // Use web_driver_url from config if set
         if let Some(config) = &self.config {
@@ -304,10 +304,7 @@ impl BrowserManager {
             format!("http://localhost:{GECKODRIVER_DEFAULT_PORT}")
         };
 
-        info!(
-            "TARZI_WEBDRIVER_URL not set, checking configured WebDriver at: {}",
-            default_url
-        );
+        info!("Checking configured WebDriver at: {}", default_url);
 
         if is_webdriver_available_at_url(&default_url).await {
             info!("WebDriver server found at configured URL: {}", default_url);
@@ -436,9 +433,9 @@ impl BrowserManager {
         // If all attempts failed, return an error with helpful guidance
         Err(TarziError::Browser(
             "No WebDriver server is available. Please either:\n\
-            1. Set TARZI_WEBDRIVER_URL environment variable to your WebDriver endpoint, or\n\
-            2. Install ChromeDriver (https://chromedriver.chromium.org/) or GeckoDriver (https://github.com/mozilla/geckodriver/releases) and ensure they're in your PATH, or\n\
-            3. Start a WebDriver server manually and set TARZI_WEBDRIVER_URL".to_string()
+            1. Install ChromeDriver (https://chromedriver.chromium.org/) or GeckoDriver (https://github.com/mozilla/geckodriver/releases) and ensure they're in your PATH, or\n\
+            2. Start a WebDriver server manually and configure it in your tarzi.toml file, or\n\
+            3. Let tarzi automatically start a WebDriver using DriverManager".to_string()
         ))
     }
 

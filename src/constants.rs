@@ -9,9 +9,6 @@ use std::time::Duration;
 // Network & WebDriver Constants
 // ============================================================================
 
-/// Default WebDriver URL for legacy compatibility (should use CHROMEDRIVER_DEFAULT_URL instead)
-pub const WEBDRIVER_LEGACY_DEFAULT_URL: &str = "http://localhost:4444";
-
 /// Default ChromeDriver URL
 pub const CHROMEDRIVER_DEFAULT_URL: &str = "http://localhost:9515";
 

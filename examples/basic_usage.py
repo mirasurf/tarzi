@@ -47,7 +47,7 @@ def main():
     print("4. Search functionality:")
     try:
         # Web query mode
-        results = tarzi.search_web("Rust programming", "webquery", 3)
+        results = tarzi.search_web("Agentic AI", "webquery", 3)
         print(f"Web query mode - Found {len(results)} search results:")
         for i, result in enumerate(results):
             print(f"  {i+1}. {result.title} ({result.url})")
@@ -55,7 +55,7 @@ def main():
         print()
 
         # API query mode
-        results = tarzi.search_web("Python programming", "apiquery", 2)
+        results = tarzi.search_web("Agent LLM", "apiquery", 2)
         print(f"API query mode - Found {len(results)} search results:")
         for i, result in enumerate(results):
             print(f"  {i+1}. {result.title} ({result.url})")

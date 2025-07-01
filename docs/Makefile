@@ -17,4 +17,17 @@ help:
 # Catch-all target: route all unknown targets to Sphinx-Makefiles using the "make mode" option.
 # $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) 
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+
+# Additional targets for local development
+clean:
+	rm -rf $(BUILDDIR)/*
+
+serve:
+	@echo "Starting documentation server..."
+	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@echo "Documentation built. Open _build/html/index.html in your browser."
+
+watch:
+	@echo "Watching for changes..."
+	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O) -W --keep-going 

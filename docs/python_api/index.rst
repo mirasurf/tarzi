@@ -3,16 +3,6 @@ Python API Reference
 
 Complete reference for the tarzi Python API.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Python API:
-
-   converter
-   fetcher
-   search
-   config
-   errors
-
 Quick Reference
 ---------------
 
@@ -30,13 +20,6 @@ Quick Reference
 **Data Types**
    - :class:`tarzi.SearchResult` - Search result data
    - :class:`tarzi.TarziError` - Error types
-
-Installation
-------------
-
-.. code-block:: bash
-
-   pip install tarzi
 
 Basic Usage
 -----------

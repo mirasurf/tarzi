@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="static/tarzi-320.png" alt="Tarzi Logo" width="200" height="200">
+  <img src="https://github.com/mirasurf/tarzi.rs/blob/4e751f8d389c0ac7f2061afa9286d2d7fa551aaf/static/tarzi-320.png" alt="Tarzi Logo" width="200" height="200">
 </div>
 
 <h1 align="center">tarzi.rs</h1>

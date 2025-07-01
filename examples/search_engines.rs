@@ -17,7 +17,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut search_engine = SearchEngine::from_config(&config);
 
     // Perform a search
-    let query = "Rust programming language";
+    let query = "agentic AI";
     println!("\nSearching for: '{query}'");
 
     let results = search_engine

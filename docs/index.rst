@@ -1,3 +1,6 @@
+.. warning::
+   tarzi currently supports only Linux and macOS. Windows is not supported.
+
 tarzi - Rust-native lite search for AI applications
 ====================================================
 
@@ -28,11 +31,11 @@ with both browser-based and API-based approaches.
    overview
    installation
    quickstart
-   user_guide/index
    python_api/index
    rust_api/index
    examples/index
    configuration
+   development
 
 Key Features
 ============
@@ -109,7 +112,7 @@ Rust
        // Search web
        let mut search_engine = SearchEngine::new();
        let results = search_engine.search(
-           "rust programming",
+           "agentic AI",
            SearchMode::WebQuery,
            5
        ).await?;
@@ -133,32 +136,11 @@ CLI
 
    # Search and fetch content
    tarzi search-and-fetch \
-     --query "rust programming" \
+     --query "agentic AI" \
      --search-mode browser \
      --fetch-mode plain_request \
      --format markdown \
      --limit 5
-
-Architecture
-============
-
-tarzi is built with a modular architecture consisting of three core components:
-
-**Converter Module**
-   Converts raw HTML content into structured formats (Markdown, JSON, YAML)
-
-**Fetcher Module**
-   Handles web page retrieval with multiple strategies (HTTP, Browser automation)
-
-**Search Module**
-   Provides search engine integration and result processing
-
-This modular design ensures:
-
-- **Maintainability**: Clear module boundaries make code easier to maintain
-- **Reusability**: Fetcher interfaces are reused by search module
-- **Flexibility**: Multiple fetch modes and formats supported
-- **Extensibility**: Easy to add new formats or fetch modes
 
 Use Cases
 =========

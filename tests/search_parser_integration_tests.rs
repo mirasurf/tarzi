@@ -1,4 +1,5 @@
 use std::time::Duration;
+use tarzi::constants::CHROMEDRIVER_DEFAULT_URL;
 use tarzi::search::parser::{
     BaiduParser, BingParser, BraveParser, DuckDuckGoParser, GoogleParser, SearchResultParser,
 };
@@ -10,8 +11,7 @@ use thirtyfour::{By, DesiredCapabilities, Key, WebDriver};
 /// These tests require internet access and a running WebDriver server
 /// Perform a real Bing search using WebDriver and return the HTML
 async fn perform_bing_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
-        .unwrap_or_else(|_| "http://localhost:4444".to_string());
+    let webdriver_url = CHROMEDRIVER_DEFAULT_URL;
 
     // Setup Firefox capabilities for geckodriver (default)
     let mut caps = DesiredCapabilities::firefox();
@@ -20,7 +20,7 @@ async fn perform_bing_search(query: &str) -> Result<String, Box<dyn std::error::
     caps.add_arg("--disable-features=VizDisplayCompositor")?;
 
     // Connect to WebDriver
-    let driver = WebDriver::new(&webdriver_url, caps).await?;
+    let driver = WebDriver::new(webdriver_url, caps).await?;
 
     let result = async {
         // Navigate to Bing
@@ -75,8 +75,7 @@ async fn perform_bing_search(query: &str) -> Result<String, Box<dyn std::error::
 
 /// Perform a real DuckDuckGo search using WebDriver and return the HTML
 async fn perform_duckduckgo_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
-        .unwrap_or_else(|_| "http://localhost:4444".to_string());
+    let webdriver_url = CHROMEDRIVER_DEFAULT_URL;
 
     // Setup Firefox capabilities for geckodriver (default)
     let mut caps = DesiredCapabilities::firefox();
@@ -88,7 +87,7 @@ async fn perform_duckduckgo_search(query: &str) -> Result<String, Box<dyn std::e
     caps.add_arg("--disable-default-apps")?;
 
     // Connect to WebDriver
-    let driver = WebDriver::new(&webdriver_url, caps).await?;
+    let driver = WebDriver::new(webdriver_url, caps).await?;
 
     let result = async {
         // Navigate to DuckDuckGo
@@ -168,8 +167,7 @@ async fn perform_duckduckgo_search(query: &str) -> Result<String, Box<dyn std::e
 
 /// Perform a real Google search using WebDriver and return the HTML
 async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
-        .unwrap_or_else(|_| "http://localhost:4444".to_string());
+    let webdriver_url = CHROMEDRIVER_DEFAULT_URL;
 
     // Setup Firefox capabilities for geckodriver (default)
     let mut caps = DesiredCapabilities::firefox();
@@ -181,7 +179,7 @@ async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error
     caps.add_arg("--disable-default-apps")?;
 
     // Connect to WebDriver
-    let driver = WebDriver::new(&webdriver_url, caps).await?;
+    let driver = WebDriver::new(webdriver_url, caps).await?;
 
     let result = async {
         // Navigate to Google
@@ -257,8 +255,7 @@ async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error
 
 /// Perform a real Brave search using WebDriver and return the HTML
 async fn perform_brave_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
-        .unwrap_or_else(|_| "http://localhost:4444".to_string());
+    let webdriver_url = CHROMEDRIVER_DEFAULT_URL;
 
     // Setup Firefox capabilities for geckodriver (default)
     let mut caps = DesiredCapabilities::firefox();
@@ -270,7 +267,7 @@ async fn perform_brave_search(query: &str) -> Result<String, Box<dyn std::error:
     caps.add_arg("--disable-default-apps")?;
 
     // Connect to WebDriver
-    let driver = WebDriver::new(&webdriver_url, caps).await?;
+    let driver = WebDriver::new(webdriver_url, caps).await?;
 
     let result = async {
         // Navigate to Brave Search
@@ -338,8 +335,7 @@ async fn perform_brave_search(query: &str) -> Result<String, Box<dyn std::error:
 
 /// Perform a real Baidu search using WebDriver and return the HTML
 async fn perform_baidu_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let webdriver_url = std::env::var("TARZI_WEBDRIVER_URL")
-        .unwrap_or_else(|_| "http://localhost:4444".to_string());
+    let webdriver_url = CHROMEDRIVER_DEFAULT_URL;
 
     // Setup Firefox capabilities for geckodriver (default)
     let mut caps = DesiredCapabilities::firefox();
@@ -351,7 +347,7 @@ async fn perform_baidu_search(query: &str) -> Result<String, Box<dyn std::error:
     caps.add_arg("--disable-default-apps")?;
 
     // Connect to WebDriver
-    let driver = WebDriver::new(&webdriver_url, caps).await?;
+    let driver = WebDriver::new(webdriver_url, caps).await?;
 
     let result = async {
         // Navigate to Baidu
