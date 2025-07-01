@@ -37,22 +37,6 @@ jobs:
           - os: ubuntu-latest
             python-version: '3.12'
             arch: 'x64'
-          # Ubuntu ARM64
-          - os: ubuntu-latest
-            python-version: '3.8'
-            arch: 'arm64'
-          - os: ubuntu-latest
-            python-version: '3.9'
-            arch: 'arm64'
-          - os: ubuntu-latest
-            python-version: '3.10'
-            arch: 'arm64'
-          - os: ubuntu-latest
-            python-version: '3.11'
-            arch: 'arm64'
-          - os: ubuntu-latest
-            python-version: '3.12'
-            arch: 'arm64'
           # macOS x64
           - os: macos-latest
             python-version: '3.8'

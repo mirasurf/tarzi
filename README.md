@@ -16,18 +16,12 @@
   <a href="https://crates.io/crates/tarzi">
     <img src="https://img.shields.io/crates/d/tarzi.svg?style=flat-square" alt="Crate Downloads" />
   </a>
-  <a href="https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml">
-    <img src="https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml/badge.svg" alt="Rust CI" />
-  </a>
   <!-- PyPI package: version and monthly downloads -->
   <a href="https://pypi.org/project/tarzi/">
     <img src="https://img.shields.io/pypi/v/tarzi.svg?style=flat-square" alt="PyPI Version" />
   </a>
   <a href="https://pypistats.org/packages/tarzi">
     <img src="https://img.shields.io/pypi/dm/tarzi.svg?style=flat-square" alt="PyPI Downloads" />
-  </a>
-  <a href="https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml">
-    <img src="https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml/badge.svg" alt="Python CI" />
   </a>
   <!-- License -->
   <a href="https://www.apache.org/licenses/LICENSE-2.0">
@@ -59,7 +53,6 @@
 - 🛡️ **Proxy Support**: Bypass network bans using proxy support
 - 🚀 **End-to-End Workflow**: Full pipeline from search to content extraction for AI and automation use cases
 
-
 ## 🧪 Advanced Features (Coming Soon)
 
 - 🖥️ **Custom Browser Controls**: Set screen size, viewport, and locale for realistic behavior  
@@ -72,6 +65,25 @@
 ## Usage Examples
 
 * Examples in Python and Rust: [examples](/examples/)
+
+## 🖥️ Supported Platforms & Versions
+
+### Python Package
+- **Python Versions**: 3.8, 3.9, 3.10, 3.11, 3.12
+- **Platforms**:
+  - Ubuntu Linux (x64)
+  - macOS (x64, ARM64/Apple Silicon)
+
+### Rust Crate
+- **Rust Version**: 1.70+
+- **Platforms**:
+  - Ubuntu Linux (x64)
+  - macOS (x64, ARM64/Apple Silicon)
+
+### Continuous Integration
+- **Tested Platforms**: Ubuntu x64, macOS x64, macOS ARM64
+- **Tested Python Versions**: 3.8, 3.9, 3.10, 3.11, 3.12
+- **Build Status**: [![Rust CI](https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml) [![Python CI](https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml/badge.svg)](https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml)
 
 ## License
 

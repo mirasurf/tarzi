@@ -60,10 +60,6 @@ jobs:
           - os: ubuntu-latest
             python-version: '3.12'
             arch: 'x64'
-          # Ubuntu ARM64 - test key Python versions
-          - os: ubuntu-latest
-            python-version: '3.11'
-            arch: 'arm64'
           # macOS x64 - test key Python versions
           - os: macos-latest
             python-version: '3.11'
@@ -132,7 +128,7 @@ jobs:
       continue-on-error: true
 
     - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
+      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
       uses: codecov/codecov-action@v3
       with:
         file: tests/python/coverage.xml
@@ -148,9 +144,6 @@ jobs:
           # Ubuntu x64
           - os: ubuntu-latest
             arch: 'x64'
-          # Ubuntu ARM64
-          - os: ubuntu-latest
-            arch: 'arm64'
           # macOS x64
           - os: macos-latest
             arch: 'x64'

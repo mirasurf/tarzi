@@ -34,10 +34,6 @@ jobs:
           - os: macos-latest
             python-version: '3.11'
             arch: 'x64'
-          # Test ARM64 on Ubuntu
-          - os: ubuntu-latest
-            python-version: '3.11'
-            arch: 'arm64'
           # Test x86_64 on Ubuntu
           - os: ubuntu-latest
             python-version: '3.11'
@@ -149,7 +145,7 @@ jobs:
         echo "✅ All installation tests completed!" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Tested Platforms:**" >> $GITHUB_STEP_SUMMARY
-        echo "- Ubuntu (x64, ARM64)" >> $GITHUB_STEP_SUMMARY
+        echo "- Ubuntu (x64)" >> $GITHUB_STEP_SUMMARY
         echo "- macOS (x64, ARM64)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Tested Python Versions:** 3.8, 3.9, 3.10, 3.11, 3.12" >> $GITHUB_STEP_SUMMARY
