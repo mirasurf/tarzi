@@ -163,7 +163,7 @@ Use Cases
 Support
 =======
 
-- **Documentation**: https://tarzi.readthedocs.io/
+- **Documentation**: https://tarzirs.readthedocs.io/
 - **Source Code**: https://github.com/mirasurf/tarzi.rs
 - **Issues**: https://github.com/mirasurf/tarzi.rs/issues
 - **PyPI**: https://pypi.org/project/tarzi/

@@ -15,7 +15,7 @@ sys.path.insert(0, str(project_root))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "tarzi"
-copyright = "2024, Mirasurf"
+copyright = "2025, Mirasurf"
 author = "xmingc"
 release = "0.0.11"
 
@@ -77,7 +77,7 @@ html_theme_options = {
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = "_static/tarzi-logo.png"
+# html_logo = "_static/tarzi-logo.png"  # Commented out - using Furo theme logos instead
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.
@@ -88,26 +88,15 @@ html_favicon = "_static/favicon.ico"
 # -- Options for autodoc extension -------------------------------------------
 autodoc_default_options = {
     "members": True,
-    "member-order": "bysource",
-    "special-members": "__init__",
     "undoc-members": True,
     "exclude-members": "__weakref__",
 }
 
 # -- Options for autosummary extension ---------------------------------------
 autosummary_generate = True
-autosummary_generate_overwrite = True
 
 # -- Options for napoleon extension ------------------------------------------
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-napoleon_include_init_with_doc = False
-napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = True
-napoleon_use_admonition_for_examples = False
-napoleon_use_admonition_for_notes = False
-napoleon_use_admonition_for_references = False
-napoleon_use_ivar = False
 napoleon_use_param = True
 napoleon_use_rtype = True
 
@@ -119,7 +108,6 @@ intersphinx_mapping = {
 
 # -- Options for autodoc_typehints extension ---------------------------------
 always_document_param_types = True
-typehints_fully_qualified = False
 typehints_document_rtype = True
 
 # -- Options for myst-parser extension ---------------------------------------
