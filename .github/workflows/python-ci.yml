@@ -39,35 +39,19 @@ jobs:
       run: ruff check examples tests/python
 
   test:
-    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }} (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ['3.10']
-        arch: [x64, arm64]
-        include:
-          - os: ubuntu-latest
-            arch: x64
-            runner: ubuntu-latest
-          - os: ubuntu-latest
-            arch: arm64
-            runner: ubuntu-latest-arm64
-          - os: macos-latest
-            arch: x64
-            runner: macos-13
-          - os: macos-latest
-            arch: arm64
-            runner: macos-latest-xlarge
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }} (${{ matrix.arch }})
+    - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.arch }}
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
@@ -79,9 +63,9 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-${{ matrix.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.arch }}-cargo-
+          ${{ runner.os }}-cargo-
 
     - name: Install maturin
       run: pip install maturin[patchelf]
@@ -127,35 +111,19 @@ jobs:
         name: python-coverage
 
   build-wheels:
-    name: Build Python wheels on ${{ matrix.os }} (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+    name: Build Python wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: ['3.10']
-        arch: [x64, arm64]
-        include:
-          - os: ubuntu-latest
-            arch: x64
-            runner: ubuntu-latest
-          - os: ubuntu-latest
-            arch: arm64
-            runner: ubuntu-latest-arm64
-          - os: macos-latest
-            arch: x64
-            runner: macos-13
-          - os: macos-latest
-            arch: arm64
-            runner: macos-latest-xlarge
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python (${{ matrix.arch }})
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.arch }}
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
@@ -178,7 +146,7 @@ jobs:
     - name: Upload wheels as artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wheels-${{ matrix.os }}-${{ matrix.arch }}
+        name: wheels-${{ matrix.os }}
         path: dist/
 
   docs:

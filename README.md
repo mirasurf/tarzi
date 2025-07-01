@@ -72,14 +72,6 @@
 
 * Examples in Python and Rust: [examples](/examples/)
 
-## 🖥️ Supported Platforms & Versions
-
-| Component | Version | Platforms |
-|-----------|---------|-----------|
-| **Python Package** | 3.10, 3.11, 3.12 | Ubuntu Linux (AMD64, ARM64)<br>macOS (AMD64, ARM64/Apple Silicon) |
-| **Rust Crate** | 1.70+ | Ubuntu Linux (AMD64, ARM64)<br>macOS (AMD64, ARM64/Apple Silicon) |
-| **Continuous Integration** | - | Ubuntu (AMD64, ARM64), macOS (AMD64, ARM64)<br>Python: 3.10, 3.11, 3.12 |
-
 ## Contributors
 
 Thank you ❤ all human and non-human contributors.
