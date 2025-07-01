@@ -86,7 +86,7 @@ Add tarzi to your `Cargo.toml`:
 .. code-block:: toml
 
    [dependencies]
-   tarzi = "0.0.4"
+   tarzi = "0.0.11"
    tokio = { version = "1.0", features = ["full"] }
 
 Or add it using cargo:
