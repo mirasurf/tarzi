@@ -50,7 +50,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Install system dependencies (macOS)
-      if: matrix.os == 'macos-latest'
+      if: matrix.os == 'macos'
       run: |
         brew install gettext
         brew link gettext --force

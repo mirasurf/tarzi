@@ -16,12 +16,18 @@
   <a href="https://crates.io/crates/tarzi">
     <img src="https://img.shields.io/crates/d/tarzi.svg?style=flat-square" alt="Crate Downloads" />
   </a>
+  <a href="https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml">
+    <img src="https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml/badge.svg" alt="Rust CI" />
+  </a>
   <!-- PyPI package: version and monthly downloads -->
   <a href="https://pypi.org/project/tarzi/">
     <img src="https://img.shields.io/pypi/v/tarzi.svg?style=flat-square" alt="PyPI Version" />
   </a>
   <a href="https://pypistats.org/packages/tarzi">
     <img src="https://img.shields.io/pypi/dm/tarzi.svg?style=flat-square" alt="PyPI Downloads" />
+  </a>
+  <a href="https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml">
+    <img src="https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml/badge.svg" alt="Python CI" />
   </a>
   <!-- License -->
   <a href="https://www.apache.org/licenses/LICENSE-2.0">
@@ -65,18 +71,6 @@
 ## Usage Examples
 
 * Examples in Python and Rust: [examples](/examples/)
-
-## 🖥️ Supported Platforms & Versions
-
-| Component | Version | Platforms |
-|-----------|---------|-----------|
-| **Python Package** | 3.8, 3.9, 3.10, 3.11, 3.12 | Linux (AMD64, ARM64)<br>macOS (AMD64, ARM64/Apple Silicon) |
-| **Rust Crate** | 1.70+ | Linux (AMD64, ARM64)<br>macOS (AMD64, ARM64/Apple Silicon) |
-| **Continuous Integration** | - | Ubuntu (AMD64, ARM64), macOS (AMD64, ARM64)<br>Python: 3.8, 3.9, 3.10, 3.11, 3.12<br>[![Rust CI](https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml) [![Python CI](https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml/badge.svg)](https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml) |
-
-## License
-
-Apache License 2.0 - see LICENSE file for details.
 
 ## Contributors
 
