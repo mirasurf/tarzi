@@ -20,44 +20,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu, macos]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.10', '3.11', '3.12']
         arch: [x64, arm64]
-        include:
-          # Map OS + Arch → appropriate GitHub Actions runner label
-          - os: ubuntu
-            arch: x64
-            runner: ubuntu-latest
-          - os: ubuntu
-            arch: arm64
-            runner: ubuntu-latest-arm64
-          - os: macos
-            arch: x64
-            runner: macos-latest
-          - os: macos
-            arch: arm64
-            runner: macos-latest-xlarge
-        exclude:
-          # Exclude macOS ARM64 for Python 3.8 and 3.9 (not supported)
-          - os: macos
-            python-version: '3.8'
-            arch: arm64
-          - os: macos
-            python-version: '3.9'
-            arch: arm64
     
     steps:
     - uses: actions/checkout@v4
-    
-    - name: Install system dependencies (macOS)
-      if: matrix.os == 'macos'
-      run: |
-        brew install gettext
-        brew link gettext --force
-        echo "PATH=/opt/homebrew/bin:$PATH" >> $GITHUB_ENV
-        echo "LDFLAGS=-L/opt/homebrew/lib" >> $GITHUB_ENV
-        echo "CPPFLAGS=-I/opt/homebrew/include" >> $GITHUB_ENV
-        echo "DYLD_LIBRARY_PATH=/opt/homebrew/lib:$DYLD_LIBRARY_PATH" >> $GITHUB_ENV
 
     - name: Set up Python ${{ matrix.python-version }} (${{ matrix.arch }})
       uses: actions/setup-python@v4

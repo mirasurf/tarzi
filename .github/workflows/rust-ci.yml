@@ -51,9 +51,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.11]
         os: [ubuntu-latest, macos-latest]
-        arch: [x64]
+        arch: [x64, arm64]
+        python-version: [3.10]
     steps:
     - uses: actions/checkout@v4
 
@@ -101,8 +101,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        arch: [x64]
-        python-version: [3.11]
+        arch: [x64, arm64]
+        python-version: [3.10]
     steps:
     - uses: actions/checkout@v4
 

@@ -59,7 +59,7 @@ It's recommended to use a virtual environment:
 Python Requirements
 ~~~~~~~~~~~~~~~~~~~
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - Operating system: Linux, macOS, or Windows
 
 Optional dependencies for development:
