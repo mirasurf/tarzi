@@ -97,6 +97,9 @@ jobs:
         PKG_CONFIG_PATH: /usr/local/lib/pkgconfig
         OPENSSL_LIB_DIR: /usr/local/lib
         OPENSSL_INCLUDE_DIR: /usr/local/include
+        RUSTUP_HOME: /usr/local/rustup
+        CARGO_HOME: /usr/local/cargo
+        PATH: /usr/local/cargo/bin:$PATH
       with:
         platform: linux
         archs: ${{ matrix.arch }}
@@ -109,11 +112,16 @@ jobs:
         before-all: |
           # Install OpenSSL development packages
           yum install -y openssl-devel libssl-dev
+          # Install Rust
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
+          source $HOME/.cargo/env
           # Set OpenSSL environment variables
           export OPENSSL_DIR=/usr/local
           export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
           export OPENSSL_LIB_DIR=/usr/local/lib
           export OPENSSL_INCLUDE_DIR=/usr/local/include
+          # Ensure Rust is in PATH
+          export PATH=$HOME/.cargo/bin:$PATH
     
     - name: Upload manylinux wheels
       uses: actions/upload-artifact@v4
