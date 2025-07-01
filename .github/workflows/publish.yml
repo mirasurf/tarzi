@@ -73,6 +73,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Install system dependencies (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install gettext
+        brew link gettext --force
+
     - name: Set up Python ${{ matrix.python-version }} (${{ matrix.arch }})
       uses: actions/setup-python@v4
       with:
