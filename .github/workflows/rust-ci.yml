@@ -160,4 +160,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: tarzi-binary-${{ runner.os }}-${{ matrix.arch }}
-        path: target/release/tarzi 
+        path: target/release/tarzi

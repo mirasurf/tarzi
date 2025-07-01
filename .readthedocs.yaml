@@ -27,6 +27,7 @@ build:
       - export RUSTFLAGS=-L$PYTHON_LIBDIR -lpython3.11
     post_install:
       # Build and install the Python package
+      - pip install maturin[patchelf]
       - maturin build --release
       - pip install target/wheels/*.whl
 

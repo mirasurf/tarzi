@@ -269,13 +269,31 @@ build-and-publish-python-test: check-publish-prereqs build-python publish-python
 # UTILITY COMMANDS
 # =============================================================================
 
-.PHONY: update
-update: ## Update Rust dependencies
-	$(CARGO) update
+.PHONY: version
+version: ## Show current version
+	@echo "$(BLUE)Current version:$(RESET)"
+	@echo "Rust (Cargo.toml): $(shell grep '^version = ' Cargo.toml | cut -d'"' -f2)"
+	@echo "Python (pyproject.toml): $(shell grep '^version = ' pyproject.toml | cut -d'"' -f2)"
 
-.PHONY: outdated
-outdated: ## Check for outdated Rust dependencies
-	$(CARGO) outdated
+.PHONY: version-update
+version-update:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "$(RED)❌ VERSION parameter is required. Usage: make version-update VERSION=1.2.3$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Updating version to $(VERSION)...$(RESET)"
+	@# Update Cargo.toml
+	@sed -i.bak 's/^version = ".*"/version = "$(VERSION)"/' Cargo.toml
+	@rm -f Cargo.toml.bak
+	@echo "$(GREEN)✅ Updated Cargo.toml$(RESET)"
+	@# Update pyproject.toml
+	@sed -i.bak 's/^version = ".*"/version = "$(VERSION)"/' pyproject.toml
+	@rm -f pyproject.toml.bak
+	@echo "$(GREEN)✅ Updated pyproject.toml$(RESET)"
+	@# Update Cargo.lock
+	@$(CARGO) update
+	@echo "$(GREEN)✅ Updated Cargo.lock$(RESET)"
+	@echo "$(GREEN)✅ Version updated to $(VERSION)$(RESET)"
 
 .PHONY: setup
 setup: ## Setup development environment

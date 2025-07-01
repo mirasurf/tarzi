@@ -68,22 +68,11 @@
 
 ## 🖥️ Supported Platforms & Versions
 
-### Python Package
-- **Python Versions**: 3.8, 3.9, 3.10, 3.11, 3.12
-- **Platforms**:
-  - Ubuntu Linux (x64)
-  - macOS (x64, ARM64/Apple Silicon)
-
-### Rust Crate
-- **Rust Version**: 1.70+
-- **Platforms**:
-  - Ubuntu Linux (x64)
-  - macOS (x64, ARM64/Apple Silicon)
-
-### Continuous Integration
-- **Tested Platforms**: Ubuntu x64, macOS x64, macOS ARM64
-- **Tested Python Versions**: 3.8, 3.9, 3.10, 3.11, 3.12
-- **Build Status**: [![Rust CI](https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml) [![Python CI](https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml/badge.svg)](https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml)
+| Component | Version | Platforms |
+|-----------|---------|-----------|
+| **Python Package** | 3.8, 3.9, 3.10, 3.11, 3.12 | Ubuntu Linux (x64)<br>macOS (x64, ARM64/Apple Silicon) |
+| **Rust Crate** | 1.70+ | Ubuntu Linux (x64)<br>macOS (x64, ARM64/Apple Silicon) |
+| **Continuous Integration** | - | Ubuntu x64, macOS x64, macOS ARM64<br>Python: 3.8, 3.9, 3.10, 3.11, 3.12<br>[![Rust CI](https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml) [![Python CI](https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml/badge.svg)](https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml) |
 
 ## License
 
