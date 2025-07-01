@@ -39,26 +39,48 @@ jobs:
       run: ruff check examples tests/python
 
   test:
-    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-        exclude:
-          # Reduce matrix size for faster CI - test all versions on Ubuntu, fewer on other OS
-          - os: macos-latest
+        include:
+          # Ubuntu x64 - test all Python versions
+          - os: ubuntu-latest
             python-version: '3.8'
-          - os: macos-latest
+            arch: 'x64'
+          - os: ubuntu-latest
             python-version: '3.9'
+            arch: 'x64'
+          - os: ubuntu-latest
+            python-version: '3.10'
+            arch: 'x64'
+          - os: ubuntu-latest
+            python-version: '3.11'
+            arch: 'x64'
+          - os: ubuntu-latest
+            python-version: '3.12'
+            arch: 'x64'
+          # Ubuntu ARM64 - test key Python versions
+          - os: ubuntu-latest
+            python-version: '3.11'
+            arch: 'arm64'
+          # macOS x64 - test key Python versions
+          - os: macos-latest
+            python-version: '3.11'
+            arch: 'x64'
+          # macOS ARM64 - test key Python versions
+          - os: macos-latest
+            python-version: '3.11'
+            arch: 'arm64'
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python ${{ matrix.python-version }} (${{ matrix.arch }})
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        architecture: ${{ matrix.arch }}
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
@@ -70,9 +92,9 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-${{ matrix.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ runner.os }}-${{ matrix.arch }}-cargo-
 
     - name: Install maturin
       run: pip install maturin[patchelf]
@@ -110,7 +132,7 @@ jobs:
       continue-on-error: true
 
     - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
+      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest' && matrix.arch == 'x64'
       uses: codecov/codecov-action@v3
       with:
         file: tests/python/coverage.xml
@@ -118,19 +140,32 @@ jobs:
         name: python-coverage
 
   build-wheels:
-    name: Build Python wheels on ${{ matrix.os }}
+    name: Build Python wheels on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          # Ubuntu x64
+          - os: ubuntu-latest
+            arch: 'x64'
+          # Ubuntu ARM64
+          - os: ubuntu-latest
+            arch: 'arm64'
+          # macOS x64
+          - os: macos-latest
+            arch: 'x64'
+          # macOS ARM64
+          - os: macos-latest
+            arch: 'arm64'
 
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Python
+    - name: Set up Python (${{ matrix.arch }})
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+        architecture: ${{ matrix.arch }}
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
@@ -153,7 +188,7 @@ jobs:
     - name: Upload wheels as artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: wheels-${{ matrix.os }}
+        name: wheels-${{ matrix.os }}-${{ matrix.arch }}
         path: dist/
 
   docs:

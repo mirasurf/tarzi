@@ -43,11 +43,11 @@
 
 **Tarzi** is a unified search interface designed for **Retrieval-Augmented Generation (RAG)** and **agentic systems** built on large language models. Search is a core functionality in these systems, yet most search engine providers impose API paywalls or strict rate limits—even for light or research-driven usage.
 
+**Tarzi** removes these barriers by supporting both token-based APIs and free web queries across multiple search engines. With a single dependency, you can integrate and switch between different Search Engine Providers (SEPs) as needed—seamlessly and efficiently.
+
 <div align="center">
   <img src="static/tariz-workflow.png" alt="Tarzi Logo" width="100%">
 </div>
-
-**Tarzi** removes these barriers by supporting both token-based APIs and free web queries across multiple search engines. With a single dependency, you can integrate and switch between different Search Engine Providers (SEPs) as needed—seamlessly and efficiently.
 
 ## ⚙️ Core Capabilities
 
