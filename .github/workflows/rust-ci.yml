@@ -47,7 +47,7 @@ jobs:
       run: cargo clippy --all-targets --all-features -- -D warnings
 
   test:
-    name: Test on ${{ matrix.runner }} (${{ matrix.arch }})
+    name: Test on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
@@ -108,7 +108,7 @@ jobs:
       run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --doc --all-features
 
   build:
-    name: Build Release on ${{ matrix.runner }} (${{ matrix.arch }})
+    name: Build Release on ${{ matrix.os }} (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
     needs: [check, test]
     strategy:

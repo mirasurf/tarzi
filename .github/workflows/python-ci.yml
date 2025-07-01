@@ -40,7 +40,7 @@ jobs:
 
   test:
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }} (${{ matrix.arch }})
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
@@ -128,7 +128,7 @@ jobs:
 
   build-wheels:
     name: Build Python wheels on ${{ matrix.os }} (${{ matrix.arch }})
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
