@@ -26,13 +26,11 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10']
-        arch: [x86_64]
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up QEMU for cross-platform builds
-      if: matrix.arch == 'aarch64'
       uses: docker/setup-qemu-action@v3
       with:
         platforms: arm64
@@ -48,10 +46,10 @@ jobs:
     - name: Build wheels
       run: python -m cibuildwheel --output-dir wheelhouse
       env:
-        CIBW_BUILD: cp${{ matrix.python-version == '3.10' && '310' || matrix.python-version == '3.11' && '311' || '312' }}-manylinux_${{ matrix.arch }}
+        CIBW_BUILD: cp${{ matrix.python-version == '3.10' && '310' || matrix.python-version == '3.11' && '311' || '312' }}-manylinux_x86_64 cp${{ matrix.python-version == '3.10' && '310' || matrix.python-version == '3.11' && '311' || '312' }}-manylinux_aarch64
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
         CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
-        CIBW_ARCHS: ${{ matrix.arch }}
+        CIBW_ARCHS: x86_64 aarch64
         CIBW_ENVIRONMENT: >
           OPENSSL_ROOT_DIR=/usr
           OPENSSL_DIR=/usr
@@ -109,7 +107,7 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: manylinux-wheels-${{ matrix.arch }}-py${{ matrix.python-version }}
+        name: manylinux-wheels-py${{ matrix.python-version }}
         path: wheelhouse/*.whl
 
   publish-python:
