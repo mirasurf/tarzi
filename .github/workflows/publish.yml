@@ -50,11 +50,6 @@ jobs:
     - name: Install cibuildwheel
       run: python -m pip install cibuildwheel==2.21.2
 
-    - name: Install system dependencies
-      run: |
-        # Install OpenSSL development packages and pkg-config in manylinux environment
-        sudo apt-get install -y pkg-config libssl-dev
-
     - name: Install Rust
       run: |
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -68,13 +63,32 @@ jobs:
         CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
         CIBW_ARCHS: ${{ matrix.arch }}
         CIBW_ENVIRONMENT: >
-          OPENSSL_DIR=/usr
-          PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
-          OPENSSL_LIB_DIR=/usr/lib64
-          OPENSSL_INCLUDE_DIR=/usr/include/openssl
+          OPENSSL_ROOT_DIR=/usr
+          OPENSSL_NO_PKG_CONFIG=0
+          RUSTFLAGS="-C target-feature=-crt-static"
           PATH=$HOME/.cargo/bin:$PATH
         CIBW_BEFORE_ALL: |
-          sudo apt-get install -y pkg-config libssl-dev
+          # Install OpenSSL development headers
+          yum install -y openssl-devel pkg-config
+          # Verify OpenSSL installation
+          echo "=== OpenSSL Installation Check ==="
+          ls -la /usr/include/openssl/
+          pkg-config --libs openssl
+          pkg-config --cflags openssl
+          # Set environment variables for OpenSSL
+          export OPENSSL_DIR=/usr
+          export OPENSSL_LIB_DIR=/usr/lib64
+          export OPENSSL_INCLUDE_DIR=/usr/include/openssl
+          export PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
+          # Install Rust if not already available
+          if ! command -v cargo &> /dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+            source $HOME/.cargo/env
+          fi
+          # Verify Rust installation
+          echo "=== Rust Installation Check ==="
+          cargo --version
+          rustc --version
 
     - name: Upload wheels
       uses: actions/upload-artifact@v4
