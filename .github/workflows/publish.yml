@@ -113,11 +113,6 @@ jobs:
           echo "=== Installing OpenSSL dependencies ==="
           yum update -y
           yum install -y openssl-devel
-          echo "=== OpenSSL Installation Check ==="
-          ls -la /usr/include/openssl/ || echo "OpenSSL headers not found"
-          find /usr -name "openssl.pc" 2>/dev/null || echo "openssl.pc not found"
-          pkg-config --libs openssl || echo "pkg-config failed for openssl"
-          pkg-config --cflags openssl || echo "pkg-config failed for openssl"
           # Set environment variables for OpenSSL
           export OPENSSL_DIR=/usr
           export OPENSSL_LIB_DIR=/usr/lib64
