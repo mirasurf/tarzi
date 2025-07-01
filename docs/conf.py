@@ -32,7 +32,7 @@ extensions = [
     "myst_parser",
     "sphinx_tabs.tabs",
     "sphinx_design",
-    "autoapi.extension",
+    # "autoapi.extension",  # Temporarily disabled for ReadTheDocs build
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -133,6 +133,7 @@ autoapi_ignore = [
     "*/.venv/*",
     "*/venv/*",
     "*/.pytest_cache/*",
+    "*/python/tarzi/*",  # Ignore the Python package directory to avoid import issues
 ]
 autoapi_options = [
     "members",
