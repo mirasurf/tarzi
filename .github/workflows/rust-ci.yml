@@ -123,6 +123,13 @@ jobs:
         python-version: 3.11
         architecture: ${{ matrix.arch }}
 
+    - name: Required environment variables for PyO3
+      run: |
+        PYTHON_BIN=$(which python${{ matrix.python-version }})
+        PYTHON_LIBDIR=$($PYTHON_BIN -c "import sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+        echo "PYO3_PYTHON=$PYTHON_BIN" >> $GITHUB_ENV
+        echo "RUSTFLAGS=-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" >> $GITHUB_ENV
+
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
 
