@@ -43,31 +43,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:
-          # Ubuntu x64 - test all Python versions
-          - os: ubuntu-latest
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        arch: [amd64, arm64]
+        exclude:
+          # Exclude macOS ARM64 for Python 3.8 and 3.9 as they may not be supported
+          - os: macos-latest
             python-version: '3.8'
-            arch: 'x64'
-          - os: ubuntu-latest
+            arch: arm64
+          - os: macos-latest
             python-version: '3.9'
-            arch: 'x64'
-          - os: ubuntu-latest
-            python-version: '3.10'
-            arch: 'x64'
-          - os: ubuntu-latest
-            python-version: '3.11'
-            arch: 'x64'
-          - os: ubuntu-latest
-            python-version: '3.12'
-            arch: 'x64'
-          # macOS x64 - test key Python versions
-          - os: macos-latest
-            python-version: '3.11'
-            arch: 'x64'
-          # macOS ARM64 - test key Python versions
-          - os: macos-latest
-            python-version: '3.11'
-            arch: 'arm64'
+            arch: arm64
 
     steps:
     - uses: actions/checkout@v4
@@ -140,16 +126,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:
-          # Ubuntu x64
-          - os: ubuntu-latest
-            arch: 'x64'
-          # macOS x64
-          - os: macos-latest
-            arch: 'x64'
-          # macOS ARM64
-          - os: macos-latest
-            arch: 'arm64'
+        os: [ubuntu-latest, macos-latest]
+        arch: [amd64, arm64]
 
     steps:
     - uses: actions/checkout@v4
