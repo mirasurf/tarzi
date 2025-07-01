@@ -65,6 +65,11 @@ jobs:
           echo "=== Installing OpenSSL dependencies ==="
           yum update -y
           yum install -y openssl-devel pkg-config gcc
+          # Alternative installation if the above fails
+          if [ ! -f /usr/include/openssl/opensslv.h ]; then
+            echo "OpenSSL headers not found, trying alternative installation..."
+            yum install -y openssl-devel-1.0.2k-19.el7.x86_64 || yum install -y openssl-devel
+          fi
           echo "=== OpenSSL Installation Check ==="
           ls -la /usr/include/openssl/ || echo "OpenSSL headers not found"
           find /usr -name "openssl.pc" 2>/dev/null || echo "openssl.pc not found"
