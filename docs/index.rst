@@ -25,7 +25,7 @@ It provides a comprehensive toolkit for content conversion, web fetching, and se
 with both browser-based and API-based approaches.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    overview

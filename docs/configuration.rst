@@ -10,6 +10,7 @@ Configuration File
 ------------------
 
 tarzi reads configuration from the following sources in order:
+
 1. `.tarzi.toml` under user home directory
 2. `tarzi.toml` in current project root
 
@@ -23,8 +24,8 @@ Currently supported environment variables:
 .. code-block:: bash
 
    # Proxy configuration (standard environment variables)
-   export HTTP_PROXY=http://proxy.example.com:8080
-   export HTTPS_PROXY=http://proxy.example.com:8080
+   export http_proxy=http://proxy.example.com:8080
+   export https_proxy=http://proxy.example.com:8080
 
    # Debug mode (for development/testing)
    export TARZI_DEBUG=1

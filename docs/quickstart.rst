@@ -142,7 +142,6 @@ tarzi supports multiple output formats:
 - **Markdown**: Clean, readable text format
 - **JSON**: Structured data with metadata
 - **YAML**: Human-readable structured format
-- **HTML**: Raw HTML (useful for debugging)
 
 .. code-block:: python
 
@@ -218,18 +217,18 @@ Basic configuration can be done through environment variables or a `tarzi.toml` 
    [fetcher]
    user_agent = "Mozilla/5.0 (compatible; Tarzi/1.0)"
    timeout = 30
-
-   [proxy]
-   http = "http://proxy.example.com:8080"
-   https = "http://proxy.example.com:8080"
+   proxy = "http://proxy.example.com:8080"
 
 Environment Variables
 ~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
-   export HTTP_PROXY=http://proxy.example.com:8080
-   export HTTPS_PROXY=http://proxy.example.com:8080
+   # Proxy configuration (standard environment variables)
+   export http_proxy=http://proxy.example.com:8080
+   export https_proxy=http://proxy.example.com:8080
+
+   # Debug mode (for development/testing)
    export TARZI_DEBUG=1
 
 Next Steps

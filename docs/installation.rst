@@ -135,7 +135,31 @@ Browser Dependencies (Optional)
 
 For browser-based fetching, you'll need a WebDriver:
 
-**Chrome/Chromium** (Recommended):
+**Firefox** (Recommended):
+
+.. tabs::
+
+   .. tab:: Linux
+
+      .. code-block:: bash
+
+         # Ubuntu/Debian
+         sudo apt-get install firefox
+
+         # Download GeckoDriver
+         wget https://github.com/mozilla/geckodriver/releases/latest/download/geckodriver-linux64.tar.gz
+         tar -xzf geckodriver-linux64.tar.gz
+         sudo mv geckodriver /usr/local/bin/
+
+   .. tab:: macOS
+
+      .. code-block:: bash
+
+         # Using Homebrew
+         brew install firefox
+         brew install geckodriver
+
+**Chrome/Chromium** (Alternative):
 
 .. tabs::
 
@@ -159,30 +183,6 @@ For browser-based fetching, you'll need a WebDriver:
          # Using Homebrew
          brew install chromium
          brew install chromedriver
-
-**Firefox** (Alternative):
-
-.. tabs::
-
-   .. tab:: Linux
-
-      .. code-block:: bash
-
-         # Ubuntu/Debian
-         sudo apt-get install firefox
-
-         # Download GeckoDriver
-         wget https://github.com/mozilla/geckodriver/releases/latest/download/geckodriver-linux64.tar.gz
-         tar -xzf geckodriver-linux64.tar.gz
-         sudo mv geckodriver /usr/local/bin/
-
-   .. tab:: macOS
-
-      .. code-block:: bash
-
-         # Using Homebrew
-         brew install firefox
-         brew install geckodriver
 
 Verification
 ------------
