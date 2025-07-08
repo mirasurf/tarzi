@@ -73,6 +73,10 @@ pip install tarzi
 
 * Examples in Python and Rust: [examples](/examples/)
 
+## Alternatives
+
+* LangChain [PlayWrightBrowserToolkit](https://python.langchain.com/docs/integrations/tools/playwright/)
+
 ## Contributors
 
 Thank you ❤ all human and non-human contributors.
