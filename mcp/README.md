@@ -1,6 +1,6 @@
 # Tarzi MCP Server
 
-A Model Context Protocol (MCP) server that exposes Tarzi's web search, content fetching, and HTML conversion capabilities as tools for LLM applications. **Now with headless Firefox browser automation support!**
+A Model Context Protocol (MCP) server that exposes Tarzi's web search, content fetching, and HTML conversion capabilities as tools for LLM applications. **Now with automatic browser automation support!**
 
 ## Features
 
@@ -15,9 +15,9 @@ The Tarzi MCP Server provides the following tools and resources:
 ### Resources
 - **tarzi://config**: Current Tarzi configuration
 - **tarzi://status**: Server health status
-- **tarzi://browser**: Detailed browser automation status and configuration
 
 ### Browser Automation Features ✨
+- **Automatic browser setup** - no manual configuration required
 - **Headless Firefox** with geckodriver
 - **Full JavaScript rendering** for dynamic content
 - **Anti-bot detection bypass** capabilities
@@ -63,7 +63,7 @@ docker-compose --profile proxy up
 
 Test browser functionality:
 ```bash
-# Test browser configuration
+# Test browser functionality  
 docker-compose --profile test run tarzi-mcp-browser-test
 
 # Run with VNC for visual debugging
@@ -80,11 +80,6 @@ The server supports multiple transport modes:
 #### HTTP Transport (Recommended for Production)
 ```bash
 python -m tarzi_mcp_server.server --transport streamable-http --host 0.0.0.0 --port 8000
-```
-
-#### With Browser Testing
-```bash
-python -m tarzi_mcp_server.server --transport streamable-http --test-browser
 ```
 
 #### SSE Transport (Legacy)
@@ -149,7 +144,7 @@ Fetch content from a web URL with optional browser automation.
 - JavaScript execution
 - Dynamic content rendering
 - Anti-bot detection bypass
-- Custom user agents
+- Automatic configuration
 
 **Example:**
 ```json
@@ -191,41 +186,6 @@ Search and fetch content from results with browser automation support.
 
 **Returns:** Search results with fetched content.
 
-## Browser Configuration
-
-### Environment Variables
-
-Configure browser behavior with these environment variables:
-
-```bash
-# Basic browser settings
-export DISPLAY=:99
-export MOZ_HEADLESS=1
-export FIREFOX_BINARY_PATH=/usr/bin/firefox-esr
-export GECKODRIVER_PATH=/usr/local/bin/geckodriver
-
-# Browser behavior
-export TARZI_BROWSER_TIMEOUT=30
-export TARZI_BROWSER_WINDOW_SIZE=1920,1080
-export TARZI_BROWSER_USER_AGENT="Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0"
-
-# Data directories
-export TARZI_BROWSER_DATA_DIR=/app/browser-data
-export TARZI_BROWSER_PROFILE_PATH=/app/.mozilla/firefox/tarzi.profile
-export TARZI_BROWSER_CACHE_DIR=/app/browser-data/cache
-export TARZI_BROWSER_DOWNLOADS_DIR=/app/browser-data/downloads
-```
-
-### Testing Browser Setup
-
-```bash
-# Test browser configuration
-python -m tarzi_mcp_server.browser_config
-
-# In Docker
-docker-compose --profile test run tarzi-mcp-browser-test
-```
-
 ## Integration with Claude Desktop
 
 To use this server with Claude Desktop, add the following configuration to your Claude Desktop config file:
@@ -238,11 +198,7 @@ To use this server with Claude Desktop, add the following configuration to your 
   "mcpServers": {
     "tarzi": {
       "command": "python",
-      "args": ["-m", "tarzi_mcp_server.server"],
-      "env": {
-        "MOZ_HEADLESS": "1",
-        "TARZI_BROWSER_TIMEOUT": "30"
-      }
+      "args": ["-m", "tarzi_mcp_server.server"]
     }
   }
 }
@@ -290,12 +246,10 @@ Core variables:
 - `TARZI_TIMEOUT`: Override default timeout
 - `TARZI_USER_AGENT`: Override default user agent
 
-Browser variables:
+Browser variables (automatically configured by tarzi):
 - `MOZ_HEADLESS=1`: Enable headless mode
 - `FIREFOX_BINARY_PATH`: Firefox binary location
 - `GECKODRIVER_PATH`: Geckodriver location
-- `TARZI_BROWSER_TIMEOUT`: Browser operation timeout
-- `TARZI_BROWSER_WINDOW_SIZE`: Browser window size
 
 ## Development
 
@@ -308,9 +262,6 @@ pip install -e ".[dev]"
 # Run tests
 pytest
 
-# Test browser setup
-python -m tarzi_mcp_server.browser_config
-
 # Run specific tests
 python -m tarzi_mcp_server.client --test all
 ```
@@ -321,17 +272,6 @@ python -m tarzi_mcp_server.client --test all
 docker build -t tarzi-mcp-server .
 ```
 
-### Browser Development
-
-```bash
-# Test browser in development
-python -m tarzi_mcp_server.server --test-browser
-
-# Debug browser issues with VNC
-docker-compose --profile debug up
-# Visit http://localhost:8080 for visual access
-```
-
 ## Troubleshooting
 
 ### Common Issues
@@ -339,27 +279,19 @@ docker-compose --profile debug up
 1. **Import Error**: Ensure Tarzi is installed: `pip install tarzi`
 2. **Connection Failed**: Check that the server is running and accessible
 3. **Search Failures**: Some search engines may require API keys or have rate limits
-4. **Browser Mode Errors**: 
-   - Check Firefox installation: `firefox-esr --version`
-   - Check geckodriver: `geckodriver --version`
-   - Verify display settings: `echo $DISPLAY`
-   - Test browser: `python -m tarzi_mcp_server.browser_config`
+4. **Browser Mode Errors**: Browser configuration is handled automatically by tarzi library
 
 ### Browser-Specific Troubleshooting
 
 1. **Browser not starting**:
    ```bash
-   # Check components
-   python -m tarzi_mcp_server.browser_config
-   
-   # Test in Docker
+   # Test browser functionality in Docker
    docker-compose --profile test run tarzi-mcp-browser-test
    ```
 
 2. **JavaScript not executing**:
    - Ensure you're using `mode: "browser"` in fetch_url
-   - Check browser timeout settings
-   - Verify Firefox is running in headless mode
+   - Browser configuration is handled automatically by tarzi
 
 3. **Memory issues**:
    ```bash
@@ -388,10 +320,9 @@ docker-compose --profile test logs tarzi-mcp-browser-test
 ## Performance Optimization
 
 ### Browser Performance
-- Use appropriate timeout values
+- Browser configuration is automatically optimized by tarzi
 - Configure shared memory size (`--shm-size=2g`)
-- Use persistent browser profiles
-- Enable browser caching
+- Set appropriate timeouts
 
 ### Server Performance
 - Use HTTP transport for production
@@ -403,8 +334,8 @@ docker-compose --profile test logs tarzi-mcp-browser-test
 
 ### Browser Security
 - Runs as non-root user
+- Automatic security configuration by tarzi
 - Isolated browser profiles
-- Configurable user agents
 - No automatic file downloads outside controlled directory
 
 ### Network Security
@@ -429,10 +360,10 @@ This project follows the same license as the Tarzi project (Apache 2.0).
 For issues related to:
 - **MCP functionality**: Check MCP documentation
 - **Tarzi functionality**: Check Tarzi repository
-- **Browser automation**: Check browser logs and test configuration
-- **Docker issues**: Verify container configuration and browser setup
+- **Browser automation**: Handled automatically by tarzi library
+- **Docker issues**: Verify container configuration
 - **This server**: Open an issue in this repository
 
 ---
 
-**✨ Browser automation ready!** The server now supports full JavaScript rendering and anti-bot detection bypass through headless Firefox automation.
+**✨ Browser automation ready!** The server now supports automatic browser configuration and full JavaScript rendering through the tarzi library.
