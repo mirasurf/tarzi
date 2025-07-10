@@ -3,19 +3,11 @@
 </div>
 <h1 align="center">tarzi.rs</h1>  
 <p align="center">
-  <!-- Rust crate: version and download count -->
   <a href="https://crates.io/crates/tarzi">
     <img src="https://img.shields.io/crates/v/tarzi.svg?style=flat-square" alt="Crate Version" />
   </a>
-  <a href="https://crates.io/crates/tarzi">
-    <img src="https://img.shields.io/crates/d/tarzi.svg?style=flat-square" alt="Crate Downloads" />
-  </a>
-  <!-- PyPI package: version and monthly downloads -->
   <a href="https://pypi.org/project/tarzi/">
     <img src="https://img.shields.io/pypi/v/tarzi.svg?style=flat-square" alt="PyPI Version" />
-  </a>
-  <a href="https://pypistats.org/packages/tarzi">
-    <img src="https://img.shields.io/pypi/dm/tarzi.svg?style=flat-square" alt="PyPI Downloads" />
   </a>
   <!-- CI and Docs -->
   <a href="https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml">
