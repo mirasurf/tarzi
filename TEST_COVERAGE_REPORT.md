@@ -15,8 +15,9 @@ Successfully enhanced test coverage for the tarzi Rust project by adding compreh
   - Proxy integration: 1 test
   - Search parser integration: 6 tests
 
-- **Python Tests**: 38 tests passing
+- **Python Tests**: 51 tests passing
   - Configuration tests: 5 tests
+  - Configuration priority tests: 13 tests (NEW)
   - Converter tests: 10 tests
   - HTML pipeline tests: 3 tests
   - Proxy configuration tests: 6 tests
@@ -40,7 +41,21 @@ Successfully enhanced test coverage for the tarzi Rust project by adding compreh
 - ✅ Configuration validation for different search engines
 - ✅ Multiple API provider support
 
-### 3. Enhanced Configuration Support
+### 3. Configuration Loading Priority (`test_config_priorities.py`) 
+- ✅ Default configuration value loading
+- ✅ String configuration override of defaults
+- ✅ Environment variable override of config settings
+- ✅ Environment variable priority order (HTTPS_PROXY > HTTP_PROXY)
+- ✅ Empty environment variable fallback to config
+- ✅ Mixed priority scenarios testing
+- ✅ API key configuration with different sources
+- ✅ Search engine switching configuration priorities
+- ✅ Web driver configuration priority handling
+- ✅ Timeout configuration from multiple sources
+- ✅ Format and mode configuration priorities
+- ✅ Invalid configuration graceful handling
+
+### 4. Enhanced Configuration Support
 - ✅ Updated sample configuration with proxy settings
 - ✅ Search engine configuration with API keys
 - ✅ Auto-switching configuration options
@@ -87,8 +102,9 @@ Integration Tests: 44/44 ✅
 
 ### Python Tests Breakdown
 ```
-Unit Tests (tests/python/unit/): 38/38 ✅
+Unit Tests (tests/python/unit/): 51/51 ✅
 ├── test_config.py: 5 tests
+├── test_config_priorities.py: 13 tests (NEW)
 ├── test_converter.py: 10 tests
 ├── test_html_pipeline.py: 3 tests
 ├── test_proxy_config.py: 6 tests (NEW)
@@ -136,4 +152,4 @@ The test coverage enhancement was successful, providing comprehensive testing fo
 - ✅ Integration scenarios
 - ✅ Error handling and edge cases
 
-All tests are now passing (158 total tests), providing robust coverage for the new features while maintaining backward compatibility.
+All tests are now passing (171 total tests), providing robust coverage for the new features while maintaining backward compatibility.
