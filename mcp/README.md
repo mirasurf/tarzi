@@ -136,7 +136,7 @@ Fetch content from a web URL with optional browser automation.
 **Parameters:**
 - `url` (string): URL to fetch
 - `format` (string, default: "html"): Output format ("html", "markdown", "json", "yaml")
-- `mode` (string, default: "plain_request"): Fetch mode ("plain_request" or "browser")
+- `mode` (string, default: "plain_request"): Fetch mode ("plain_request", "browser_headless", or "browser_headed")
 
 **Returns:** Fetched content in the specified format.
 
@@ -145,13 +145,15 @@ Fetch content from a web URL with optional browser automation.
 - Dynamic content rendering
 - Anti-bot detection bypass
 - Automatic configuration
+- `browser_headless`: Faster execution without GUI
+- `browser_headed`: Visible browser window for debugging
 
 **Example:**
 ```json
 {
   "url": "https://example.com",
   "format": "markdown",
-  "mode": "browser"
+  "mode": "browser_headless"
 }
 ```
 
@@ -180,8 +182,8 @@ Search and fetch content from results with browser automation support.
 **Parameters:**
 - `query` (string): Search query
 - `limit` (integer, default: 5): Maximum results to process
-- `search_mode` (string, default: "webquery"): Search mode
-- `fetch_mode` (string, default: "plain_request"): Fetch mode ("plain_request" or "browser")
+- `search_mode` (string, default: "webquery"): Search mode ("webquery" or "apiquery")
+- `fetch_mode` (string, default: "plain_request"): Fetch mode ("plain_request", "browser_headless", or "browser_headed")
 - `content_format` (string, default: "markdown"): Content format
 
 **Returns:** Search results with fetched content.
@@ -290,7 +292,7 @@ docker build -t tarzi-mcp-server .
    ```
 
 2. **JavaScript not executing**:
-   - Ensure you're using `mode: "browser"` in fetch_url
+   - Ensure you're using `mode: "browser_headless"` or `mode: "browser_headed"` in fetch_url
    - Browser configuration is handled automatically by tarzi
 
 3. **Memory issues**:
