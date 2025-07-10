@@ -14,7 +14,7 @@ pub mod types;
 mod tests;
 
 // Re-export main types and functions
+pub use crate::parser::{CustomParserConfig, ParserFactory, SearchResultParser};
 pub use api::{ApiSearchManager, AutoSwitchStrategy, SearchApiProvider};
 pub use engine::SearchEngine;
-pub use crate::parser::{CustomParserConfig, ParserFactory, SearchResultParser};
 pub use types::{SearchEngineType, SearchMode, SearchResult};

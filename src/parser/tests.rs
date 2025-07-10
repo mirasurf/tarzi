@@ -1,8 +1,8 @@
-use super::super::types::{SearchEngineType, SearchMode};
 use super::{
     BaiduParser, BingParser, BraveParser, CustomParser, CustomParserConfig, DuckDuckGoParser,
     GoogleParser, ParserFactory, SearchResultParser,
 };
+use crate::search::types::{SearchEngineType, SearchMode};
 
 #[test]
 fn test_bing_parser() {

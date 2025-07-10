@@ -1,5 +1,5 @@
 use tarzi::SearchMode;
-use tarzi::search::parser::CustomParser;
+use tarzi::parser::CustomParser;
 use tarzi::search::{
     CustomParserConfig, ParserFactory, SearchEngine, SearchEngineType, SearchResultParser,
 };

@@ -1,5 +1,5 @@
-use crate::search::types::{SearchEngineType, SearchMode, SearchResult};
 use crate::Result;
+use crate::search::types::{SearchEngineType, SearchMode, SearchResult};
 
 pub mod baidu;
 pub mod base;

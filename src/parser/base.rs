@@ -1,5 +1,5 @@
-THIS SHOULD BE A LINTER ERRORuse super::super::types::{SearchEngineType, SearchResult};
 use crate::Result;
+use crate::search::types::{SearchEngineType, SearchResult};
 use serde_json::Value;
 
 /// Base trait for all search result parsers
