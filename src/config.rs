@@ -49,7 +49,6 @@ pub struct SearchConfig {
     pub limit: usize,
     #[serde(default = "default_autoswitch_strategy")]
     pub autoswitch: String,
-    pub api_key: Option<String>,
     pub brave_api_key: Option<String>,
     pub duckduckgo_api_key: Option<String>,
     pub google_serper_api_key: Option<String>,
@@ -188,7 +187,6 @@ impl Default for SearchConfig {
             query_pattern: default_query_pattern(),
             limit: default_result_limit(),
             autoswitch: default_autoswitch_strategy(),
-            api_key: None,
             brave_api_key: None,
             duckduckgo_api_key: None,
             google_serper_api_key: None,
@@ -298,20 +296,19 @@ mod tests {
             "https://www.bing.com/search?q={query}"
         );
         assert_eq!(config.search.limit, 5);
-        assert!(config.search.api_key.is_none());
     }
 
     #[test]
     fn test_config_serialization() {
         let mut config = Config::new();
-        config.search.api_key = Some("test_key".to_string());
+        config.search.brave_api_key = Some("test_key".to_string());
         config.search.limit = 5;
         config.fetcher.mode = "head".to_string();
 
         let toml_str = toml::to_string_pretty(&config).unwrap();
         let parsed_config: Config = toml::from_str(&toml_str).unwrap();
 
-        assert_eq!(parsed_config.search.api_key, Some("test_key".to_string()));
+        assert_eq!(parsed_config.search.brave_api_key, Some("test_key".to_string()));
         assert_eq!(parsed_config.search.limit, 5);
         assert_eq!(parsed_config.fetcher.mode, "head");
     }
@@ -323,7 +320,6 @@ mod tests {
 
         // Create a test config
         let mut config = Config::new();
-        config.search.api_key = Some("test_api_key".to_string());
         config.search.brave_api_key = Some("test_brave_key".to_string());
         config.search.limit = 10;
         config.general.log_level = "debug".to_string();
@@ -336,10 +332,6 @@ mod tests {
         let content = fs::read_to_string(&config_path).unwrap();
         let loaded_config: Config = toml::from_str(&content).unwrap();
 
-        assert_eq!(
-            loaded_config.search.api_key,
-            Some("test_api_key".to_string())
-        );
         assert_eq!(
             loaded_config.search.brave_api_key,
             Some("test_brave_key".to_string())
@@ -376,7 +368,6 @@ engine = "google.com"
 query_pattern = ".*"
 limit = 5
 autoswitch = "none"
-api_key = "google_key_123"
 brave_api_key = "brave_key_456"
 google_serper_api_key = "serper_key_789"
 exa_api_key = "exa_key_012"
@@ -405,7 +396,7 @@ travily_api_key = "travily_key_345"
         assert_eq!(config.search.query_pattern, ".*");
         assert_eq!(config.search.limit, 5);
         assert_eq!(config.search.autoswitch, "none");
-        assert_eq!(config.search.api_key, Some("google_key_123".to_string()));
+
         assert_eq!(config.search.brave_api_key, Some("brave_key_456".to_string()));
         assert_eq!(config.search.google_serper_api_key, Some("serper_key_789".to_string()));
         assert_eq!(config.search.exa_api_key, Some("exa_key_012".to_string()));
@@ -459,8 +450,7 @@ web_driver_url = "http://localhost:9999"
         );
         assert_eq!(config.search.limit, 5);
         assert_eq!(config.search.autoswitch, "smart");
-        // api_key should be None by default (commented out in tarzi.toml)
-        assert_eq!(config.search.api_key, None);
+        // API keys should be None by default (commented out in tarzi.toml)
         assert_eq!(config.search.brave_api_key, None);
         assert_eq!(config.search.duckduckgo_api_key, None);
         assert_eq!(config.search.google_serper_api_key, None);

@@ -120,6 +120,16 @@ impl BraveSearchProvider {
     pub fn new(api_key: String, client: Client) -> Self {
         Self { api_key, client }
     }
+
+    pub fn new_with_proxy(api_key: String, proxy_url: &str) -> Result<Self> {
+        let client = Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .proxy(reqwest::Proxy::http(proxy_url)?)
+            .build()
+            .map_err(|e| TarziError::Network(format!("Failed to create proxy client: {}", e)))?;
+        
+        Ok(Self { api_key, client })
+    }
 }
 
 #[async_trait]
@@ -192,6 +202,16 @@ pub struct GoogleSerperProvider {
 impl GoogleSerperProvider {
     pub fn new(api_key: String, client: Client) -> Self {
         Self { api_key, client }
+    }
+
+    pub fn new_with_proxy(api_key: String, proxy_url: &str) -> Result<Self> {
+        let client = Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .proxy(reqwest::Proxy::http(proxy_url)?)
+            .build()
+            .map_err(|e| TarziError::Network(format!("Failed to create proxy client: {}", e)))?;
+        
+        Ok(Self { api_key, client })
     }
 }
 
@@ -266,6 +286,16 @@ pub struct ExaSearchProvider {
 impl ExaSearchProvider {
     pub fn new(api_key: String, client: Client) -> Self {
         Self { api_key, client }
+    }
+
+    pub fn new_with_proxy(api_key: String, proxy_url: &str) -> Result<Self> {
+        let client = Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .proxy(reqwest::Proxy::http(proxy_url)?)
+            .build()
+            .map_err(|e| TarziError::Network(format!("Failed to create proxy client: {}", e)))?;
+        
+        Ok(Self { api_key, client })
     }
 }
 
@@ -350,6 +380,16 @@ impl TravilySearchProvider {
     pub fn new(api_key: String, client: Client) -> Self {
         Self { api_key, client }
     }
+
+    pub fn new_with_proxy(api_key: String, proxy_url: &str) -> Result<Self> {
+        let client = Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .proxy(reqwest::Proxy::http(proxy_url)?)
+            .build()
+            .map_err(|e| TarziError::Network(format!("Failed to create proxy client: {}", e)))?;
+        
+        Ok(Self { api_key, client })
+    }
 }
 
 #[async_trait]
@@ -424,6 +464,12 @@ pub struct DuckDuckGoProvider;
 impl DuckDuckGoProvider {
     pub fn new(_client: Client) -> Self {
         Self
+    }
+
+    pub fn new_with_proxy(_proxy_url: &str) -> Result<Self> {
+        // DuckDuckGo provider doesn't use HTTP client currently
+        // but we provide the method for consistency
+        Ok(Self)
     }
 }
 

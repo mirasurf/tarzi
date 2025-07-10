@@ -72,7 +72,6 @@ impl SearchEngine {
     pub fn from_config(config: &Config) -> Self {
         info!("Initializing SearchEngine from config");
         let fetcher = crate::fetcher::WebFetcher::from_config(config);
-        let api_key = config.search.api_key.clone();
 
         // Parse the search engine type from config
         let engine_type =
@@ -89,34 +88,47 @@ impl SearchEngine {
         let autoswitch_strategy = AutoSwitchStrategy::from(config.search.autoswitch.as_str());
         let mut api_manager = ApiSearchManager::new(autoswitch_strategy);
 
-        // Initialize HTTP client for API providers
-        let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(config.general.timeout))
-            .user_agent(&config.fetcher.user_agent)
-            .build()
-            .expect("Failed to create HTTP client for API providers");
+        // Check for proxy configuration
+        let proxy_url = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
+        
+        // Initialize HTTP client for API providers (with or without proxy)
+        let client = if let Some(ref proxy) = proxy_url {
+            info!("Creating API client with proxy: {}", proxy);
+            Client::builder()
+                .timeout(std::time::Duration::from_secs(config.general.timeout))
+                .user_agent(&config.fetcher.user_agent)
+                .proxy(reqwest::Proxy::http(proxy).expect("Invalid proxy URL"))
+                .build()
+                .expect("Failed to create HTTP client with proxy for API providers")
+        } else {
+            Client::builder()
+                .timeout(std::time::Duration::from_secs(config.general.timeout))
+                .user_agent(&config.fetcher.user_agent)
+                .build()
+                .expect("Failed to create HTTP client for API providers")
+        };
 
         // Register API providers based on available API keys
         if let Some(ref brave_key) = config.search.brave_api_key {
-            info!("Registering Brave Search API provider");
+            info!("Registering Brave Search API provider{}", if proxy_url.is_some() { " with proxy" } else { "" });
             let provider = Box::new(BraveSearchProvider::new(brave_key.clone(), client.clone()));
             api_manager.register_provider(SearchEngineType::BraveSearch, provider);
         }
 
         if let Some(ref serper_key) = config.search.google_serper_api_key {
-            info!("Registering Google Serper API provider");
+            info!("Registering Google Serper API provider{}", if proxy_url.is_some() { " with proxy" } else { "" });
             let provider = Box::new(GoogleSerperProvider::new(serper_key.clone(), client.clone()));
             api_manager.register_provider(SearchEngineType::GoogleSerper, provider);
         }
 
         if let Some(ref exa_key) = config.search.exa_api_key {
-            info!("Registering Exa Search API provider");
+            info!("Registering Exa Search API provider{}", if proxy_url.is_some() { " with proxy" } else { "" });
             let provider = Box::new(ExaSearchProvider::new(exa_key.clone(), client.clone()));
             api_manager.register_provider(SearchEngineType::Exa, provider);
         }
 
         if let Some(ref travily_key) = config.search.travily_api_key {
-            info!("Registering Travily Search API provider");
+            info!("Registering Travily Search API provider{}", if proxy_url.is_some() { " with proxy" } else { "" });
             let provider = Box::new(TravilySearchProvider::new(travily_key.clone(), client.clone()));
             api_manager.register_provider(SearchEngineType::Travily, provider);
         }
@@ -128,7 +140,7 @@ impl SearchEngine {
 
         Self {
             fetcher,
-            api_key,
+            api_key: None, // Deprecated: specific API keys are now managed per provider
             engine_type,
             query_pattern,
             user_agent: config.fetcher.user_agent.clone(),
