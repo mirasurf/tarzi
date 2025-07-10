@@ -136,7 +136,7 @@ brave_api_key = "test_key"
             ('web_driver = "geckodriver"\nweb_driver_url = "http://selenium-hub:4444"', "http://selenium-hub:4444"),
         ]
 
-        for driver_config, expected_url in driver_configs:
+        for driver_config, _expected_url in driver_configs:
             config_str = f"""
 [fetcher]
 {driver_config}

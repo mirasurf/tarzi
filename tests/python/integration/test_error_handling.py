@@ -340,7 +340,7 @@ brave_api_key = ""
             # Use components briefly
             try:
                 converter.convert("<p>test</p>", "markdown")
-            except:
+            except Exception:
                 pass
 
         # Should not cause memory leaks or resource issues
