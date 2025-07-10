@@ -1,4 +1,4 @@
-use super::types::{SearchEngineType, SearchMode, SearchResult};
+use crate::search::types::{SearchEngineType, SearchMode, SearchResult};
 use crate::Result;
 
 pub mod baidu;

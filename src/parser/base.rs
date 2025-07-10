@@ -1,4 +1,4 @@
-use super::super::types::{SearchEngineType, SearchResult};
+THIS SHOULD BE A LINTER ERRORuse super::super::types::{SearchEngineType, SearchResult};
 use crate::Result;
 use serde_json::Value;
 

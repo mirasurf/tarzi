@@ -1,4 +1,4 @@
-use super::super::types::{SearchEngineType, SearchResult};
+use crate::search::types::{SearchEngineType, SearchResult};
 use super::SearchResultParser;
 use super::base::{
     ApiSearchParser, BaseApiParser, BaseSearchParser, BaseWebParser, WebSearchParser,
