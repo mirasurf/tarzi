@@ -90,7 +90,7 @@ impl SearchEngine {
 
         // Check for proxy configuration
         let proxy_url = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
-        
+
         // Initialize HTTP client for API providers (with or without proxy)
         let client = if let Some(ref proxy) = proxy_url {
             info!("Creating API client with proxy: {}", proxy);
@@ -110,26 +110,60 @@ impl SearchEngine {
 
         // Register API providers based on available API keys
         if let Some(ref brave_key) = config.search.brave_api_key {
-            info!("Registering Brave Search API provider{}", if proxy_url.is_some() { " with proxy" } else { "" });
+            info!(
+                "Registering Brave Search API provider{}",
+                if proxy_url.is_some() {
+                    " with proxy"
+                } else {
+                    ""
+                }
+            );
             let provider = Box::new(BraveSearchProvider::new(brave_key.clone(), client.clone()));
             api_manager.register_provider(SearchEngineType::BraveSearch, provider);
         }
 
         if let Some(ref serper_key) = config.search.google_serper_api_key {
-            info!("Registering Google Serper API provider{}", if proxy_url.is_some() { " with proxy" } else { "" });
-            let provider = Box::new(GoogleSerperProvider::new(serper_key.clone(), client.clone()));
+            info!(
+                "Registering Google Serper API provider{}",
+                if proxy_url.is_some() {
+                    " with proxy"
+                } else {
+                    ""
+                }
+            );
+            let provider = Box::new(GoogleSerperProvider::new(
+                serper_key.clone(),
+                client.clone(),
+            ));
             api_manager.register_provider(SearchEngineType::GoogleSerper, provider);
         }
 
         if let Some(ref exa_key) = config.search.exa_api_key {
-            info!("Registering Exa Search API provider{}", if proxy_url.is_some() { " with proxy" } else { "" });
+            info!(
+                "Registering Exa Search API provider{}",
+                if proxy_url.is_some() {
+                    " with proxy"
+                } else {
+                    ""
+                }
+            );
             let provider = Box::new(ExaSearchProvider::new(exa_key.clone(), client.clone()));
             api_manager.register_provider(SearchEngineType::Exa, provider);
         }
 
         if let Some(ref travily_key) = config.search.travily_api_key {
-            info!("Registering Travily Search API provider{}", if proxy_url.is_some() { " with proxy" } else { "" });
-            let provider = Box::new(TravilySearchProvider::new(travily_key.clone(), client.clone()));
+            info!(
+                "Registering Travily Search API provider{}",
+                if proxy_url.is_some() {
+                    " with proxy"
+                } else {
+                    ""
+                }
+            );
+            let provider = Box::new(TravilySearchProvider::new(
+                travily_key.clone(),
+                client.clone(),
+            ));
             api_manager.register_provider(SearchEngineType::Travily, provider);
         }
 
@@ -224,8 +258,11 @@ impl SearchEngine {
         info!("Starting API-based search for query: '{}'", query);
 
         // Use the API manager to perform the search with automatic provider switching
-        let results = self.api_manager.search(&self.engine_type, query, limit).await?;
-        
+        let results = self
+            .api_manager
+            .search(&self.engine_type, query, limit)
+            .await?;
+
         info!("API search completed, returning {} results", results.len());
         Ok(results)
     }

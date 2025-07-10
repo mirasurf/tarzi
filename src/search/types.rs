@@ -59,9 +59,7 @@ impl SearchEngineType {
     pub fn is_api_based(&self) -> bool {
         matches!(
             self,
-            SearchEngineType::Exa
-                | SearchEngineType::Travily
-                | SearchEngineType::GoogleSerper
+            SearchEngineType::Exa | SearchEngineType::Travily | SearchEngineType::GoogleSerper
         )
     }
 }

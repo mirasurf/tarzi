@@ -308,7 +308,10 @@ mod tests {
         let toml_str = toml::to_string_pretty(&config).unwrap();
         let parsed_config: Config = toml::from_str(&toml_str).unwrap();
 
-        assert_eq!(parsed_config.search.brave_api_key, Some("test_key".to_string()));
+        assert_eq!(
+            parsed_config.search.brave_api_key,
+            Some("test_key".to_string())
+        );
         assert_eq!(parsed_config.search.limit, 5);
         assert_eq!(parsed_config.fetcher.mode, "head");
     }
@@ -397,10 +400,19 @@ travily_api_key = "travily_key_345"
         assert_eq!(config.search.limit, 5);
         assert_eq!(config.search.autoswitch, "none");
 
-        assert_eq!(config.search.brave_api_key, Some("brave_key_456".to_string()));
-        assert_eq!(config.search.google_serper_api_key, Some("serper_key_789".to_string()));
+        assert_eq!(
+            config.search.brave_api_key,
+            Some("brave_key_456".to_string())
+        );
+        assert_eq!(
+            config.search.google_serper_api_key,
+            Some("serper_key_789".to_string())
+        );
         assert_eq!(config.search.exa_api_key, Some("exa_key_012".to_string()));
-        assert_eq!(config.search.travily_api_key, Some("travily_key_345".to_string()));
+        assert_eq!(
+            config.search.travily_api_key,
+            Some("travily_key_345".to_string())
+        );
     }
 
     #[test]
