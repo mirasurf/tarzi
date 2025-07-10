@@ -54,14 +54,14 @@ class TestUpdatedConfig:
     def test_new_api_key_fields_support(self, modern_config):
         """Test that new specific API key fields are supported."""
         config = tarzi.Config.from_str(modern_config)
-        
+
         # Test that components can be created with new config structure
         search_engine = tarzi.SearchEngine.from_config(config)
         assert isinstance(search_engine, tarzi.SearchEngine)
-        
+
         fetcher = tarzi.WebFetcher.from_config(config)
         assert isinstance(fetcher, tarzi.WebFetcher)
-        
+
         converter = tarzi.Converter.from_config(config)
         assert isinstance(converter, tarzi.Converter)
 
@@ -73,9 +73,9 @@ class TestUpdatedConfig:
             'autoswitch = "Smart"',
             'autoswitch = "None"',
             'autoswitch = "SMART"',
-            'autoswitch = "NONE"'
+            'autoswitch = "NONE"',
         ]
-        
+
         for autoswitch_line in autoswitch_configs:
             config_str = f"""
 [search]
@@ -84,7 +84,7 @@ engine = "duckduckgo"
 """
             config = tarzi.Config.from_str(config_str)
             assert isinstance(config, tarzi.Config)
-            
+
             # Should be able to create search engine
             engine = tarzi.SearchEngine.from_config(config)
             assert isinstance(engine, tarzi.SearchEngine)
@@ -102,7 +102,7 @@ autoswitch = "smart"
 """
         config = tarzi.Config.from_str(config_str)
         assert isinstance(config, tarzi.Config)
-        
+
         # Should be able to create components with multiple providers
         engine = tarzi.SearchEngine.from_config(config)
         assert isinstance(engine, tarzi.SearchEngine)
@@ -120,11 +120,11 @@ brave_api_key = "test_key"
 """
         config = tarzi.Config.from_str(config_str)
         assert isinstance(config, tarzi.Config)
-        
+
         # All components should handle proxy configuration
         fetcher = tarzi.WebFetcher.from_config(config)
         assert isinstance(fetcher, tarzi.WebFetcher)
-        
+
         engine = tarzi.SearchEngine.from_config(config)
         assert isinstance(engine, tarzi.SearchEngine)
 
@@ -133,9 +133,9 @@ brave_api_key = "test_key"
         driver_configs = [
             ('web_driver = "geckodriver"', None),
             ('web_driver = "chromedriver"', None),
-            ('web_driver = "geckodriver"\nweb_driver_url = "http://selenium-hub:4444"', "http://selenium-hub:4444")
+            ('web_driver = "geckodriver"\nweb_driver_url = "http://selenium-hub:4444"', "http://selenium-hub:4444"),
         ]
-        
+
         for driver_config, expected_url in driver_configs:
             config_str = f"""
 [fetcher]
@@ -146,21 +146,15 @@ engine = "duckduckgo"
 """
             config = tarzi.Config.from_str(config_str)
             assert isinstance(config, tarzi.Config)
-            
+
             # Should be able to create fetcher with driver config
             fetcher = tarzi.WebFetcher.from_config(config)
             assert isinstance(fetcher, tarzi.WebFetcher)
 
     def test_search_engine_options(self):
         """Test different search engine configuration options."""
-        engines = [
-            "duckduckgo",
-            "brave",
-            "googleserper", 
-            "exa",
-            "travily"
-        ]
-        
+        engines = ["duckduckgo", "brave", "googleserper", "exa", "travily"]
+
         for engine in engines:
             config_str = f"""
 [search]
@@ -168,19 +162,15 @@ engine = "{engine}"
 """
             config = tarzi.Config.from_str(config_str)
             assert isinstance(config, tarzi.Config)
-            
+
             # Should be able to create search engine
             search_engine = tarzi.SearchEngine.from_config(config)
             assert isinstance(search_engine, tarzi.SearchEngine)
 
     def test_fetcher_mode_options(self):
         """Test different fetcher mode configuration options."""
-        modes = [
-            "plain_request",
-            "browser_headless",
-            "browser_full"
-        ]
-        
+        modes = ["plain_request", "browser_headless", "browser_full"]
+
         for mode in modes:
             config_str = f"""
 [fetcher]
@@ -191,20 +181,15 @@ engine = "duckduckgo"
 """
             config = tarzi.Config.from_str(config_str)
             assert isinstance(config, tarzi.Config)
-            
+
             # Should be able to create fetcher
             fetcher = tarzi.WebFetcher.from_config(config)
             assert isinstance(fetcher, tarzi.WebFetcher)
 
     def test_format_options(self):
         """Test different format configuration options."""
-        formats = [
-            "html",
-            "markdown",
-            "json",
-            "yaml"
-        ]
-        
+        formats = ["html", "markdown", "json", "yaml"]
+
         for format_type in formats:
             config_str = f"""
 [fetcher]
@@ -215,11 +200,11 @@ engine = "duckduckgo"
 """
             config = tarzi.Config.from_str(config_str)
             assert isinstance(config, tarzi.Config)
-            
+
             # Should be able to create components
             fetcher = tarzi.WebFetcher.from_config(config)
             assert isinstance(fetcher, tarzi.WebFetcher)
-            
+
             converter = tarzi.Converter.from_config(config)
             assert isinstance(converter, tarzi.Converter)
 
@@ -237,18 +222,18 @@ engine = "duckduckgo"
 """
         config = tarzi.Config.from_str(config_str)
         assert isinstance(config, tarzi.Config)
-        
+
         # Components should handle timeout configuration
         fetcher = tarzi.WebFetcher.from_config(config)
         assert isinstance(fetcher, tarzi.WebFetcher)
-        
+
         engine = tarzi.SearchEngine.from_config(config)
         assert isinstance(engine, tarzi.SearchEngine)
 
     def test_search_limit_configuration(self):
         """Test search limit configuration."""
         limits = [1, 5, 10, 20, 50]
-        
+
         for limit in limits:
             config_str = f"""
 [search]
@@ -257,7 +242,7 @@ limit = {limit}
 """
             config = tarzi.Config.from_str(config_str)
             assert isinstance(config, tarzi.Config)
-            
+
             # Should be able to create search engine
             engine = tarzi.SearchEngine.from_config(config)
             assert isinstance(engine, tarzi.SearchEngine)
@@ -284,20 +269,20 @@ timeout = -5
 
 [search]
 engine = "duckduckgo"
-"""
+""",
         ]
-        
+
         for config_str in invalid_configs:
             try:
                 config = tarzi.Config.from_str(config_str)
                 # Configuration parsing might succeed even with invalid values
                 # (validation happens at runtime)
                 assert isinstance(config, tarzi.Config)
-                
+
                 # Try to create components - might succeed or fail
                 engine = tarzi.SearchEngine.from_config(config)
                 assert isinstance(engine, tarzi.SearchEngine)
-                
+
             except Exception:
                 # Invalid configs may cause failures, which is acceptable
                 pass
@@ -307,14 +292,14 @@ engine = "duckduckgo"
         config_str = ""
         config = tarzi.Config.from_str(config_str)
         assert isinstance(config, tarzi.Config)
-        
+
         # Should be able to create components with default configuration
         fetcher = tarzi.WebFetcher.from_config(config)
         assert isinstance(fetcher, tarzi.WebFetcher)
-        
+
         engine = tarzi.SearchEngine.from_config(config)
         assert isinstance(engine, tarzi.SearchEngine)
-        
+
         converter = tarzi.Converter.from_config(config)
         assert isinstance(converter, tarzi.Converter)
 
@@ -336,19 +321,19 @@ mode = "plain_request"
 [search]
 engine = "brave"
 brave_api_key = "test_key"
-"""
+""",
         ]
-        
+
         for config_str in partial_configs:
             config = tarzi.Config.from_str(config_str)
             assert isinstance(config, tarzi.Config)
-            
+
             # Should be able to create components even with partial config
             fetcher = tarzi.WebFetcher.from_config(config)
             assert isinstance(fetcher, tarzi.WebFetcher)
-            
+
             engine = tarzi.SearchEngine.from_config(config)
             assert isinstance(engine, tarzi.SearchEngine)
-            
+
             converter = tarzi.Converter.from_config(config)
             assert isinstance(converter, tarzi.Converter)
