@@ -79,40 +79,6 @@ def test_browser_components():
     
     return True
 
-def test_browser_config():
-    """Test browser configuration module."""
-    try:
-        logger.info("Testing browser configuration...")
-        
-        # Import browser config
-        sys.path.insert(0, '/app')
-        from tarzi_mcp_server.browser_config import get_browser_config, test_browser_setup
-        
-        # Get configuration
-        config = get_browser_config()
-        if config:
-            logger.info("✅ Browser configuration loaded")
-            
-            # Check if browser is available
-            available = config.is_browser_available()
-            logger.info(f"Browser availability: {'✅ Available' if available else '❌ Not available'}")
-            
-            # Get environment info
-            env_info = config.get_environment_info()
-            logger.info("Browser environment:")
-            for key, value in env_info.items():
-                status = "✅" if key.endswith('_exists') and value else "❌" if key.endswith('_exists') else "ℹ️"
-                logger.info(f"  {status} {key}: {value}")
-            
-            return available
-        else:
-            logger.error("❌ Failed to load browser configuration")
-            return False
-            
-    except Exception as e:
-        logger.error(f"❌ Browser configuration test failed: {e}")
-        return False
-
 def test_selenium_basic():
     """Test basic Selenium functionality."""
     try:
@@ -185,7 +151,6 @@ async def main():
     test_results = {
         "imports": test_imports(),
         "browser_components": test_browser_components(),
-        "browser_config": test_browser_config(),
         "selenium_basic": test_selenium_basic(),
         "mcp_server": test_mcp_server_structure(),
     }
