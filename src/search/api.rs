@@ -475,9 +475,10 @@ impl SearchApiProvider for TravilySearchProvider {
             )));
         }
 
-        let data: Value = response.json().await.map_err(|e| {
-            TarziError::Parse(format!("Failed to parse Travily API response: {e}"))
-        })?;
+        let data: Value = response
+            .json()
+            .await
+            .map_err(|e| TarziError::Parse(format!("Failed to parse Travily API response: {e}")))?;
 
         self.parse_travily_response(data)
     }
