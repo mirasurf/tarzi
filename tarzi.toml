@@ -50,9 +50,9 @@
 # Options: "google", "bing", "duckduckgo", "brave", "baidu", "exa", "travily", "google_serper"
 # engine = "bing"
 
-# URL pattern for search queries
+# URL pattern for search queries when engine is "custom"
 # Use {query} as placeholder for the search term
-# query_pattern = "https://www.bing.com/search?q={query}"
+# query_pattern = "https://example.com/search?q={query}"
 
 # Maximum number of search results to return
 # limit = 5
@@ -63,9 +63,6 @@
 
 # API keys for different search engines
 # Required when using apiquery mode with specific search engines
-
-# Legacy API key (deprecated - use specific engine keys below)
-# api_key = "your-api-key-for-apiquery-mode"
 
 # Brave Search API key
 # brave_api_key = "your-brave-api-key"

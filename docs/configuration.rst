@@ -84,5 +84,37 @@ Configuration values are applied in the following order (highest to lowest prior
 3. Configuration file
 4. Default values
 
-**Note**: Environment variables currently only override proxy settings. 
+**Note**: Environment variables currently only override proxy settings and API keys. 
 All other configuration must be set via TOML file or programmatically.
+
+API Search Configuration
+------------------------
+
+tarzi supports multiple API search providers with automatic fallback capabilities:
+
+**Supported Providers:**
+- **Brave Search API**: Fast, privacy-focused search results
+- **Google Serper API**: Google search results via official API
+- **Exa Search API**: AI-powered semantic search with enhanced relevance
+- **Travily API**: Specialized travel and location-based search
+- **DuckDuckGo API**: Privacy-focused search (limited functionality, no API key required)
+
+**Autoswitch Strategies:**
+- **smart**: Automatically fallback to available providers if primary fails
+- **none**: Only use the configured primary search engine
+
+**Configuration Example:**
+
+.. code-block:: toml
+
+   [search]
+   engine = "brave"
+   mode = "apiquery"
+   autoswitch = "smart"
+   limit = 10
+   
+   # API keys for different providers
+   brave_api_key = "your-brave-api-key"
+   google_serper_api_key = "your-google-serper-api-key"
+   exa_api_key = "your-exa-api-key"
+   travily_api_key = "your-travily-api-key"

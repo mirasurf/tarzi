@@ -63,14 +63,15 @@ The Search module provides comprehensive search engine integration:
    
    - Google, Bing, DuckDuckGo, Brave Search support
    - Custom search engine configuration
-   - Anti-detection measures (under development)
+   - Anti-detection measures
 
-**API-Based Search** (under development)
+**API-Based Search**
    Direct API integration for supported search engines:
    
-   - Official API support
-   - Rate limiting and quota management
-   - Structured result parsing
+   - **Multiple API Providers**: Brave Search, Google Serper, Exa, Travily, DuckDuckGo (more to come)
+   - **Automatic Provider Switching**: Smart fallback when primary provider fails
+   - **Proxy Support**: Full proxy support for all API providers
+   - **Structured Results**: Consistent result format across all providers
 
 Key features:
 

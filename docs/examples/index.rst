@@ -19,4 +19,12 @@ All examples are available in the `examples/` directory of the repository:
 
    # Rust examples
    cargo run --example basic_usage
-   cargo run --example search_engines 
+   cargo run --example search_engines
+
+Documentation Examples
+---------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   api_search 

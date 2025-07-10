@@ -52,8 +52,14 @@ Key Features
 🔍 **Search Integration**
    Query search engines using browser mode (headless/headed/existing) or API mode
 
-🎯 **Multiple Search Engines**
-   Support for Bing, Google, DuckDuckGo, Brave Search, Tavily, and custom engines
+🎯 **Web Search Engines**
+   Support for Bing, Google, DuckDuckGo, Brave Search, and custom engines
+
+🚀 **API Search Providers**
+   Direct API integration with Brave Search, Google Serper, Exa, Travily, and DuckDuckGo
+
+🔄 **Automatic Provider Switching**
+   Smart fallback between API providers for enhanced reliability
 
 🔒 **Proxy Support**
    Use proxies in both browser-based and API-based operations
@@ -81,8 +87,11 @@ Python
    # Fetch web page
    content = tarzi.fetch_url("https://example.com", js=True)
 
-   # Search web
-   results = tarzi.search_web("python programming", "browser", 10)
+   # Search web (browser-based)
+   results = tarzi.search_web("python programming", "webquery", 10)
+
+   # Search using API providers (requires API keys)
+   results = tarzi.search_web("machine learning", "apiquery", 10)
 
 Rust
 ----
@@ -109,11 +118,19 @@ Rust
            Format::Markdown
        ).await?;
 
-       // Search web
+       // Search web (browser-based)
        let mut search_engine = SearchEngine::new();
        let results = search_engine.search(
            "agentic AI",
            SearchMode::WebQuery,
+           5
+       ).await?;
+
+       // Search using API providers (requires API keys)
+       let mut api_search_engine = SearchEngine::from_config(&Config::new());
+       let api_results = api_search_engine.search(
+           "machine learning",
+           SearchMode::ApiQuery,
            5
        ).await?;
 
@@ -134,10 +151,18 @@ CLI
    # Fetch web page with JavaScript rendering
    tarzi fetch --url "https://example.com" --mode browser_headless --format json
 
-   # Search and fetch content
+   # Search and fetch content (browser-based)
    tarzi search-and-fetch \
      --query "agentic AI" \
-     --search-mode browser \
+     --search-mode webquery \
+     --fetch-mode plain_request \
+     --format markdown \
+     --limit 5
+
+   # Search using API providers (requires API keys)
+   tarzi search-and-fetch \
+     --query "machine learning" \
+     --search-mode apiquery \
      --fetch-mode plain_request \
      --format markdown \
      --limit 5
@@ -159,6 +184,12 @@ Use Cases
 
 🔄 **API Development**
    Use as a backend service for search and content extraction APIs
+
+⚡ **High-Performance Search**
+   Leverage API providers for faster, more reliable search results
+
+🛡️ **Enterprise Search Solutions**
+   Deploy with proxy support and multiple API providers for enterprise environments
 
 Support
 =======

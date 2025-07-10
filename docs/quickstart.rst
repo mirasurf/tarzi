@@ -37,7 +37,7 @@ Let's start with a simple example that demonstrates the core functionality:
    except Exception as e:
        print(f"Fetch failed: {e}")
 
-   # 3. Search the web
+   # 3. Search the web (browser-based)
    try:
        results = tarzi.search_web(
            "python web scraping", 
@@ -51,6 +51,21 @@ Let's start with a simple example that demonstrates the core functionality:
            print(f"   Snippet: {result.snippet[:100]}...")
    except Exception as e:
        print(f"Search failed: {e}")
+
+   # 4. Search using API providers (requires API keys)
+   try:
+       results = tarzi.search_web(
+           "machine learning trends", 
+           mode="apiquery", 
+           limit=3
+       )
+       print(f"\nAPI search found {len(results)} results:")
+       for i, result in enumerate(results):
+           print(f"{i+1}. {result.title}")
+           print(f"   URL: {result.url}")
+           print(f"   Snippet: {result.snippet[:100]}...")
+   except Exception as e:
+       print(f"API search failed: {e}")
 
 Save this as `quickstart.py` and run it:
 
@@ -88,7 +103,7 @@ Here's the equivalent Rust program:
            Err(e) => println!("Fetch failed: {}", e),
        }
 
-       // 3. Search the web
+       // 3. Search the web (browser-based)
        let mut search_engine = SearchEngine::new();
        match search_engine.search(
            "agentic AI",
@@ -104,6 +119,24 @@ Here's the equivalent Rust program:
                }
            }
            Err(e) => println!("Search failed: {}", e),
+       }
+
+       // 4. Search using API providers (requires API keys)
+       let mut api_search_engine = SearchEngine::from_config(&Config::new());
+       match api_search_engine.search(
+           "machine learning trends",
+           SearchMode::ApiQuery,
+           3
+       ).await {
+           Ok(results) => {
+               println!("\nAPI search found {} results:", results.len());
+               for (i, result) in results.iter().enumerate() {
+                   println!("{}. {}", i + 1, result.title);
+                   println!("   URL: {}", result.url);
+                   println!("   Snippet: {}...", &result.snippet[..100.min(result.snippet.len())]);
+               }
+           }
+           Err(e) => println!("API search failed: {}", e),
        }
 
        Ok(())
@@ -187,6 +220,25 @@ Two approaches to web search:
 - **webquery**: Scrape search engine results pages (no API key needed)
 - **apiquery**: Use official search APIs (requires API key)
 
+API Search Providers
+~~~~~~~~~~~~~~~~~~~
+
+tarzi supports multiple API search providers with automatic fallback:
+
+- **Brave Search API**: Fast, privacy-focused search
+- **Google Serper API**: Google search results via API
+- **Exa Search API**: AI-powered semantic search
+- **Travily API**: Travel-focused search engine
+- **DuckDuckGo API**: Privacy-focused search (limited functionality)
+
+Autoswitch Strategy
+~~~~~~~~~~~~~~~~~~
+
+When using API search, tarzi can automatically switch between providers:
+
+- **smart**: Automatically fallback to available providers if primary fails
+- **none**: Only use the configured primary search engine
+
 .. code-block:: python
 
    # Browser-based search (no API key needed)
@@ -211,8 +263,16 @@ Basic configuration can be done through environment variables or a `tarzi.toml` 
 .. code-block:: toml
 
    [search]
-   default_engine = "google"
-   timeout = 30
+   engine = "brave"
+   mode = "apiquery"
+   autoswitch = "smart"
+   limit = 5
+   
+   # API keys for different providers
+   brave_api_key = "your-brave-api-key"
+   google_serper_api_key = "your-google-serper-api-key"
+   exa_api_key = "your-exa-api-key"
+   travily_api_key = "your-travily-api-key"
 
    [fetcher]
    user_agent = "Mozilla/5.0 (compatible; Tarzi/1.0)"
