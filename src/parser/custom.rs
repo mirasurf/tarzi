@@ -1,9 +1,9 @@
-use super::super::types::{SearchEngineType, SearchResult};
 use super::SearchResultParser;
 use super::base::{
     ApiSearchParser, BaseApiParser, BaseSearchParser, BaseWebParser, WebSearchParser,
 };
 use crate::Result;
+use crate::search::types::{SearchEngineType, SearchResult};
 use serde_json::Value;
 use std::collections::HashMap;
 

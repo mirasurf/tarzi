@@ -2,9 +2,9 @@ use super::api::{
     ApiSearchManager, AutoSwitchStrategy, BraveSearchProvider, DuckDuckGoProvider,
     ExaSearchProvider, GoogleSerperProvider, TravilySearchProvider,
 };
-use super::parser::{ParserFactory, SearchResultParser};
 use super::types::{SearchEngineType, SearchMode, SearchResult};
 use crate::config::Config;
+use crate::parser::{ParserFactory, SearchResultParser};
 use crate::{
     Result,
     error::TarziError,

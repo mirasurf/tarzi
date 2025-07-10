@@ -3,6 +3,7 @@ pub mod constants;
 pub mod converter;
 pub mod error;
 pub mod fetcher;
+pub mod parser;
 pub mod search;
 pub mod utils;
 

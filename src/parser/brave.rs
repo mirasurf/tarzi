@@ -1,26 +1,26 @@
-use super::super::types::{SearchEngineType, SearchResult};
 use super::SearchResultParser;
 use super::base::{
     ApiSearchParser, BaseApiParser, BaseSearchParser, BaseWebParser, WebSearchParser,
 };
 use crate::Result;
+use crate::search::types::{SearchEngineType, SearchResult};
 use select::document::Document;
-use select::predicate::{And, Class, Descendant, Name};
+use select::predicate::{Class, Name};
 use serde_json::Value;
 
-pub struct BaiduParser {
+pub struct BraveParser {
     base: BaseWebParser,
 }
 
-impl BaiduParser {
+impl BraveParser {
     pub fn new() -> Self {
         Self {
-            base: BaseWebParser::new("BaiduParser".to_string(), SearchEngineType::Baidu),
+            base: BaseWebParser::new("BraveParser".to_string(), SearchEngineType::BraveSearch),
         }
     }
 }
 
-impl BaseSearchParser for BaiduParser {
+impl BaseSearchParser for BraveParser {
     fn name(&self) -> &str {
         self.base.name()
     }
@@ -29,29 +29,29 @@ impl BaseSearchParser for BaiduParser {
     }
 }
 
-impl WebSearchParser for BaiduParser {
+impl WebSearchParser for BraveParser {
     fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
-        let result_selector = And(Class("result"), Class("c-container"));
-        for node in document.find(result_selector) {
-            // Skip ads
-            if node.attr("data-tuiguang").is_some() {
-                continue;
-            }
-            let title = node
-                .find(Descendant(Name("h3"), Name("a")))
-                .next()
+        for (rank, node) in document.find(Class("result-row")).take(limit).enumerate() {
+            let title_link = node.find(Name("a")).next();
+            let title = title_link
                 .map(|n| n.text().trim().to_string())
                 .unwrap_or_default();
-            let url = node
-                .find(Descendant(Name("h3"), Name("a")))
-                .next()
+            let url = title_link
                 .and_then(|n| n.attr("href"))
-                .unwrap_or_default()
-                .to_string();
+                .map(|href| {
+                    if href.starts_with("http") {
+                        href.to_string()
+                    } else if href.starts_with("/") {
+                        format!("https://search.brave.com{href}")
+                    } else {
+                        href.to_string()
+                    }
+                })
+                .unwrap_or_default();
             let snippet = node
-                .find(Class("c-abstract"))
+                .find(Class("result-snippet"))
                 .next()
                 .map(|n| n.text().trim().to_string())
                 .unwrap_or_default();
@@ -60,18 +60,15 @@ impl WebSearchParser for BaiduParser {
                     title,
                     url,
                     snippet,
-                    rank: results.len() + 1,
+                    rank: rank + 1,
                 });
-            }
-            if results.len() >= limit {
-                break;
             }
         }
         Ok(results)
     }
 }
 
-impl SearchResultParser for BaiduParser {
+impl SearchResultParser for BraveParser {
     fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         self.parse_html(html, limit)
     }
@@ -83,25 +80,25 @@ impl SearchResultParser for BaiduParser {
     }
 }
 
-impl Default for BaiduParser {
+impl Default for BraveParser {
     fn default() -> Self {
         Self::new()
     }
 }
 
-pub struct BaiduApiParser {
+pub struct BraveApiParser {
     base: BaseApiParser,
 }
 
-impl BaiduApiParser {
+impl BraveApiParser {
     pub fn new() -> Self {
         Self {
-            base: BaseApiParser::new("BaiduApiParser".to_string(), SearchEngineType::Baidu),
+            base: BaseApiParser::new("BraveApiParser".to_string(), SearchEngineType::BraveSearch),
         }
     }
 }
 
-impl BaseSearchParser for BaiduApiParser {
+impl BaseSearchParser for BraveApiParser {
     fn name(&self) -> &str {
         self.base.name()
     }
@@ -110,16 +107,16 @@ impl BaseSearchParser for BaiduApiParser {
     }
 }
 
-impl ApiSearchParser for BaiduApiParser {
+impl ApiSearchParser for BraveApiParser {
     fn parse_json(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let json: Value = serde_json::from_str(json_content)?;
         let mut results = Vec::new();
-        if let Some(results_array) = json["results"].as_array() {
-            for (i, result) in results_array.iter().take(limit).enumerate() {
+        if let Some(web_results) = json["web"]["results"].as_array() {
+            for (i, result) in web_results.iter().take(limit).enumerate() {
                 results.push(SearchResult {
                     title: result["title"].as_str().unwrap_or("").to_string(),
                     url: result["url"].as_str().unwrap_or("").to_string(),
-                    snippet: result["snippet"].as_str().unwrap_or("").to_string(),
+                    snippet: result["description"].as_str().unwrap_or("").to_string(),
                     rank: i,
                 });
             }
@@ -128,7 +125,7 @@ impl ApiSearchParser for BaiduApiParser {
     }
 }
 
-impl SearchResultParser for BaiduApiParser {
+impl SearchResultParser for BraveApiParser {
     fn parse(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
         self.parse_json(json_content, limit)
     }
@@ -140,7 +137,7 @@ impl SearchResultParser for BaiduApiParser {
     }
 }
 
-impl Default for BaiduApiParser {
+impl Default for BraveApiParser {
     fn default() -> Self {
         Self::new()
     }

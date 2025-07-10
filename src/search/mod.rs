@@ -8,14 +8,13 @@
 
 pub mod api;
 pub mod engine;
-pub mod parser;
 pub mod types;
 
 #[cfg(test)]
 mod tests;
 
 // Re-export main types and functions
+pub use crate::parser::{CustomParserConfig, ParserFactory, SearchResultParser};
 pub use api::{ApiSearchManager, AutoSwitchStrategy, SearchApiProvider};
 pub use engine::SearchEngine;
-pub use parser::{CustomParserConfig, ParserFactory, SearchResultParser};
 pub use types::{SearchEngineType, SearchMode, SearchResult};
