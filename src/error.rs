@@ -49,6 +49,12 @@ pub enum TarziError {
 
     #[error("Driver process error: {0}")]
     DriverProcess(String),
+
+    #[error("Network error: {0}")]
+    Network(String),
+
+    #[error("Parse error: {0}")]
+    Parse(String),
 }
 
 pub type Result<T> = std::result::Result<T, TarziError>;
