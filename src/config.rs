@@ -47,7 +47,13 @@ pub struct SearchConfig {
     pub query_pattern: String,
     #[serde(default = "default_result_limit")]
     pub limit: usize,
-    pub api_key: Option<String>,
+    #[serde(default = "default_autoswitch_strategy")]
+    pub autoswitch: String,
+    pub brave_api_key: Option<String>,
+    pub duckduckgo_api_key: Option<String>,
+    pub google_serper_api_key: Option<String>,
+    pub exa_api_key: Option<String>,
+    pub travily_api_key: Option<String>,
 }
 
 impl Config {
@@ -180,7 +186,12 @@ impl Default for SearchConfig {
             engine: default_search_engine(),
             query_pattern: default_query_pattern(),
             limit: default_result_limit(),
-            api_key: None,
+            autoswitch: default_autoswitch_strategy(),
+            brave_api_key: None,
+            duckduckgo_api_key: None,
+            google_serper_api_key: None,
+            exa_api_key: None,
+            travily_api_key: None,
         }
     }
 }
@@ -236,6 +247,10 @@ fn default_web_driver() -> String {
     "geckodriver".to_string()
 }
 
+fn default_autoswitch_strategy() -> String {
+    "smart".to_string()
+}
+
 /// Get proxy configuration with environment variable override
 /// Environment variables checked in order: HTTP_PROXY, HTTPS_PROXY, http_proxy, https_proxy
 /// Falls back to config.proxy if no environment variables are set
@@ -281,20 +296,22 @@ mod tests {
             "https://www.bing.com/search?q={query}"
         );
         assert_eq!(config.search.limit, 5);
-        assert!(config.search.api_key.is_none());
     }
 
     #[test]
     fn test_config_serialization() {
         let mut config = Config::new();
-        config.search.api_key = Some("test_key".to_string());
+        config.search.brave_api_key = Some("test_key".to_string());
         config.search.limit = 5;
         config.fetcher.mode = "head".to_string();
 
         let toml_str = toml::to_string_pretty(&config).unwrap();
         let parsed_config: Config = toml::from_str(&toml_str).unwrap();
 
-        assert_eq!(parsed_config.search.api_key, Some("test_key".to_string()));
+        assert_eq!(
+            parsed_config.search.brave_api_key,
+            Some("test_key".to_string())
+        );
         assert_eq!(parsed_config.search.limit, 5);
         assert_eq!(parsed_config.fetcher.mode, "head");
     }
@@ -306,7 +323,7 @@ mod tests {
 
         // Create a test config
         let mut config = Config::new();
-        config.search.api_key = Some("test_api_key".to_string());
+        config.search.brave_api_key = Some("test_brave_key".to_string());
         config.search.limit = 10;
         config.general.log_level = "debug".to_string();
 
@@ -319,8 +336,8 @@ mod tests {
         let loaded_config: Config = toml::from_str(&content).unwrap();
 
         assert_eq!(
-            loaded_config.search.api_key,
-            Some("test_api_key".to_string())
+            loaded_config.search.brave_api_key,
+            Some("test_brave_key".to_string())
         );
         assert_eq!(loaded_config.search.limit, 10);
         assert_eq!(loaded_config.general.log_level, "debug");
@@ -353,7 +370,11 @@ mode = "api"
 engine = "google.com"
 query_pattern = ".*"
 limit = 5
-api_key = "google_key_123"
+autoswitch = "none"
+brave_api_key = "brave_key_456"
+google_serper_api_key = "serper_key_789"
+exa_api_key = "exa_key_012"
+travily_api_key = "travily_key_345"
 "#;
 
         let config: Config = toml::from_str(config_str).unwrap();
@@ -377,7 +398,21 @@ api_key = "google_key_123"
         assert_eq!(config.search.engine, "google.com");
         assert_eq!(config.search.query_pattern, ".*");
         assert_eq!(config.search.limit, 5);
-        assert_eq!(config.search.api_key, Some("google_key_123".to_string()));
+        assert_eq!(config.search.autoswitch, "none");
+
+        assert_eq!(
+            config.search.brave_api_key,
+            Some("brave_key_456".to_string())
+        );
+        assert_eq!(
+            config.search.google_serper_api_key,
+            Some("serper_key_789".to_string())
+        );
+        assert_eq!(config.search.exa_api_key, Some("exa_key_012".to_string()));
+        assert_eq!(
+            config.search.travily_api_key,
+            Some("travily_key_345".to_string())
+        );
     }
 
     #[test]
@@ -426,8 +461,13 @@ web_driver_url = "http://localhost:9999"
             "https://www.bing.com/search?q={query}"
         );
         assert_eq!(config.search.limit, 5);
-        // api_key should be None by default (commented out in tarzi.toml)
-        assert_eq!(config.search.api_key, None);
+        assert_eq!(config.search.autoswitch, "smart");
+        // API keys should be None by default (commented out in tarzi.toml)
+        assert_eq!(config.search.brave_api_key, None);
+        assert_eq!(config.search.duckduckgo_api_key, None);
+        assert_eq!(config.search.google_serper_api_key, None);
+        assert_eq!(config.search.exa_api_key, None);
+        assert_eq!(config.search.travily_api_key, None);
     }
 
     #[test]

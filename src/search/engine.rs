@@ -1,3 +1,7 @@
+use super::api::{
+    ApiSearchManager, AutoSwitchStrategy, BraveSearchProvider, DuckDuckGoProvider,
+    ExaSearchProvider, GoogleSerperProvider, TravilySearchProvider,
+};
 use super::parser::{ParserFactory, SearchResultParser};
 use super::types::{SearchEngineType, SearchMode, SearchResult};
 use crate::config::Config;
@@ -19,6 +23,7 @@ pub struct SearchEngine {
     query_pattern: String,
     user_agent: String,
     parser_factory: ParserFactory,
+    api_manager: ApiSearchManager,
 }
 
 impl SearchEngine {
@@ -31,6 +36,7 @@ impl SearchEngine {
             query_pattern: SearchEngineType::Bing.get_query_pattern(),
             user_agent: crate::constants::DEFAULT_USER_AGENT.to_string(),
             parser_factory: ParserFactory::new(),
+            api_manager: ApiSearchManager::new(AutoSwitchStrategy::Smart),
         }
     }
 
@@ -66,7 +72,6 @@ impl SearchEngine {
     pub fn from_config(config: &Config) -> Self {
         info!("Initializing SearchEngine from config");
         let fetcher = crate::fetcher::WebFetcher::from_config(config);
-        let api_key = config.search.api_key.clone();
 
         // Parse the search engine type from config
         let engine_type =
@@ -79,13 +84,102 @@ impl SearchEngine {
             engine_type.get_query_pattern()
         };
 
+        // Initialize API manager with autoswitch strategy
+        let autoswitch_strategy = AutoSwitchStrategy::from(config.search.autoswitch.as_str());
+        let mut api_manager = ApiSearchManager::new(autoswitch_strategy);
+
+        // Check for proxy configuration
+        let proxy_url = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
+
+        // Initialize HTTP client for API providers (with or without proxy)
+        let client = if let Some(ref proxy) = proxy_url {
+            info!("Creating API client with proxy: {}", proxy);
+            Client::builder()
+                .timeout(std::time::Duration::from_secs(config.general.timeout))
+                .user_agent(&config.fetcher.user_agent)
+                .proxy(reqwest::Proxy::http(proxy).expect("Invalid proxy URL"))
+                .build()
+                .expect("Failed to create HTTP client with proxy for API providers")
+        } else {
+            Client::builder()
+                .timeout(std::time::Duration::from_secs(config.general.timeout))
+                .user_agent(&config.fetcher.user_agent)
+                .build()
+                .expect("Failed to create HTTP client for API providers")
+        };
+
+        // Register API providers based on available API keys
+        if let Some(ref brave_key) = config.search.brave_api_key {
+            info!(
+                "Registering Brave Search API provider{}",
+                if proxy_url.is_some() {
+                    " with proxy"
+                } else {
+                    ""
+                }
+            );
+            let provider = Box::new(BraveSearchProvider::new(brave_key.clone(), client.clone()));
+            api_manager.register_provider(SearchEngineType::BraveSearch, provider);
+        }
+
+        if let Some(ref serper_key) = config.search.google_serper_api_key {
+            info!(
+                "Registering Google Serper API provider{}",
+                if proxy_url.is_some() {
+                    " with proxy"
+                } else {
+                    ""
+                }
+            );
+            let provider = Box::new(GoogleSerperProvider::new(
+                serper_key.clone(),
+                client.clone(),
+            ));
+            api_manager.register_provider(SearchEngineType::GoogleSerper, provider);
+        }
+
+        if let Some(ref exa_key) = config.search.exa_api_key {
+            info!(
+                "Registering Exa Search API provider{}",
+                if proxy_url.is_some() {
+                    " with proxy"
+                } else {
+                    ""
+                }
+            );
+            let provider = Box::new(ExaSearchProvider::new(exa_key.clone(), client.clone()));
+            api_manager.register_provider(SearchEngineType::Exa, provider);
+        }
+
+        if let Some(ref travily_key) = config.search.travily_api_key {
+            info!(
+                "Registering Travily Search API provider{}",
+                if proxy_url.is_some() {
+                    " with proxy"
+                } else {
+                    ""
+                }
+            );
+            let provider = Box::new(TravilySearchProvider::new(
+                travily_key.clone(),
+                client.clone(),
+            ));
+            api_manager.register_provider(SearchEngineType::Travily, provider);
+        }
+
+        // DuckDuckGo doesn't require an API key but has limited functionality
+        info!("Registering DuckDuckGo API provider (limited functionality)");
+        let provider = Box::new(DuckDuckGoProvider::new(client.clone()));
+        api_manager.register_provider(SearchEngineType::DuckDuckGo, provider);
+
         Self {
             fetcher,
-            api_key,
+            api_key: None, // Deprecated: specific API keys are now managed per provider
             engine_type,
             query_pattern,
             user_agent: config.fetcher.user_agent.clone(),
             parser_factory: ParserFactory::new(),
+            api_manager,
         }
     }
 
@@ -163,36 +257,12 @@ impl SearchEngine {
     async fn search_api(&self, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
         info!("Starting API-based search for query: '{}'", query);
 
-        // This is a simplified API search implementation
-        // In a real implementation, you would use actual search APIs like Google Custom Search, Bing, etc.
+        // Use the API manager to perform the search with automatic provider switching
+        let results = self
+            .api_manager
+            .search(&self.engine_type, query, limit)
+            .await?;
 
-        if self.api_key.is_none() {
-            warn!("No API key provided for API mode");
-            return Err(TarziError::Config(
-                "API key required for API mode".to_string(),
-            ));
-        }
-
-        info!("Using API key for search");
-        // FIXME (xiaming.cxm): to be implemented.
-        // For demonstration, we'll simulate API search results
-        // In practice, you would make actual API calls here
-        let mock_results = vec![
-            SearchResult {
-                title: format!("Search result for: {query}"),
-                url: "https://example.com/result1".to_string(),
-                snippet: format!("This is a mock search result for the query: {query}"),
-                rank: 1,
-            },
-            SearchResult {
-                title: format!("Another result for: {query}"),
-                url: "https://example.com/result2".to_string(),
-                snippet: format!("Another mock search result for: {query}"),
-                rank: 2,
-            },
-        ];
-
-        let results: Vec<SearchResult> = mock_results.into_iter().take(limit).collect();
         info!("API search completed, returning {} results", results.len());
         Ok(results)
     }

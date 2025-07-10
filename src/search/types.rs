@@ -8,13 +8,16 @@ pub enum SearchMode {
     ApiQuery,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SearchEngineType {
     Bing,
     DuckDuckGo,
     Google,
     BraveSearch,
     Baidu,
+    Exa,
+    Travily,
+    GoogleSerper,
     Custom(String),
 }
 
@@ -28,6 +31,9 @@ impl FromStr for SearchEngineType {
             "google" => Ok(SearchEngineType::Google),
             "brave" => Ok(SearchEngineType::BraveSearch),
             "baidu" => Ok(SearchEngineType::Baidu),
+            "exa" => Ok(SearchEngineType::Exa),
+            "travily" => Ok(SearchEngineType::Travily),
+            "google_serper" => Ok(SearchEngineType::GoogleSerper),
             _ => Ok(SearchEngineType::Custom(s.to_string())),
         }
     }
@@ -43,8 +49,18 @@ impl SearchEngineType {
                 "https://search.brave.com/search?q={query}".to_string()
             }
             SearchEngineType::Baidu => "https://www.baidu.com/s?wd={query}".to_string(),
+            SearchEngineType::Exa => "https://api.exa.ai/search".to_string(),
+            SearchEngineType::Travily => "https://api.tavily.com/search".to_string(),
+            SearchEngineType::GoogleSerper => "https://google.serper.dev/search".to_string(),
             SearchEngineType::Custom(_) => "{query}".to_string(), // Default pattern for custom engines
         }
+    }
+
+    pub fn is_api_based(&self) -> bool {
+        matches!(
+            self,
+            SearchEngineType::Exa | SearchEngineType::Travily | SearchEngineType::GoogleSerper
+        )
     }
 }
 

@@ -21,7 +21,6 @@ def sample_config():
 timeout = 30
 user_agent = "Test Agent"
 format = "html"
-proxy = ""
 
 [search]
 engine = "bing"

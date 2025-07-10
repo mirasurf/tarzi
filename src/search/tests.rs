@@ -5,9 +5,10 @@ use std::str::FromStr;
 fn test_searchengine_from_config() {
     use crate::config::Config;
     let mut config = Config::new();
-    config.search.api_key = Some("test-api-key-123".to_string());
+    config.search.brave_api_key = Some("test-brave-api-key-123".to_string());
     let engine = SearchEngine::from_config(&config);
-    assert_eq!(*engine.api_key(), Some("test-api-key-123".to_string()));
+    // Note: The general api_key is deprecated, specific API keys are managed per provider
+    assert_eq!(*engine.api_key(), None);
     assert_eq!(*engine.engine_type(), SearchEngineType::Bing);
     assert_eq!(
         engine.query_pattern(),

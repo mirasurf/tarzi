@@ -55,6 +55,11 @@ impl ParserFactory {
             SearchEngineType::Google => Box::new(GoogleParser::new()),
             SearchEngineType::BraveSearch => Box::new(BraveParser::new()),
             SearchEngineType::Baidu => Box::new(BaiduParser::new()),
+            SearchEngineType::Exa => Box::new(CustomParser::new("Exa".to_string())),
+            SearchEngineType::Travily => Box::new(CustomParser::new("Travily".to_string())),
+            SearchEngineType::GoogleSerper => {
+                Box::new(CustomParser::new("GoogleSerper".to_string()))
+            }
             SearchEngineType::Custom(name) => {
                 if let Some(_parser) = self.custom_parsers.get(name) {
                     // Note: This is a simplified approach. In practice, you might want
