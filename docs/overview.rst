@@ -56,12 +56,20 @@ Key features:
 Search Module
 ~~~~~~~~~~~~~
 
-The Search module provides comprehensive search engine integration:
+The Search module provides comprehensive search engine integration with a unified parser architecture:
+
+**Base Parser Architecture**
+   All search engines inherit from base parser traits:
+   
+   - **BaseSearchParser**: Core trait with name, engine type, and support checking
+   - **WebSearchParser**: HTML-based parsing with `parse_html()` method
+   - **ApiSearchParser**: JSON-based parsing with `parse_json()` method
+   - **UnifiedParser**: Combines web and API parsing capabilities
 
 **Browser-Based Search**
    Scrape search results directly from search engine pages:
    
-   - Google, Bing, DuckDuckGo, Brave Search support
+   - Google, Bing, DuckDuckGo, Brave Search, Baidu support
    - Custom search engine configuration
    - Anti-detection measures
 
@@ -73,6 +81,13 @@ The Search module provides comprehensive search engine integration:
    - **Proxy Support**: Full proxy support for all API providers
    - **Structured Results**: Consistent result format across all providers
 
+**Parser Factory**
+   Factory pattern for creating and managing parsers:
+   
+   - Mode-aware parser selection (WebQuery vs ApiQuery)
+   - Custom parser registration
+   - Automatic fallback for unsupported combinations
+
 Key features:
 
 - Multiple search engine support
@@ -80,6 +95,7 @@ Key features:
 - Search result ranking
 - Snippet extraction
 - URL validation and cleaning
+- Extensible parser architecture
 
 Getting Started
 ---------------

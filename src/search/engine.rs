@@ -32,8 +32,8 @@ impl SearchEngine {
         Self {
             fetcher: WebFetcher::new(),
             api_key: None,
-            engine_type: SearchEngineType::Bing,
-            query_pattern: SearchEngineType::Bing.get_query_pattern(),
+            engine_type: SearchEngineType::DuckDuckGo,
+            query_pattern: SearchEngineType::DuckDuckGo.get_query_pattern(),
             user_agent: crate::constants::DEFAULT_USER_AGENT.to_string(),
             parser_factory: ParserFactory::new(),
             api_manager: ApiSearchManager::new(AutoSwitchStrategy::Smart),
@@ -74,15 +74,19 @@ impl SearchEngine {
         let fetcher = crate::fetcher::WebFetcher::from_config(config);
 
         // Parse the search engine type from config
-        let engine_type =
-            SearchEngineType::from_str(&config.search.engine).unwrap_or(SearchEngineType::Bing);
+        let engine_type = SearchEngineType::from_str(&config.search.engine)
+            .unwrap_or(SearchEngineType::DuckDuckGo);
 
-        // Use custom query pattern if provided, otherwise use the default for the engine type
-        let query_pattern = if config.search.query_pattern != engine_type.get_query_pattern() {
-            config.search.query_pattern.clone()
-        } else {
-            engine_type.get_query_pattern()
-        };
+        // Determine the search mode
+        let mode = SearchMode::from_str(&config.search.mode).unwrap_or(SearchMode::WebQuery);
+
+        // Use custom query pattern if provided, otherwise use the default for the engine type and mode
+        let query_pattern =
+            if config.search.query_pattern != engine_type.get_query_pattern_for_mode(mode) {
+                config.search.query_pattern.clone()
+            } else {
+                engine_type.get_query_pattern_for_mode(mode)
+            };
 
         // Initialize API manager with autoswitch strategy
         let autoswitch_strategy = AutoSwitchStrategy::from(config.search.autoswitch.as_str());
@@ -167,6 +171,21 @@ impl SearchEngine {
             api_manager.register_provider(SearchEngineType::Travily, provider);
         }
 
+        if let Some(ref _baidu_key) = config.search.baidu_api_key {
+            info!(
+                "Registering Baidu Search API provider{}",
+                if proxy_url.is_some() {
+                    " with proxy"
+                } else {
+                    ""
+                }
+            );
+            // Note: BaiduSearchProvider needs to be implemented
+            // For now, we'll just register a placeholder
+            // let provider = Box::new(BaiduSearchProvider::new(baidu_key.clone(), client.clone()));
+            // api_manager.register_provider(SearchEngineType::Baidu, provider);
+        }
+
         // DuckDuckGo doesn't require an API key but has limited functionality
         info!("Registering DuckDuckGo API provider (limited functionality)");
         let provider = Box::new(DuckDuckGoProvider::new(client.clone()));
@@ -190,12 +209,37 @@ impl SearchEngine {
         limit: usize,
     ) -> Result<Vec<SearchResult>> {
         info!("Starting search with mode: {:?}, limit: {}", mode, limit);
+
+        // Validate that the engine supports the requested mode
         match mode {
             SearchMode::WebQuery => {
+                if !self.engine_type.supports_web_query() {
+                    return Err(TarziError::Config(format!(
+                        "Engine {:?} does not support web query mode",
+                        self.engine_type
+                    )));
+                }
                 info!("Using browser mode for search");
                 self.search_browser(query, limit).await
             }
             SearchMode::ApiQuery => {
+                if !self.engine_type.supports_api_query() {
+                    return Err(TarziError::Config(format!(
+                        "Engine {:?} does not support API query mode",
+                        self.engine_type
+                    )));
+                }
+
+                // Check if API key is required and available
+                if self.engine_type.requires_api_key()
+                    && !self.api_manager.has_provider(&self.engine_type)
+                {
+                    return Err(TarziError::Config(format!(
+                        "Engine {:?} requires API key for API query mode but no provider is registered",
+                        self.engine_type
+                    )));
+                }
+
                 info!("Using API mode for search");
                 self.search_api(query, limit).await
             }
@@ -211,17 +255,20 @@ impl SearchEngine {
             .replace("{query}", &urlencoding::encode(query));
         info!("Fetching search results from: {}", search_url);
 
-        let search_page_content = self
-            .fetcher
-            .fetch_raw(&search_url, FetchMode::BrowserHeadless)
-            .await?;
+        // For webquery mode, default to browser_headless but allow config to override
+        let fetch_mode = FetchMode::BrowserHeadless;
+        let search_page_content = self.fetcher.fetch_raw(&search_url, fetch_mode).await?;
         info!(
             "Successfully fetched search page ({} characters)",
             search_page_content.len()
         );
 
-        // Extract search results from the HTML content
-        let results = self.extract_search_results_from_html(&search_page_content, limit)?;
+        // Extract search results from the HTML content using webquery parser
+        let results = self.extract_search_results_from_html(
+            &search_page_content,
+            limit,
+            SearchMode::WebQuery,
+        )?;
         info!("Successfully extracted {} search results", results.len());
 
         Ok(results)
@@ -231,16 +278,18 @@ impl SearchEngine {
         &self,
         html: &str,
         limit: usize,
+        mode: SearchMode,
     ) -> Result<Vec<SearchResult>> {
-        info!("Extracting search results from HTML content using parser factory");
+        info!("Extracting search results from content using mode-specific parser");
 
-        // Get the appropriate parser for the current engine type
-        let parser = self.parser_factory.get_parser(&self.engine_type);
+        // Get the appropriate parser for the current engine type and mode
+        let parser = self.parser_factory.get_parser(&self.engine_type, mode);
 
         info!(
-            "Using parser: {} for engine type: {:?}",
+            "Using parser: {} for engine type: {:?} and mode: {:?}",
             parser.name(),
-            self.engine_type
+            self.engine_type,
+            mode
         );
 
         // Use the parser to extract results
@@ -278,16 +327,39 @@ impl SearchEngine {
     ) -> Result<Vec<(SearchResult, String)>> {
         info!("Searching and fetching content for query: '{}'", query);
 
+        // Enforce fetcher mode constraints based on search mode
+        let effective_fetch_mode = match mode {
+            SearchMode::ApiQuery => {
+                // For apiquery mode, always use plain_request regardless of what's passed
+                info!("Enforcing plain_request mode for apiquery search");
+                FetchMode::PlainRequest
+            }
+            SearchMode::WebQuery => {
+                // For webquery mode, use the provided fetch_mode or default to browser_headless
+                if matches!(fetch_mode, FetchMode::PlainRequest) {
+                    info!("Using plain_request mode for webquery search");
+                    FetchMode::PlainRequest
+                } else {
+                    info!("Using browser_headless mode for webquery search");
+                    FetchMode::BrowserHeadless
+                }
+            }
+        };
+
         // First, perform the search
         let search_results = self.search(query, mode, limit).await?;
         info!("Found {} search results", search_results.len());
 
-        // Then, fetch content for each result
+        // Then, fetch content for each result using the effective fetch mode
         let mut results_with_content = Vec::new();
 
         for result in search_results.clone() {
             info!("Fetching content for: {}", result.url);
-            match self.fetcher.fetch(&result.url, fetch_mode, format).await {
+            match self
+                .fetcher
+                .fetch(&result.url, effective_fetch_mode, format)
+                .await
+            {
                 Ok(content) => {
                     info!(
                         "Successfully fetched content for {} ({} characters)",

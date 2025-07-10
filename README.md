@@ -61,6 +61,15 @@
 pip install tarzi
 ```
 
+## CLI Commands
+
+Tarzi provides two command-line interfaces:
+
+- **`tarzi`**: Native Rust CLI (faster, more efficient)
+- **`pytarzi`**: Python CLI (easier to extend, same functionality)
+
+Both CLIs support the same commands and configuration precedence.
+
 ## Usage Examples
 
 * Examples in Python and Rust: [examples](/examples/)

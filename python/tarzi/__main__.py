@@ -8,8 +8,8 @@ from typing import Optional
 def main():
     """Main entry point that mimics the Rust CLI using Python bindings."""
     parser = argparse.ArgumentParser(
-        prog="tarzi",
-        description="Rust-native lite search for AI applications"
+        prog="pytarzi",
+        description="Rust-native lite search for AI applications (Python CLI)"
     )
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -24,7 +24,6 @@ def main():
     # Fetch subcommand
     fetch_parser = subparsers.add_parser("fetch", help="Fetch web page content")
     fetch_parser.add_argument("-u", "--url", required=True, help="URL to fetch")
-    fetch_parser.add_argument("-m", "--mode", default="plain_request", help="Fetch mode: plain_request, browser_head, or browser_headless")
     fetch_parser.add_argument("-f", "--format", default="html", help="Output format: html, markdown, json, or yaml")
     fetch_parser.add_argument("-o", "--output", help="Output file path (optional)")
     fetch_parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
@@ -32,7 +31,6 @@ def main():
     # Search subcommand
     search_parser = subparsers.add_parser("search", help="Search using search engines")
     search_parser.add_argument("-q", "--query", required=True, help="Search query")
-    search_parser.add_argument("-m", "--mode", default="webquery", help="Search mode: webquery or apiquery")
     search_parser.add_argument("-l", "--limit", type=int, default=10, help="Number of results to return")
     search_parser.add_argument("-f", "--format", default="json", help="Output format: json or yaml")
     search_parser.add_argument("-o", "--output", help="Output file path (optional)")
@@ -41,8 +39,6 @@ def main():
     # Search and fetch subcommand
     search_fetch_parser = subparsers.add_parser("search-and-fetch", help="Search and fetch content for each result")
     search_fetch_parser.add_argument("-q", "--query", required=True, help="Search query")
-    search_fetch_parser.add_argument("--search-mode", default="webquery", help="Search mode: webquery or apiquery")
-    search_fetch_parser.add_argument("--fetch-mode", default="plain_request", help="Fetch mode: plain_request, browser_head, or browser_headless")
     search_fetch_parser.add_argument("-l", "--limit", type=int, default=5, help="Number of results to return")
     search_fetch_parser.add_argument("-f", "--format", default="markdown", help="Output format: html, markdown, json, or yaml")
     search_fetch_parser.add_argument("-o", "--output", help="Output file path (optional)")
@@ -59,17 +55,46 @@ def main():
         import tarzi
         import os
         
-        # Load configuration from ~/.tarzi.toml if it exists
+        # Load configuration with proper precedence:
+        # 1. CLI parameters (highest priority - applied later)
+        # 2. ~/.tarzi.toml (user config)
+        # 3. tarzi.toml (project config)
+        # 4. Default values (lowest priority)
         config = None
-        config_path = os.path.expanduser("~/.tarzi.toml")
-        if os.path.exists(config_path):
+        
+        # Try to load from project config (tarzi.toml) first
+        project_config_path = "tarzi.toml"
+        if os.path.exists(project_config_path):
             try:
-                config = tarzi.Config.from_file(config_path)
+                config = tarzi.Config.from_file(project_config_path)
                 if args.verbose:
-                    print(f"Loaded configuration from {config_path}")
+                    print(f"Loaded project configuration from {project_config_path}")
             except Exception as e:
                 if args.verbose:
-                    print(f"Warning: Failed to load config from {config_path}: {e}")
+                    print(f"Warning: Failed to load project config from {project_config_path}: {e}")
+        
+        # Try to load from user config (~/.tarzi.toml) - overrides project config
+        user_config_path = os.path.expanduser("~/.tarzi.toml")
+        if os.path.exists(user_config_path):
+            try:
+                user_config = tarzi.Config.from_file(user_config_path)
+                if config is None:
+                    config = user_config
+                else:
+                    # Merge user config into project config (user config takes precedence)
+                    # For simplicity, we'll just use the user config as it has higher priority
+                    config = user_config
+                if args.verbose:
+                    print(f"Loaded user configuration from {user_config_path}")
+            except Exception as e:
+                if args.verbose:
+                    print(f"Warning: Failed to load user config from {user_config_path}: {e}")
+        
+        # If no config was loaded, create a default one
+        if config is None:
+            config = tarzi.Config()
+            if args.verbose:
+                print("Using default configuration")
         
         if args.command == "convert":
             converter = tarzi.Converter()
@@ -88,7 +113,9 @@ def main():
                 fetcher = tarzi.WebFetcher.from_config(config)
             else:
                 fetcher = tarzi.WebFetcher()
-            result = fetcher.fetch(args.url, args.mode, args.format)
+            # Use config mode or default to plain_request
+            mode = config.fetcher.mode if config else "plain_request"
+            result = fetcher.fetch(args.url, mode, args.format)
             
             if args.output:
                 with open(args.output, 'w') as f:
@@ -103,7 +130,9 @@ def main():
                 engine = tarzi.SearchEngine.from_config(config)
             else:
                 engine = tarzi.SearchEngine()
-            results = engine.search(args.query, args.mode, args.limit)
+            # Use config mode or default to webquery
+            mode = config.search.mode if config else "webquery"
+            results = engine.search(args.query, mode, args.limit)
             
             # Convert results to the requested format
             if args.format == "json":
@@ -130,7 +159,10 @@ def main():
                 engine = tarzi.SearchEngine.from_config(config)
             else:
                 engine = tarzi.SearchEngine()
-            results = engine.search_and_fetch(args.query, args.search_mode, args.limit, args.fetch_mode, args.format)
+            # Use config modes or defaults
+            search_mode = config.search.mode if config else "webquery"
+            fetch_mode = config.fetcher.mode if config else "plain_request"
+            results = engine.search_and_fetch(args.query, search_mode, args.limit, fetch_mode, args.format)
             
             # Format the combined results
             if args.format == "json":

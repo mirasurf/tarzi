@@ -17,7 +17,7 @@ sys.path.insert(0, str(project_root))
 project = "tarzi"
 copyright = "2025, Mirasurf"
 author = "xmingc"
-release = "0.0.11"
+release = "latest"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

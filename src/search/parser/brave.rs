@@ -1,44 +1,46 @@
+use super::super::types::{SearchEngineType, SearchResult};
 use super::SearchResultParser;
+use super::base::{
+    ApiSearchParser, BaseApiParser, BaseSearchParser, BaseWebParser, WebSearchParser,
+};
 use crate::Result;
-use crate::search::types::{SearchEngineType, SearchResult};
 use select::document::Document;
 use select::predicate::{Class, Name};
-use tracing::{info, warn};
+use serde_json::Value;
 
-pub struct BraveParser;
+pub struct BraveParser {
+    base: BaseWebParser,
+}
 
 impl BraveParser {
     pub fn new() -> Self {
-        Self
+        Self {
+            base: BaseWebParser::new("BraveParser".to_string(), SearchEngineType::BraveSearch),
+        }
     }
 }
 
-impl SearchResultParser for BraveParser {
-    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        info!("Parsing Brave search results from HTML");
+impl BaseSearchParser for BraveParser {
+    fn name(&self) -> &str {
+        self.base.name()
+    }
+    fn engine_type(&self) -> SearchEngineType {
+        self.base.engine_type()
+    }
+}
 
-        if html.is_empty() {
-            warn!("Empty HTML provided to BraveParser");
-            return Ok(Vec::new());
-        }
-
+impl WebSearchParser for BraveParser {
+    fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
-
-        // Look for Brave search result containers
-        // Brave uses .result-row for individual result containers
         for (rank, node) in document.find(Class("result-row")).take(limit).enumerate() {
-            // Extract title and URL from a element
             let title_link = node.find(Name("a")).next();
-
             let title = title_link
                 .map(|n| n.text().trim().to_string())
                 .unwrap_or_default();
-
             let url = title_link
                 .and_then(|n| n.attr("href"))
                 .map(|href| {
-                    // Brave sometimes uses relative URLs or redirect URLs
                     if href.starts_with("http") {
                         href.to_string()
                     } else if href.starts_with("/") {
@@ -48,44 +50,94 @@ impl SearchResultParser for BraveParser {
                     }
                 })
                 .unwrap_or_default();
-
-            // Extract snippet from .result-snippet element
             let snippet = node
                 .find(Class("result-snippet"))
                 .next()
                 .map(|n| n.text().trim().to_string())
                 .unwrap_or_default();
-
-            // Only add if we have at least a title
             if !title.is_empty() {
-                let result = SearchResult {
+                results.push(SearchResult {
                     title,
                     url,
                     snippet,
                     rank: rank + 1,
-                };
-                info!("Extracted Brave result #{}: {}", rank + 1, result.title);
-                results.push(result);
+                });
             }
         }
-
-        info!(
-            "Successfully parsed {} Brave search results from HTML",
-            results.len()
-        );
         Ok(results)
     }
+}
 
-    fn name(&self) -> &str {
-        "BraveParser"
+impl SearchResultParser for BraveParser {
+    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        self.parse_html(html, limit)
     }
-
+    fn name(&self) -> &str {
+        BaseSearchParser::name(self)
+    }
     fn supports(&self, engine_type: &SearchEngineType) -> bool {
-        matches!(engine_type, SearchEngineType::BraveSearch)
+        BaseSearchParser::supports(self, engine_type)
     }
 }
 
 impl Default for BraveParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct BraveApiParser {
+    base: BaseApiParser,
+}
+
+impl BraveApiParser {
+    pub fn new() -> Self {
+        Self {
+            base: BaseApiParser::new("BraveApiParser".to_string(), SearchEngineType::BraveSearch),
+        }
+    }
+}
+
+impl BaseSearchParser for BraveApiParser {
+    fn name(&self) -> &str {
+        self.base.name()
+    }
+    fn engine_type(&self) -> SearchEngineType {
+        self.base.engine_type()
+    }
+}
+
+impl ApiSearchParser for BraveApiParser {
+    fn parse_json(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        let json: Value = serde_json::from_str(json_content)?;
+        let mut results = Vec::new();
+        if let Some(web_results) = json["web"]["results"].as_array() {
+            for (i, result) in web_results.iter().take(limit).enumerate() {
+                results.push(SearchResult {
+                    title: result["title"].as_str().unwrap_or("").to_string(),
+                    url: result["url"].as_str().unwrap_or("").to_string(),
+                    snippet: result["description"].as_str().unwrap_or("").to_string(),
+                    rank: i,
+                });
+            }
+        }
+        Ok(results)
+    }
+}
+
+impl SearchResultParser for BraveApiParser {
+    fn parse(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        self.parse_json(json_content, limit)
+    }
+    fn name(&self) -> &str {
+        BaseSearchParser::name(self)
+    }
+    fn supports(&self, engine_type: &SearchEngineType) -> bool {
+        BaseSearchParser::supports(self, engine_type)
+    }
+}
+
+impl Default for BraveApiParser {
     fn default() -> Self {
         Self::new()
     }

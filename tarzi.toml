@@ -20,7 +20,7 @@
 # -----------------------------------------------------------------------------
 [fetcher]
 # Fetcher mode - how to retrieve web content
-# Options: "browser_headless", "browser_headed", "http"
+# Options: "browser_headless", "browser_headed", "plain_request"
 # mode = "browser_headless"
 
 # Output format for fetched content
@@ -48,7 +48,7 @@
 
 # Search engine to use
 # Options: "google", "bing", "duckduckgo", "brave", "baidu", "exa", "travily", "google_serper"
-# engine = "bing"
+# engine = "duckduckgo"
 
 # URL pattern for search queries when engine is "custom"
 # Use {query} as placeholder for the search term
@@ -61,20 +61,9 @@
 # Options: "smart" (automatically switch using internal policies), "none" (only use search.engine)
 # autoswitch = "smart"
 
-# API keys for different search engines
-# Required when using apiquery mode with specific search engines
-
-# Brave Search API key
+# API keys for supported providers
 # brave_api_key = "your-brave-api-key"
-
-# DuckDuckGo API key
-# duckduckgo_api_key = "your-duckduckgo-api-key"
-
-# Google Serper API key
 # google_serper_api_key = "your-google-serper-api-key"
-
-# Exa Search API key
 # exa_api_key = "your-exa-api-key"
-
-# Travily API key
 # travily_api_key = "your-travily-api-key"
+# baidu_api_key = "your-baidu-api-key"

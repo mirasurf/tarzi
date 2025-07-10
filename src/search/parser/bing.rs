@@ -1,43 +1,42 @@
-use super::SearchResultParser;
+use super::base::{BaseSearchParser, BaseWebParser, WebSearchParser};
 use crate::Result;
 use crate::search::types::{SearchEngineType, SearchResult};
 use select::document::Document;
-use select::predicate::{Class, Name, Predicate};
-use tracing::{info, warn};
+use select::predicate::{Class, Descendant, Name};
 
-pub struct BingParser;
+pub struct BingParser {
+    base: BaseWebParser,
+}
 
 impl BingParser {
     pub fn new() -> Self {
-        Self
+        Self {
+            base: BaseWebParser::new("BingParser".to_string(), SearchEngineType::Bing),
+        }
     }
 }
 
-impl SearchResultParser for BingParser {
-    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        info!("Parsing Bing search results from HTML");
+impl BaseSearchParser for BingParser {
+    fn name(&self) -> &str {
+        self.base.name()
+    }
+    fn engine_type(&self) -> SearchEngineType {
+        self.base.engine_type()
+    }
+}
 
-        if html.is_empty() {
-            warn!("Empty HTML provided to BingParser");
-            return Ok(Vec::new());
-        }
-
+impl WebSearchParser for BingParser {
+    fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
-
-        // Look for Bing search result containers
         for (rank, node) in document.find(Class("b_algo")).take(limit).enumerate() {
-            // Extract title and URL from h2 > a element
-            let title_link = node.find(Name("h2").descendant(Name("a"))).next();
-
+            let title_link = node.find(Descendant(Name("h2"), Name("a"))).next();
             let title = title_link
                 .map(|n| n.text().trim().to_string())
                 .unwrap_or_default();
-
             let url = title_link
                 .and_then(|n| n.attr("href"))
                 .map(|href| {
-                    // Bing sometimes uses relative URLs or has tracking parameters
                     if href.starts_with("http") {
                         href.to_string()
                     } else if href.starts_with("/") {
@@ -47,40 +46,34 @@ impl SearchResultParser for BingParser {
                     }
                 })
                 .unwrap_or_default();
-
-            // Extract snippet from .b_caption p element
             let snippet = node
-                .find(Class("b_caption").descendant(Name("p")))
+                .find(Descendant(Class("b_caption"), Name("p")))
                 .next()
                 .map(|n| n.text().trim().to_string())
                 .unwrap_or_default();
-
-            // Only add if we have at least a title
             if !title.is_empty() {
-                let result = SearchResult {
+                results.push(SearchResult {
                     title,
                     url,
                     snippet,
                     rank: rank + 1,
-                };
-                info!("Extracted Bing result #{}: {}", rank + 1, result.title);
-                results.push(result);
+                });
             }
         }
-
-        info!(
-            "Successfully parsed {} Bing search results from HTML",
-            results.len()
-        );
         Ok(results)
     }
+}
 
-    fn name(&self) -> &str {
-        "BingParser"
+use super::SearchResultParser;
+impl SearchResultParser for BingParser {
+    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        self.parse_html(html, limit)
     }
-
+    fn name(&self) -> &str {
+        BaseSearchParser::name(self)
+    }
     fn supports(&self, engine_type: &SearchEngineType) -> bool {
-        matches!(engine_type, SearchEngineType::Bing)
+        BaseSearchParser::supports(self, engine_type)
     }
 }
 

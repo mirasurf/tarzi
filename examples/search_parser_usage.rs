@@ -1,3 +1,4 @@
+use tarzi::SearchMode;
 use tarzi::search::parser::CustomParser;
 use tarzi::search::{
     CustomParserConfig, ParserFactory, SearchEngine, SearchEngineType, SearchResultParser,
@@ -70,7 +71,7 @@ async fn main() -> tarzi::Result<()> {
 
     for (engine_type, engine_name) in engines {
         println!("  Testing {engine_name} parser:");
-        let parser = factory.get_parser(&engine_type);
+        let parser = factory.get_parser(&engine_type, SearchMode::WebQuery);
         let mock_html = format!("<html><body>Mock HTML for {engine_name}</body></html>");
         let results = parser.parse(&mock_html, 3)?;
 
@@ -128,7 +129,7 @@ async fn main() -> tarzi::Result<()> {
     // Test the registered custom parsers
     for engine_name in ["CustomEngine1", "CustomEngine2", "SpecialSearchEngine"] {
         let engine_type = SearchEngineType::Custom(engine_name.to_string());
-        let parser = factory.get_parser(&engine_type);
+        let parser = factory.get_parser(&engine_type, SearchMode::WebQuery);
         let results = parser.parse("<html><body>Test</body></html>", 2)?;
 
         println!("  Results from {engine_name}:");
@@ -148,7 +149,7 @@ async fn main() -> tarzi::Result<()> {
     ];
 
     for engine_type in test_engines {
-        let parser = factory.get_parser(&engine_type);
+        let parser = factory.get_parser(&engine_type, SearchMode::WebQuery);
         println!(
             "  Parser: {} supports {:?}: {}",
             parser.name(),

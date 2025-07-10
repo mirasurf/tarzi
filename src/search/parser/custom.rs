@@ -1,12 +1,16 @@
+use super::super::types::{SearchEngineType, SearchResult};
 use super::SearchResultParser;
+use super::base::{
+    ApiSearchParser, BaseApiParser, BaseSearchParser, BaseWebParser, WebSearchParser,
+};
 use crate::Result;
-use crate::search::types::{SearchEngineType, SearchResult};
+use serde_json::Value;
 use std::collections::HashMap;
-use tracing::info;
 
 pub struct CustomParser {
     engine_name: String,
     custom_config: CustomParserConfig,
+    base: BaseWebParser,
 }
 
 #[derive(Debug, Clone)]
@@ -35,6 +39,10 @@ impl Default for CustomParserConfig {
 impl CustomParser {
     pub fn new(engine_name: String) -> Self {
         Self {
+            base: BaseWebParser::new(
+                engine_name.clone(),
+                SearchEngineType::Custom(engine_name.clone()),
+            ),
             engine_name,
             custom_config: CustomParserConfig::default(),
         }
@@ -42,6 +50,10 @@ impl CustomParser {
 
     pub fn with_config(engine_name: String, config: CustomParserConfig) -> Self {
         Self {
+            base: BaseWebParser::new(
+                engine_name.clone(),
+                SearchEngineType::Custom(engine_name.clone()),
+            ),
             engine_name,
             custom_config: config,
         }
@@ -65,25 +77,21 @@ impl CustomParser {
     }
 }
 
-impl SearchResultParser for CustomParser {
-    fn parse(&self, _html: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        info!(
-            "Parsing custom search results from HTML for engine: {}",
-            self.engine_name
-        );
+impl BaseSearchParser for CustomParser {
+    fn name(&self) -> &str {
+        self.base.name()
+    }
+    fn engine_type(&self) -> SearchEngineType {
+        self.base.engine_type()
+    }
+}
 
+impl WebSearchParser for CustomParser {
+    fn parse_html(&self, _html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let mut results = Vec::new();
-
-        // Mock implementation for custom parser
-        // In a real implementation, you would use the custom_config selectors
-        // to parse the HTML using a proper HTML parser like scraper
-
-        let mock_results_count = std::cmp::min(limit, 8); // Slightly different limit for custom
-
+        let mock_results_count = std::cmp::min(limit, 8);
         for i in 0..mock_results_count {
             let rank = i + 1;
-
-            // Mock custom search engine results
             let result = SearchResult {
                 title: format!(
                     "{} Custom Search Result #{} - Mock Title",
@@ -105,39 +113,19 @@ impl SearchResultParser for CustomParser {
                 ),
                 rank,
             };
-
             results.push(result);
         }
-
-        info!(
-            "Successfully parsed {} custom search results for {}",
-            results.len(),
-            self.engine_name
-        );
-
-        // In a real implementation, you would:
-        // 1. Use scraper crate with the CSS selectors from custom_config
-        // 2. Parse the HTML using the configured selectors
-        // 3. Apply any custom rules from custom_config.custom_rules
-        // 4. Extract and validate the results
-        //
-        // Example implementation:
-        // ```rust
-        // use scraper::{Html, Selector};
-        //
-        // let document = Html::parse_document(html);
-        // let container_selector = Selector::parse(&self.custom_config.result_container_selector)?;
-        // let title_selector = Selector::parse(&self.custom_config.title_selector)?;
-        // // ... parse using the selectors
-        // ```
-
         Ok(results)
     }
+}
 
-    fn name(&self) -> &str {
-        &self.engine_name
+impl SearchResultParser for CustomParser {
+    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        self.parse_html(html, limit)
     }
-
+    fn name(&self) -> &str {
+        BaseSearchParser::name(self)
+    }
     fn supports(&self, engine_type: &SearchEngineType) -> bool {
         match engine_type {
             SearchEngineType::Custom(name) => name == &self.engine_name,
@@ -149,5 +137,119 @@ impl SearchResultParser for CustomParser {
 impl Default for CustomParser {
     fn default() -> Self {
         Self::new("Custom".to_string())
+    }
+}
+
+pub struct ExaApiParser {
+    base: BaseApiParser,
+}
+
+impl ExaApiParser {
+    pub fn new() -> Self {
+        Self {
+            base: BaseApiParser::new("ExaApiParser".to_string(), SearchEngineType::Exa),
+        }
+    }
+}
+
+impl BaseSearchParser for ExaApiParser {
+    fn name(&self) -> &str {
+        self.base.name()
+    }
+    fn engine_type(&self) -> SearchEngineType {
+        self.base.engine_type()
+    }
+}
+
+impl ApiSearchParser for ExaApiParser {
+    fn parse_json(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        let json: Value = serde_json::from_str(json_content)?;
+        let mut results = Vec::new();
+        if let Some(results_array) = json["results"].as_array() {
+            for (i, result) in results_array.iter().take(limit).enumerate() {
+                results.push(SearchResult {
+                    title: result["title"].as_str().unwrap_or("").to_string(),
+                    url: result["url"].as_str().unwrap_or("").to_string(),
+                    snippet: result["text"].as_str().unwrap_or("").to_string(),
+                    rank: i,
+                });
+            }
+        }
+        Ok(results)
+    }
+}
+
+impl SearchResultParser for ExaApiParser {
+    fn parse(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        self.parse_json(json_content, limit)
+    }
+    fn name(&self) -> &str {
+        BaseSearchParser::name(self)
+    }
+    fn supports(&self, engine_type: &SearchEngineType) -> bool {
+        BaseSearchParser::supports(self, engine_type)
+    }
+}
+
+impl Default for ExaApiParser {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct TravilyApiParser {
+    base: BaseApiParser,
+}
+
+impl TravilyApiParser {
+    pub fn new() -> Self {
+        Self {
+            base: BaseApiParser::new("TravilyApiParser".to_string(), SearchEngineType::Travily),
+        }
+    }
+}
+
+impl BaseSearchParser for TravilyApiParser {
+    fn name(&self) -> &str {
+        self.base.name()
+    }
+    fn engine_type(&self) -> SearchEngineType {
+        self.base.engine_type()
+    }
+}
+
+impl ApiSearchParser for TravilyApiParser {
+    fn parse_json(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        let json: Value = serde_json::from_str(json_content)?;
+        let mut results = Vec::new();
+        if let Some(results_array) = json["results"].as_array() {
+            for (i, result) in results_array.iter().take(limit).enumerate() {
+                results.push(SearchResult {
+                    title: result["title"].as_str().unwrap_or("").to_string(),
+                    url: result["url"].as_str().unwrap_or("").to_string(),
+                    snippet: result["content"].as_str().unwrap_or("").to_string(),
+                    rank: i,
+                });
+            }
+        }
+        Ok(results)
+    }
+}
+
+impl SearchResultParser for TravilyApiParser {
+    fn parse(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        self.parse_json(json_content, limit)
+    }
+    fn name(&self) -> &str {
+        BaseSearchParser::name(self)
+    }
+    fn supports(&self, engine_type: &SearchEngineType) -> bool {
+        BaseSearchParser::supports(self, engine_type)
+    }
+}
+
+impl Default for TravilyApiParser {
+    fn default() -> Self {
+        Self::new()
     }
 }
