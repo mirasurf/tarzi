@@ -14,6 +14,13 @@ try:
 except ImportError:
     raise ImportError("tarzi library is required. Install with: pip install tarzi")
 
+try:
+    from .browser_config import get_browser_config
+except ImportError:
+    # Fallback if browser config is not available
+    def get_browser_config() -> Optional[Any]:
+        return None
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -21,7 +28,7 @@ logger = logging.getLogger(__name__)
 # Create the MCP server
 mcp = FastMCP(
     "Tarzi Search Server",
-    description="MCP server providing web search, content fetching, and HTML conversion tools using Tarzi"
+    description="MCP server providing web search, content fetching, and HTML conversion tools using Tarzi with headless browser support"
 )
 
 
@@ -114,10 +121,17 @@ def fetch_url(
         if mode not in ["plain_request", "browser"]:
             raise ValueError("Mode must be 'plain_request' or 'browser'")
             
+        # For browser mode, check if browser is available
+        if mode == "browser":
+            browser_config = get_browser_config()
+            if browser_config and not browser_config.is_browser_available():
+                logger.warning("Browser mode requested but browser not available, falling back to plain_request")
+                mode = "plain_request"
+            
         # Fetch content using tarzi
         content = tarzi.fetch_url(url, mode, format)
         
-        logger.info(f"URL fetched successfully: {url} in {format} format")
+        logger.info(f"URL fetched successfully: {url} in {format} format using {mode} mode")
         return FetchResult(content=content, format=format)
         
     except Exception as e:
@@ -183,6 +197,13 @@ def search_and_fetch(
         if content_format not in ["html", "markdown", "json", "yaml"]:
             raise ValueError("Content format must be 'html', 'markdown', 'json', or 'yaml'")
             
+        # For browser mode, check if browser is available
+        if fetch_mode == "browser":
+            browser_config = get_browser_config()
+            if browser_config and not browser_config.is_browser_available():
+                logger.warning("Browser mode requested but browser not available, falling back to plain_request")
+                fetch_mode = "plain_request"
+            
         # Perform search and fetch using tarzi
         results_with_content = tarzi.search_and_fetch(
             query, search_mode, limit, fetch_mode, content_format
@@ -199,7 +220,8 @@ def search_and_fetch(
                     "rank": search_result.rank
                 },
                 "content": content,
-                "content_format": content_format
+                "content_format": content_format,
+                "fetch_mode_used": fetch_mode
             })
             
         logger.info(f"Search and fetch completed: {len(structured_results)} results for query '{query}'")
@@ -216,11 +238,16 @@ def get_config() -> str:
     try:
         # Try to get default config
         config = tarzi.Config()
+        browser_config = get_browser_config()
+        browser_status = "Available" if browser_config and browser_config.is_browser_available() else "Not Available"
+        
         return f"""Tarzi Configuration:
 - Version: {tarzi.__version__ if hasattr(tarzi, '__version__') else 'unknown'}
 - Default timeout: 30s
 - Default user agent: Tarzi Search Client
-- Available modes: webquery, apiquery, plain_request, browser
+- Available search modes: webquery, apiquery
+- Available fetch modes: plain_request, browser
+- Browser automation: {browser_status}
 - Supported formats: html, markdown, json, yaml
 """
     except Exception as e:
@@ -236,29 +263,89 @@ def get_status() -> str:
         fetcher = tarzi.WebFetcher()
         search_engine = tarzi.SearchEngine()
         
-        return """Tarzi MCP Server Status: HEALTHY
+        # Check browser status
+        browser_config = get_browser_config()
+        browser_status = "HEALTHY" if browser_config and browser_config.is_browser_available() else "NOT AVAILABLE"
+        
+        return f"""Tarzi MCP Server Status: HEALTHY
 - Converter: Available
 - WebFetcher: Available  
 - SearchEngine: Available
+- Browser Automation: {browser_status}
 - MCP Server: Running
 """
     except Exception as e:
         return f"Tarzi MCP Server Status: ERROR - {str(e)}"
 
 
+@mcp.resource("tarzi://browser")
+def get_browser_status() -> str:
+    """Get detailed browser configuration and status."""
+    try:
+        browser_config = get_browser_config()
+        if not browser_config:
+            return "Browser configuration not available (browser_config module not found)"
+        
+        env_info = browser_config.get_environment_info()
+        
+        status_lines = ["Tarzi Browser Configuration:", ""]
+        
+        # Basic info
+        status_lines.append(f"Display: {env_info['display']}")
+        status_lines.append(f"Headless Mode: {env_info['headless']}")
+        status_lines.append(f"Window Size: {env_info['window_size']}")
+        status_lines.append(f"Timeout: {env_info['timeout']}s")
+        status_lines.append("")
+        
+        # Component availability
+        status_lines.append("Component Availability:")
+        status_lines.append(f"- Firefox Binary: {'✅ Available' if env_info['firefox_exists'] else '❌ Missing'} ({env_info['firefox_binary']})")
+        status_lines.append(f"- Geckodriver: {'✅ Available' if env_info['geckodriver_exists'] else '❌ Missing'} ({env_info['geckodriver_path']})")
+        status_lines.append(f"- Profile Directory: {'✅ Available' if env_info['profile_exists'] else '❌ Missing'} ({env_info['profile_path']})")
+        status_lines.append(f"- Data Directory: {'✅ Available' if env_info['data_dir_exists'] else '❌ Missing'} ({env_info['browser_data_dir']})")
+        status_lines.append("")
+        
+        # Overall status
+        all_available = all([
+            env_info['firefox_exists'],
+            env_info['geckodriver_exists'],
+            env_info['profile_exists'],
+            env_info['data_dir_exists']
+        ])
+        
+        status_lines.append(f"Overall Status: {'✅ READY FOR BROWSER AUTOMATION' if all_available else '❌ BROWSER AUTOMATION NOT AVAILABLE'}")
+        status_lines.append(f"User Agent: {env_info['user_agent']}")
+        
+        return "\n".join(status_lines)
+        
+    except Exception as e:
+        return f"Error getting browser status: {str(e)}"
+
+
 def main():
     """Main entry point for the server."""
     import argparse
     
-    parser = argparse.ArgumentParser(description="Tarzi MCP Server")
+    parser = argparse.ArgumentParser(description="Tarzi MCP Server with Browser Support")
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
     parser.add_argument("--transport", default="streamable-http", choices=["stdio", "sse", "streamable-http"], 
                        help="Transport type")
+    parser.add_argument("--test-browser", action="store_true", help="Test browser configuration on startup")
     
     args = parser.parse_args()
     
     logger.info(f"Starting Tarzi MCP Server on {args.host}:{args.port} with {args.transport} transport")
+    
+    # Test browser configuration if requested
+    if args.test_browser:
+        browser_config = get_browser_config()
+        if browser_config:
+            logger.info("Testing browser configuration...")
+            from .browser_config import test_browser_setup
+            test_browser_setup()
+        else:
+            logger.warning("Browser configuration module not available")
     
     if args.transport == "stdio":
         # For stdio transport (development/testing)

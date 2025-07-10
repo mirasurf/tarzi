@@ -7,15 +7,45 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+      # Browser configuration
+      - DISPLAY=:99
+      - MOZ_HEADLESS=1
+      - FIREFOX_BINARY_PATH=/usr/bin/firefox-esr
+      - GECKODRIVER_PATH=/usr/local/bin/geckodriver
+      - TARZI_BROWSER_TIMEOUT=30
+      - TARZI_BROWSER_WINDOW_SIZE=1920,1080
+      - TARZI_BROWSER_USER_AGENT=Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0
+      # Tarzi configuration
+      - TARZI_TIMEOUT=30
+      - TARZI_USER_AGENT=Tarzi MCP Server/1.0
     volumes:
       - ./logs:/app/logs
+      - browser-data:/app/browser-data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    # Set shared memory size for browser
+    shm_size: 2gb
+
+  # Browser testing service - use this to test browser functionality
+  tarzi-mcp-browser-test:
+    build: .
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DISPLAY=:99
+      - MOZ_HEADLESS=1
+      - FIREFOX_BINARY_PATH=/usr/bin/firefox-esr
+      - GECKODRIVER_PATH=/usr/local/bin/geckodriver
+    volumes:
+      - browser-data:/app/browser-data
+    command: ["python", "-m", "tarzi_mcp_server.browser_config"]
+    profiles:
+      - "test"
+    shm_size: 1gb
 
   # Optional: Include a simple nginx proxy
   nginx:
@@ -29,3 +59,21 @@ services:
     restart: unless-stopped
     profiles:
       - "proxy"
+
+  # VNC server for debugging browser issues (optional)
+  vnc-server:
+    image: theasp/novnc:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - DISPLAY_WIDTH=1920
+      - DISPLAY_HEIGHT=1080
+      - RUN_XTERM=no
+    volumes:
+      - browser-data:/app/browser-data
+    profiles:
+      - "debug"
+
+volumes:
+  browser-data:
+    driver: local
