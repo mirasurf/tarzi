@@ -100,7 +100,7 @@ def fetch_url(
     Args:
         url: URL to fetch
         format: Output format - 'html', 'markdown', 'json', or 'yaml'
-        mode: Fetch mode - 'plain_request' for simple HTTP, 'browser' for browser automation
+        mode: Fetch mode - 'plain_request' for simple HTTP, 'browser_headless' for headless browser, 'browser_headed' for browser with head
         
     Returns:
         Fetched content in the specified format
@@ -111,10 +111,10 @@ def fetch_url(
             raise ValueError("Format must be 'html', 'markdown', 'json', or 'yaml'")
             
         # Validate mode
-        if mode not in ["plain_request", "browser"]:
-            raise ValueError("Mode must be 'plain_request' or 'browser'")
+        if mode not in ["plain_request", "browser_headless", "browser_headed"]:
+            raise ValueError("Mode must be 'plain_request', 'browser_headless', or 'browser_headed'")
             
-        # Fetch content using tarzi (tarzi handles browser automation dynamically)
+        # Fetch content using tarzi
         content = tarzi.fetch_url(url, mode, format)
         
         logger.info(f"URL fetched successfully: {url} in {format} format using {mode} mode")
@@ -167,8 +167,8 @@ def search_and_fetch(
     Args:
         query: Search query string
         limit: Maximum number of results to process (default: 5)
-        search_mode: Search mode - 'webquery' or 'apiquery'
-        fetch_mode: Fetch mode - 'plain_request' or 'browser'
+        search_mode: Search mode - 'webquery' for browser-based search, 'apiquery' for API-based search
+        fetch_mode: Fetch mode - 'plain_request' for simple HTTP, 'browser_headless' for headless browser, 'browser_headed' for browser with head
         content_format: Content format - 'html', 'markdown', 'json', or 'yaml'
         
     Returns:
@@ -178,12 +178,12 @@ def search_and_fetch(
         # Validate parameters
         if search_mode not in ["webquery", "apiquery"]:
             raise ValueError("Search mode must be 'webquery' or 'apiquery'")
-        if fetch_mode not in ["plain_request", "browser"]:
-            raise ValueError("Fetch mode must be 'plain_request' or 'browser'")
+        if fetch_mode not in ["plain_request", "browser_headless", "browser_headed"]:
+            raise ValueError("Fetch mode must be 'plain_request', 'browser_headless', or 'browser_headed'")
         if content_format not in ["html", "markdown", "json", "yaml"]:
             raise ValueError("Content format must be 'html', 'markdown', 'json', or 'yaml'")
             
-        # Perform search and fetch using tarzi (tarzi handles browser automation dynamically)
+        # Perform search and fetch using tarzi
         results_with_content = tarzi.search_and_fetch(
             query, search_mode, limit, fetch_mode, content_format
         )
@@ -223,7 +223,7 @@ def get_config() -> str:
 - Default timeout: 30s
 - Default user agent: Tarzi Search Client
 - Available search modes: webquery, apiquery
-- Available fetch modes: plain_request, browser
+- Available fetch modes: plain_request, browser_headless, browser_headed
 - Supported formats: html, markdown, json, yaml
 """
     except Exception as e:
