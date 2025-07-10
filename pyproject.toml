@@ -1,10 +1,17 @@
-[build-system]
-requires = ["maturin>=1.0,<2.0"]
-build-backend = "maturin"
-
 [project]
 name = "tarzi"
+version = "0.0.13"
 requires-python = ">=3.10"
+keywords = ["web-scraping", "search-engine", "ai-tools", "rust", "browser-automation"]
+description = "Rust-native lite search for AI applications"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "xmingc", email = "chenxm35@gmail.com"},
+]
+maintainers = [
+    {name = "xmingc", email = "chenxm35@gmail.com"},
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -18,17 +25,6 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
-]
-keywords = ["web-scraping", "search-engine", "ai-tools", "rust", "browser-automation"]
-version = "0.0.12"
-description = "Rust-native lite search for AI applications"
-readme = "README.md"
-license = {text = "Apache-2.0"}
-authors = [
-    {name = "xmingc", email = "chenxm35@gmail.com"},
-]
-maintainers = [
-    {name = "xmingc", email = "chenxm35@gmail.com"},
 ]
 
 [project.urls]
@@ -64,6 +60,10 @@ docs = [
     "sphinx-autoapi>=3.0.0",
 ]
 
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "tarzi"
@@ -72,7 +72,7 @@ bindings = "pyo3"
 python-source = "python"
 
 [project.scripts]
-tarzi = "tarzi.__main__:main"
+pytarzi = "tarzi.__main__:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]

@@ -61,6 +61,11 @@ impl ApiSearchManager {
         self.providers.insert(engine_type, provider);
     }
 
+    /// Check if a provider is registered for the given engine type
+    pub fn has_provider(&self, engine_type: &SearchEngineType) -> bool {
+        self.providers.contains_key(engine_type)
+    }
+
     pub async fn search(
         &self,
         engine_type: &SearchEngineType,

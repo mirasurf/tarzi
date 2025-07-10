@@ -12,9 +12,9 @@ async fn main() -> Result<()> {
 
     println!("=== Browser Driver Integration Demo ===\n");
 
-    // Load configuration
-    let config = Config::load().unwrap_or_else(|_| {
-        println!("Using default configuration (tarzi.toml not found)");
+    // Load configuration with proper precedence
+    let config = Config::load_with_precedence().unwrap_or_else(|_| {
+        println!("Using default configuration (no config files found)");
         Config::default()
     });
 

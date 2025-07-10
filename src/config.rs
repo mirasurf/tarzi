@@ -50,10 +50,34 @@ pub struct SearchConfig {
     #[serde(default = "default_autoswitch_strategy")]
     pub autoswitch: String,
     pub brave_api_key: Option<String>,
-    pub duckduckgo_api_key: Option<String>,
     pub google_serper_api_key: Option<String>,
     pub exa_api_key: Option<String>,
     pub travily_api_key: Option<String>,
+    pub baidu_api_key: Option<String>,
+}
+
+/// CLI configuration parameters that can override config file values
+#[derive(Debug, Clone)]
+pub struct CliConfigParams {
+    pub fetcher_format: Option<String>,
+    pub search_limit: Option<usize>,
+    pub search_engine: Option<String>,
+}
+
+impl CliConfigParams {
+    pub fn new() -> Self {
+        Self {
+            fetcher_format: None,
+            search_limit: None,
+            search_engine: None,
+        }
+    }
+}
+
+impl Default for CliConfigParams {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Config {
@@ -62,6 +86,109 @@ impl Config {
             general: GeneralConfig::default(),
             fetcher: FetcherConfig::default(),
             search: SearchConfig::default(),
+        }
+    }
+
+    /// Load configuration with proper precedence order:
+    /// 1. CLI parameters (highest priority)
+    /// 2. ~/.tarzi.toml (user config)
+    /// 3. tarzi.toml (project config)
+    /// 4. Default values (lowest priority)
+    pub fn load_with_precedence() -> Result<Self> {
+        // Start with default config
+        let mut config = Config::new();
+
+        // Load from project config (tarzi.toml) if it exists
+        let project_config = Self::load_dev();
+        if let Ok(project_config) = project_config {
+            config.merge(&project_config);
+        }
+
+        // Load from user config (~/.tarzi.toml) if it exists (overrides project config)
+        let user_config = Self::load();
+        if let Ok(user_config) = user_config {
+            config.merge(&user_config);
+        }
+
+        Ok(config)
+    }
+
+    /// Merge another config into this one (other config takes precedence)
+    pub fn merge(&mut self, other: &Config) {
+        // Merge general config
+        if other.general.log_level != default_log_level() {
+            self.general.log_level = other.general.log_level.clone();
+        }
+        if other.general.timeout != default_timeout() {
+            self.general.timeout = other.general.timeout;
+        }
+
+        // Merge fetcher config
+        if other.fetcher.mode != default_fetcher_mode() {
+            self.fetcher.mode = other.fetcher.mode.clone();
+        }
+        if other.fetcher.format != default_fetcher_format() {
+            self.fetcher.format = other.fetcher.format.clone();
+        }
+        if other.fetcher.user_agent != default_user_agent() {
+            self.fetcher.user_agent = other.fetcher.user_agent.clone();
+        }
+        if other.fetcher.timeout != default_fetch_timeout() {
+            self.fetcher.timeout = other.fetcher.timeout;
+        }
+        if other.fetcher.proxy.is_some() {
+            self.fetcher.proxy = other.fetcher.proxy.clone();
+        }
+        if other.fetcher.web_driver != default_web_driver() {
+            self.fetcher.web_driver = other.fetcher.web_driver.clone();
+        }
+        if other.fetcher.web_driver_url.is_some() {
+            self.fetcher.web_driver_url = other.fetcher.web_driver_url.clone();
+        }
+
+        // Merge search config
+        if other.search.mode != default_search_mode() {
+            self.search.mode = other.search.mode.clone();
+        }
+        if other.search.engine != default_search_engine() {
+            self.search.engine = other.search.engine.clone();
+        }
+        if other.search.query_pattern != default_query_pattern() {
+            self.search.query_pattern = other.search.query_pattern.clone();
+        }
+        if other.search.limit != default_result_limit() {
+            self.search.limit = other.search.limit;
+        }
+        if other.search.autoswitch != default_autoswitch_strategy() {
+            self.search.autoswitch = other.search.autoswitch.clone();
+        }
+        if other.search.brave_api_key.is_some() {
+            self.search.brave_api_key = other.search.brave_api_key.clone();
+        }
+        if other.search.google_serper_api_key.is_some() {
+            self.search.google_serper_api_key = other.search.google_serper_api_key.clone();
+        }
+        if other.search.exa_api_key.is_some() {
+            self.search.exa_api_key = other.search.exa_api_key.clone();
+        }
+        if other.search.travily_api_key.is_some() {
+            self.search.travily_api_key = other.search.travily_api_key.clone();
+        }
+        if other.search.baidu_api_key.is_some() {
+            self.search.baidu_api_key = other.search.baidu_api_key.clone();
+        }
+    }
+
+    /// Apply CLI parameters to config (highest priority)
+    pub fn apply_cli_params(&mut self, cli_params: &CliConfigParams) {
+        if let Some(format) = &cli_params.fetcher_format {
+            self.fetcher.format = format.clone();
+        }
+        if let Some(limit) = cli_params.search_limit {
+            self.search.limit = limit;
+        }
+        if let Some(engine) = &cli_params.search_engine {
+            self.search.engine = engine.clone();
         }
     }
 
@@ -188,10 +315,10 @@ impl Default for SearchConfig {
             limit: default_result_limit(),
             autoswitch: default_autoswitch_strategy(),
             brave_api_key: None,
-            duckduckgo_api_key: None,
             google_serper_api_key: None,
             exa_api_key: None,
             travily_api_key: None,
+            baidu_api_key: None,
         }
     }
 }
@@ -232,11 +359,11 @@ fn default_search_mode() -> String {
 }
 
 fn default_search_engine() -> String {
-    "bing".to_string()
+    "duckduckgo".to_string()
 }
 
 fn default_query_pattern() -> String {
-    "https://www.bing.com/search?q={query}".to_string()
+    "https://duckduckgo.com/?q={query}".to_string()
 }
 
 fn default_result_limit() -> usize {
@@ -290,10 +417,10 @@ mod tests {
         );
         assert_eq!(config.fetcher.timeout, 30);
         assert_eq!(config.search.mode, "webquery");
-        assert_eq!(config.search.engine, "bing");
+        assert_eq!(config.search.engine, "duckduckgo");
         assert_eq!(
             config.search.query_pattern,
-            "https://www.bing.com/search?q={query}"
+            "https://duckduckgo.com/?q={query}"
         );
         assert_eq!(config.search.limit, 5);
     }
@@ -455,16 +582,15 @@ web_driver_url = "http://localhost:9999"
         // Proxy should be None by default (commented out in tarzi.toml)
         assert_eq!(config.fetcher.proxy, None);
         assert_eq!(config.search.mode, "webquery");
-        assert_eq!(config.search.engine, "bing");
+        assert_eq!(config.search.engine, "duckduckgo");
         assert_eq!(
             config.search.query_pattern,
-            "https://www.bing.com/search?q={query}"
+            "https://duckduckgo.com/?q={query}"
         );
         assert_eq!(config.search.limit, 5);
         assert_eq!(config.search.autoswitch, "smart");
         // API keys should be None by default (commented out in tarzi.toml)
         assert_eq!(config.search.brave_api_key, None);
-        assert_eq!(config.search.duckduckgo_api_key, None);
         assert_eq!(config.search.google_serper_api_key, None);
         assert_eq!(config.search.exa_api_key, None);
         assert_eq!(config.search.travily_api_key, None);
@@ -598,5 +724,181 @@ web_driver_url = "http://localhost:9999"
                 std::env::set_var("https_proxy", val);
             }
         }
+    }
+
+    #[test]
+    fn test_config_loading_precedence() {
+        use std::fs;
+        use tempfile::tempdir;
+
+        let temp_dir = tempdir().unwrap();
+        let project_config_path = temp_dir.path().join("tarzi.toml");
+        let user_config_path = temp_dir.path().join(".tarzi.toml");
+
+        // Create project config
+        let project_config_str = r#"
+[general]
+log_level = "debug"
+timeout = 60
+
+[fetcher]
+mode = "browser_headless"
+format = "markdown"
+timeout = 30
+
+[search]
+engine = "bing"
+mode = "webquery"
+limit = 10
+"#;
+        fs::write(&project_config_path, project_config_str).unwrap();
+
+        // Create user config (should override project config)
+        let user_config_str = r#"
+[general]
+log_level = "warn"
+timeout = 45
+
+[fetcher]
+mode = "plain_request"
+format = "json"
+timeout = 60
+
+[search]
+engine = "google"
+mode = "apiquery"
+limit = 5
+brave_api_key = "user_brave_key"
+"#;
+        fs::write(&user_config_path, user_config_str).unwrap();
+
+        // Temporarily change HOME to temp_dir for testing
+        let original_home = std::env::var("HOME").ok();
+        unsafe {
+            std::env::set_var("HOME", temp_dir.path().to_str().unwrap());
+        }
+
+        // Test loading with precedence
+        let config = Config::load_with_precedence().unwrap();
+
+        // User config should take precedence over project config
+        assert_eq!(config.general.log_level, "warn"); // from user config
+        assert_eq!(config.general.timeout, 45); // from user config
+        assert_eq!(config.fetcher.mode, "plain_request"); // from user config
+        assert_eq!(config.fetcher.format, "json"); // from user config
+        assert_eq!(config.fetcher.timeout, 60); // from user config
+        assert_eq!(config.search.engine, "google"); // from user config
+        assert_eq!(config.search.mode, "apiquery"); // from user config
+        assert_eq!(config.search.limit, 5); // from user config
+        assert_eq!(
+            config.search.brave_api_key,
+            Some("user_brave_key".to_string())
+        ); // from user config
+
+        // Restore original HOME
+        if let Some(home) = original_home {
+            unsafe {
+                std::env::set_var("HOME", home);
+            }
+        } else {
+            unsafe {
+                std::env::remove_var("HOME");
+            }
+        }
+    }
+
+    #[test]
+    fn test_cli_params_override() {
+        let mut config = Config::new();
+
+        // Set some default values
+        config.fetcher.mode = "browser_headless".to_string();
+        config.fetcher.format = "markdown".to_string();
+        config.search.mode = "webquery".to_string();
+        config.search.limit = 5;
+        config.search.engine = "bing".to_string();
+
+        // Create CLI parameters
+        let mut cli_params = CliConfigParams::new();
+        cli_params.fetcher_format = Some("json".to_string());
+        cli_params.search_limit = Some(10);
+        cli_params.search_engine = Some("google".to_string());
+
+        // Apply CLI parameters
+        config.apply_cli_params(&cli_params);
+
+        // CLI parameters should override config values
+        assert_eq!(config.fetcher.mode, "browser_headless");
+        assert_eq!(config.fetcher.format, "json");
+        assert_eq!(config.search.mode, "webquery");
+        assert_eq!(config.search.limit, 10);
+        assert_eq!(config.search.engine, "google");
+    }
+
+    #[test]
+    fn test_config_merge() {
+        let mut base_config = Config::new();
+
+        // Set some base values
+        base_config.general.log_level = "info".to_string();
+        base_config.fetcher.mode = "browser_headless".to_string();
+        base_config.search.engine = "bing".to_string();
+
+        let override_config = Config {
+            general: GeneralConfig {
+                log_level: "debug".to_string(),
+                timeout: 60,
+            },
+            fetcher: FetcherConfig {
+                mode: "plain_request".to_string(),
+                format: "json".to_string(),
+                user_agent: "Custom Agent".to_string(),
+                timeout: 45,
+                proxy: Some("http://proxy:8080".to_string()),
+                web_driver: "chromedriver".to_string(),
+                web_driver_url: Some("http://localhost:4444".to_string()),
+            },
+            search: SearchConfig {
+                mode: "apiquery".to_string(),
+                engine: "google".to_string(),
+                query_pattern: "custom pattern".to_string(),
+                limit: 10,
+                autoswitch: "none".to_string(),
+                brave_api_key: Some("test_key".to_string()),
+                google_serper_api_key: None,
+                exa_api_key: None,
+                travily_api_key: None,
+                baidu_api_key: None,
+            },
+        };
+
+        // Merge override config into base config
+        base_config.merge(&override_config);
+
+        // Override config values should take precedence
+        assert_eq!(base_config.general.log_level, "debug");
+        assert_eq!(base_config.general.timeout, 60);
+        assert_eq!(base_config.fetcher.mode, "plain_request");
+        assert_eq!(base_config.fetcher.format, "json");
+        assert_eq!(base_config.fetcher.user_agent, "Custom Agent");
+        assert_eq!(base_config.fetcher.timeout, 45);
+        assert_eq!(
+            base_config.fetcher.proxy,
+            Some("http://proxy:8080".to_string())
+        );
+        assert_eq!(base_config.fetcher.web_driver, "chromedriver");
+        assert_eq!(
+            base_config.fetcher.web_driver_url,
+            Some("http://localhost:4444".to_string())
+        );
+        assert_eq!(base_config.search.mode, "apiquery");
+        assert_eq!(base_config.search.engine, "google");
+        assert_eq!(base_config.search.query_pattern, "custom pattern");
+        assert_eq!(base_config.search.limit, 10);
+        assert_eq!(base_config.search.autoswitch, "none");
+        assert_eq!(
+            base_config.search.brave_api_key,
+            Some("test_key".to_string())
+        );
     }
 }

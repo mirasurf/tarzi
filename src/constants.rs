@@ -113,7 +113,7 @@ pub const DEFAULT_FETCHER_MODE: &str = "browser_headless";
 pub const DEFAULT_FORMAT: &str = "markdown";
 
 /// Default search engine
-pub const DEFAULT_SEARCH_ENGINE: &str = "bing";
+pub const DEFAULT_SEARCH_ENGINE: &str = "duckduckgo";
 
 /// Default search mode
 pub const DEFAULT_SEARCH_MODE: &str = "webquery";

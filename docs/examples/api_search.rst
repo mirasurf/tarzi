@@ -3,6 +3,19 @@ API Search Examples
 
 This guide demonstrates how to use tarzi's API search features with multiple providers and automatic fallback capabilities.
 
+Parser Architecture
+-------------------
+
+Tarzi uses a unified parser architecture where all search engines inherit from base parser traits:
+
+- **BaseSearchParser**: Core trait with name, engine type, and support checking
+- **WebSearchParser**: HTML-based parsing for browser scraping
+- **ApiSearchParser**: JSON-based parsing for API responses
+- **UnifiedParser**: Combines web and API parsing capabilities
+- **ParserFactory**: Mode-aware parser selection (WebQuery vs ApiQuery)
+
+This architecture ensures consistent parsing across all search engines and makes it easy to add new engines.
+
 Basic API Search
 ---------------
 

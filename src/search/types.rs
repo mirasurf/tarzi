@@ -40,19 +40,117 @@ impl FromStr for SearchEngineType {
 }
 
 impl SearchEngineType {
-    pub fn get_query_pattern(&self) -> String {
-        match self {
-            SearchEngineType::Bing => "https://www.bing.com/search?q={query}".to_string(),
-            SearchEngineType::DuckDuckGo => "https://duckduckgo.com/?q={query}".to_string(),
-            SearchEngineType::Google => "https://www.google.com/search?q={query}".to_string(),
-            SearchEngineType::BraveSearch => {
+    pub fn get_query_pattern_for_mode(&self, mode: SearchMode) -> String {
+        match (self, mode) {
+            (SearchEngineType::Bing, SearchMode::WebQuery) => {
+                "https://www.bing.com/search?q={query}".to_string()
+            }
+            (SearchEngineType::Bing, SearchMode::ApiQuery) => "".to_string(), // No API
+            (SearchEngineType::DuckDuckGo, SearchMode::WebQuery) => {
+                "https://duckduckgo.com/?q={query}".to_string()
+            }
+            (SearchEngineType::DuckDuckGo, SearchMode::ApiQuery) => {
+                "https://api.duckduckgo.com/?q={query}&format=json".to_string()
+            }
+            (SearchEngineType::Google, SearchMode::WebQuery) => {
+                "https://www.google.com/search?q={query}".to_string()
+            }
+            (SearchEngineType::Google, SearchMode::ApiQuery) => {
+                "https://google.serper.dev/search".to_string()
+            } // Use Serper for Google API
+            (SearchEngineType::BraveSearch, SearchMode::WebQuery) => {
                 "https://search.brave.com/search?q={query}".to_string()
             }
-            SearchEngineType::Baidu => "https://www.baidu.com/s?wd={query}".to_string(),
-            SearchEngineType::Exa => "https://api.exa.ai/search".to_string(),
-            SearchEngineType::Travily => "https://api.tavily.com/search".to_string(),
-            SearchEngineType::GoogleSerper => "https://google.serper.dev/search".to_string(),
-            SearchEngineType::Custom(_) => "{query}".to_string(), // Default pattern for custom engines
+            (SearchEngineType::BraveSearch, SearchMode::ApiQuery) => {
+                "https://api.search.brave.com/res/v1/web/search".to_string()
+            }
+            (SearchEngineType::Baidu, SearchMode::WebQuery) => {
+                "https://www.baidu.com/s?wd={query}".to_string()
+            }
+            (SearchEngineType::Baidu, SearchMode::ApiQuery) => {
+                "https://api.baidu.com/search".to_string()
+            }
+            (SearchEngineType::Exa, SearchMode::WebQuery) => {
+                "https://exa.ai/search?q={query}".to_string()
+            }
+            (SearchEngineType::Exa, SearchMode::ApiQuery) => {
+                "https://api.exa.ai/search".to_string()
+            }
+            (SearchEngineType::Travily, SearchMode::WebQuery) => "".to_string(), // No webquery
+            (SearchEngineType::Travily, SearchMode::ApiQuery) => {
+                "https://api.tavily.com/search".to_string()
+            }
+            (SearchEngineType::GoogleSerper, SearchMode::WebQuery) => {
+                "https://www.google.com/search?q={query}".to_string()
+            }
+            (SearchEngineType::GoogleSerper, SearchMode::ApiQuery) => {
+                "https://google.serper.dev/search".to_string()
+            }
+            (SearchEngineType::Custom(_), _) => "{query}".to_string(),
+        }
+    }
+
+    pub fn get_query_pattern(&self) -> String {
+        self.get_query_pattern_for_mode(SearchMode::WebQuery)
+    }
+
+    /// Check if this engine supports web query mode
+    pub fn supports_web_query(&self) -> bool {
+        match self {
+            SearchEngineType::Bing => true,
+            SearchEngineType::DuckDuckGo => true,
+            SearchEngineType::Google => true,
+            SearchEngineType::BraveSearch => true,
+            SearchEngineType::Baidu => true,
+            SearchEngineType::Exa => true,
+            SearchEngineType::GoogleSerper => true,
+            SearchEngineType::Travily => false, // Travily only supports API
+            SearchEngineType::Custom(_) => true, // Custom engines assumed to support web query
+        }
+    }
+
+    /// Check if this engine supports API query mode
+    pub fn supports_api_query(&self) -> bool {
+        match self {
+            SearchEngineType::Bing => false, // Bing doesn't have a public API
+            SearchEngineType::DuckDuckGo => true,
+            SearchEngineType::Google => true,
+            SearchEngineType::BraveSearch => true,
+            SearchEngineType::Baidu => true,
+            SearchEngineType::Exa => true,
+            SearchEngineType::Travily => true,
+            SearchEngineType::GoogleSerper => true,
+            SearchEngineType::Custom(_) => true, // Custom engines assumed to support API
+        }
+    }
+
+    /// Check if this engine requires an API key for API query mode
+    pub fn requires_api_key(&self) -> bool {
+        match self {
+            SearchEngineType::Bing => false,       // No API support
+            SearchEngineType::DuckDuckGo => false, // No API key required
+            SearchEngineType::Google => true,
+            SearchEngineType::BraveSearch => true,
+            SearchEngineType::Baidu => true,
+            SearchEngineType::Exa => true,
+            SearchEngineType::Travily => true,
+            SearchEngineType::GoogleSerper => true,
+            SearchEngineType::Custom(_) => true, // Custom engines assumed to require API key
+        }
+    }
+
+    /// Get the API key field name for this engine type
+    pub fn get_api_key_field(&self) -> Option<&'static str> {
+        match self {
+            SearchEngineType::Bing => None,
+            SearchEngineType::DuckDuckGo => None,
+            SearchEngineType::Google => Some("google_serper_api_key"), // Use Serper for Google API
+            SearchEngineType::BraveSearch => Some("brave_api_key"),
+            SearchEngineType::Baidu => Some("baidu_api_key"), // Note: baidu_api_key not in config yet
+            SearchEngineType::Exa => Some("exa_api_key"),
+            SearchEngineType::Travily => Some("travily_api_key"),
+            SearchEngineType::GoogleSerper => Some("google_serper_api_key"),
+            SearchEngineType::Custom(_) => None, // Custom engines don't have predefined API key fields
         }
     }
 

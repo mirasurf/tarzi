@@ -3,6 +3,26 @@ Development Guide
 
 This guide covers development setup, building from source, and contributing to tarzi.
 
+Architecture Overview
+====================
+
+Parser System
+~~~~~~~~~~~~
+
+Tarzi uses a unified parser architecture for search engines:
+
+- **Base Traits**: `BaseSearchParser`, `WebSearchParser`, `ApiSearchParser`
+- **Base Structs**: `BaseWebParser`, `BaseApiParser` for common functionality
+- **Parser Factory**: Mode-aware parser selection and management
+- **Unified Parser**: Combines web and API parsing capabilities
+
+To add a new search engine:
+
+1. Create a new parser file (e.g., `src/search/parser/newengine.rs`)
+2. Implement the appropriate base traits
+3. Add the parser to `ParserFactory::get_parser()`
+4. Update `SearchEngineType` enum if needed
+
 Development Setup
 -----------------
 
@@ -236,4 +256,4 @@ Release Process
 4. **Create release**
    - Tag the release
    - Upload to crates.io and PyPI
-   - Update documentation 
+   - Update documentation

@@ -9,12 +9,16 @@ tarzi can be configured through configuration files, environment variables, and 
 Configuration File
 ------------------
 
-tarzi reads configuration from the following sources in order:
+tarzi reads configuration from the following sources in order of precedence (highest to lowest):
 
-1. `.tarzi.toml` under user home directory
-2. `tarzi.toml` in current project root
+1. **CLI parameters** (highest priority)
+2. **~/.tarzi.toml** (user home directory)
+3. **tarzi.toml** (current project root)
+4. **Default values** (lowest priority)
 
 You can refer to `tarzi.toml <https://github.com/mirasurf/tarzi.rs/blob/main/tarzi.toml>`_ for the default values.
+
+**Note**: The Python CLI is available as `pytarzi` command, while the Rust CLI remains as `tarzi` command.
 
 Environment Variables
 ---------------------
@@ -79,13 +83,14 @@ Configuration Precedence
 
 Configuration values are applied in the following order (highest to lowest priority):
 
-1. Programmatic configuration
-2. Environment variables (limited support - see above)
-3. Configuration file
-4. Default values
+1. **CLI parameters** (command line arguments)
+2. **Environment variables** (limited support - see above)
+3. **~/.tarzi.toml** (user configuration file)
+4. **tarzi.toml** (project configuration file)
+5. **Default values** (hardcoded defaults)
 
 **Note**: Environment variables currently only override proxy settings and API keys. 
-All other configuration must be set via TOML file or programmatically.
+All other configuration must be set via TOML file, CLI parameters, or programmatically.
 
 API Search Configuration
 ------------------------
@@ -98,6 +103,20 @@ tarzi supports multiple API search providers with automatic fallback capabilitie
 - **Exa Search API**: AI-powered semantic search with enhanced relevance
 - **Travily API**: Specialized travel and location-based search
 - **DuckDuckGo API**: Privacy-focused search (limited functionality, no API key required)
+- **Baidu API**: Chinese search engine with API support
+
+**Engine Capabilities:**
+
+| Engine        | Web Query | API Query | API Key Required |
+|---------------|-----------|-----------|------------------|
+| Bing          | Yes       | No        | N/A              |
+| Google        | Yes       | Yes       | Yes              |
+| Brave         | Yes       | Yes       | Yes              |
+| DuckDuckGo    | Yes       | Yes       | No               |
+| Exa           | Yes       | Yes       | Yes              |
+| Google Serper | Yes       | Yes       | Yes              |
+| Travily       | No        | Yes       | Yes              |
+| Baidu         | Yes       | Yes       | Yes              |
 
 **Autoswitch Strategies:**
 - **smart**: Automatically fallback to available providers if primary fails
@@ -118,3 +137,4 @@ tarzi supports multiple API search providers with automatic fallback capabilitie
    google_serper_api_key = "your-google-serper-api-key"
    exa_api_key = "your-exa-api-key"
    travily_api_key = "your-travily-api-key"
+   baidu_api_key = "your-baidu-api-key"

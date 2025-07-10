@@ -8,8 +8,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize logging
     tracing_subscriber::fmt::init();
 
-    // Load configuration
-    let config = Config::load_dev()?;
+    // Load configuration with proper precedence
+    let config = Config::load_with_precedence()?;
     println!("Loaded config with search engine: {}", config.search.engine);
     println!("Query pattern: {}", config.search.query_pattern);
 

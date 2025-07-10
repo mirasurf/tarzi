@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use std::str::FromStr;
 use tarzi::{
     Result,
+    config::{CliConfigParams, Config},
     converter::{Converter, Format, convert_search_results},
     fetcher::{FetchMode, WebFetcher},
     search::{SearchEngine, SearchMode},
@@ -39,9 +40,6 @@ enum Commands {
         /// URL to fetch
         #[arg(short, long)]
         url: String,
-        /// Fetch mode: plain_request, browser_head, or browser_headless
-        #[arg(short, long, default_value = "plain_request")]
-        mode: String,
         /// Output format: html, markdown, json, or yaml
         #[arg(short, long, default_value = "html")]
         format: String,
@@ -57,9 +55,6 @@ enum Commands {
         /// Search query
         #[arg(short, long)]
         query: String,
-        /// Search mode: webquery or apiquery
-        #[arg(short, long, default_value = "webquery")]
-        mode: String,
         /// Number of results to return
         #[arg(short, long, default_value = "10")]
         limit: usize,
@@ -78,12 +73,6 @@ enum Commands {
         /// Search query
         #[arg(short, long)]
         query: String,
-        /// Search mode: webquery or apiquery
-        #[arg(short, long, default_value = "webquery")]
-        search_mode: String,
-        /// Fetch mode: plain_request, browser_head, or browser_headless
-        #[arg(short, long, default_value = "plain_request")]
-        fetch_mode: String,
         /// Number of results to return
         #[arg(short, long, default_value = "5")]
         limit: usize,
@@ -102,6 +91,9 @@ enum Commands {
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    // Load configuration with proper precedence
+    let mut config = Config::load_with_precedence()?;
 
     match cli.command {
         Commands::Convert {
@@ -131,7 +123,6 @@ async fn main() -> Result<()> {
         }
         Commands::Fetch {
             url,
-            mode,
             format,
             output,
             verbose,
@@ -141,14 +132,18 @@ async fn main() -> Result<()> {
             tracing_subscriber::fmt().with_max_level(log_level).init();
 
             info!("Tarzi Fetch starting with verbose mode: {}", verbose);
-            info!("Fetching URL: {} with mode: {}", url, mode);
+            info!("Fetching URL: {} with mode: {}", url, format);
             debug!("Using format: {}", format);
 
-            let mut fetcher = WebFetcher::new();
-            let fetch_mode = FetchMode::from_str(&mode)?;
+            // Apply CLI parameters to config
+            let mut cli_params = CliConfigParams::new();
+            cli_params.fetcher_format = Some(format.clone());
+            config.apply_cli_params(&cli_params);
+
+            let mut fetcher = WebFetcher::from_config(&config);
             let format = Format::from_str(&format)?;
 
-            let result = fetcher.fetch(&url, fetch_mode, format).await?;
+            let result = fetcher.fetch(&url, FetchMode::PlainRequest, format).await?;
 
             info!(
                 "Successfully fetched and converted content ({} characters)",
@@ -164,7 +159,6 @@ async fn main() -> Result<()> {
         }
         Commands::Search {
             query,
-            mode,
             limit,
             format,
             output,
@@ -177,12 +171,16 @@ async fn main() -> Result<()> {
             info!("Tarzi Search starting with verbose mode: {}", verbose);
             info!("Starting search operation");
             info!("Query: '{}'", query);
-            info!("Mode: {}", mode);
             info!("Limit: {}", limit);
             info!("Format: {}", format);
 
-            let mut search_engine = SearchEngine::new();
-            let mode = SearchMode::from_str(&mode)?;
+            // Apply CLI parameters to config
+            let mut cli_params = CliConfigParams::new();
+            cli_params.search_limit = Some(limit);
+            config.apply_cli_params(&cli_params);
+
+            let mut search_engine = SearchEngine::from_config(&config);
+            let mode = SearchMode::from_str(&config.search.mode)?;
 
             info!("Search engine initialized, starting search...");
             let results = search_engine.search(&query, mode, limit).await?;
@@ -202,8 +200,6 @@ async fn main() -> Result<()> {
         }
         Commands::SearchAndFetch {
             query,
-            search_mode,
-            fetch_mode,
             limit,
             format,
             output,
@@ -219,19 +215,22 @@ async fn main() -> Result<()> {
             );
             info!("Starting search and fetch operation");
             info!("Query: '{}'", query);
-            info!("Search mode: {}", search_mode);
-            info!("Fetch mode: {}", fetch_mode);
             info!("Limit: {}", limit);
             info!("Format: {}", format);
 
-            let mut search_engine = SearchEngine::new();
-            let search_mode = SearchMode::from_str(&search_mode)?;
-            let fetch_mode = FetchMode::from_str(&fetch_mode)?;
+            // Apply CLI parameters to config
+            let mut cli_params = CliConfigParams::new();
+            cli_params.search_limit = Some(limit);
+            cli_params.fetcher_format = Some(format.clone());
+            config.apply_cli_params(&cli_params);
+
+            let mut search_engine = SearchEngine::from_config(&config);
+            let mode = SearchMode::from_str(&config.search.mode)?;
             let format = Format::from_str(&format)?;
 
             info!("Search engine initialized, starting search and fetch...");
             let results_with_content = search_engine
-                .search_and_fetch(&query, search_mode, limit, fetch_mode, format)
+                .search_and_fetch(&query, mode, limit, FetchMode::PlainRequest, format)
                 .await?;
 
             info!(
