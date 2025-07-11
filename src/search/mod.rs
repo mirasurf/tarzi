@@ -16,8 +16,7 @@ pub mod types;
 mod tests;
 
 // Re-export main types and functions
-pub use api::{ApiSearchManager, AutoSwitchStrategy, SearchApiProvider};
+pub use api::AutoSwitchStrategy;
 pub use engine::SearchEngine;
 pub use parser::{ParserFactory, SearchResultParser};
-pub use providers::{ApiSearchProvider, WebSearchProvider};
 pub use types::{SearchEngineType, SearchMode, SearchResult};

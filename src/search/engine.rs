@@ -1,8 +1,4 @@
-use super::api::{ApiSearchManager, AutoSwitchStrategy};
 use super::parser::ParserFactory;
-use super::providers::{
-    BraveSearchProvider, DuckDuckGoProvider, ExaSearchProvider, TravilySearchProvider,
-};
 use super::types::{SearchEngineType, SearchMode, SearchResult};
 use crate::config::Config;
 use crate::{
@@ -13,17 +9,14 @@ use crate::{
 use reqwest::Client;
 use std::str::FromStr;
 
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 pub struct SearchEngine {
     fetcher: WebFetcher,
-    api_key: Option<String>, // Deprecated: kept for backward compatibility
-    #[allow(dead_code)]
     engine_type: SearchEngineType,
     query_pattern: String,
     user_agent: String,
     parser_factory: ParserFactory,
-    api_manager: ApiSearchManager, // Legacy manager for backward compatibility
 }
 
 impl SearchEngine {
@@ -31,26 +24,14 @@ impl SearchEngine {
         info!("Initializing SearchEngine");
         Self {
             fetcher: WebFetcher::new(),
-            api_key: None,
             engine_type: SearchEngineType::DuckDuckGo,
             query_pattern: SearchEngineType::DuckDuckGo.get_query_pattern(),
             user_agent: crate::constants::DEFAULT_USER_AGENT.to_string(),
             parser_factory: ParserFactory::new(),
-            api_manager: ApiSearchManager::new(AutoSwitchStrategy::Smart),
         }
     }
 
-    pub fn with_api_key(mut self, api_key: String) -> Self {
-        info!("Setting API key for SearchEngine");
-        self.api_key = Some(api_key);
-        self
-    }
-
     // Getter methods for testing
-    pub fn api_key(&self) -> &Option<String> {
-        &self.api_key
-    }
-
     pub fn engine_type(&self) -> &SearchEngineType {
         &self.engine_type
     }
@@ -84,105 +65,12 @@ impl SearchEngine {
                 engine_type.get_query_pattern_for_mode(mode)
             };
 
-        // Initialize API manager with autoswitch strategy
-        let autoswitch_strategy = AutoSwitchStrategy::from(config.search.autoswitch.as_str());
-        let mut api_manager = ApiSearchManager::new(autoswitch_strategy.clone());
-
-        // Check for proxy configuration
-        let proxy_url = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
-
-        // Initialize HTTP client for API providers (with or without proxy)
-        let client = if let Some(ref proxy) = proxy_url {
-            info!("Creating API client with proxy: {}", proxy);
-            Client::builder()
-                .timeout(std::time::Duration::from_secs(config.general.timeout))
-                .user_agent(&config.fetcher.user_agent)
-                .proxy(reqwest::Proxy::http(proxy).expect("Invalid proxy URL"))
-                .build()
-                .expect("Failed to create HTTP client with proxy for API providers")
-        } else {
-            Client::builder()
-                .timeout(std::time::Duration::from_secs(config.general.timeout))
-                .user_agent(&config.fetcher.user_agent)
-                .build()
-                .expect("Failed to create HTTP client for API providers")
-        };
-
-        // Register API providers based on available API keys
-        if let Some(ref brave_key) = config.search.brave_api_key {
-            info!(
-                "Registering Brave Search API provider{}",
-                if proxy_url.is_some() {
-                    " with proxy"
-                } else {
-                    ""
-                }
-            );
-            let provider = Box::new(BraveSearchProvider::new_api(
-                brave_key.clone(),
-                client.clone(),
-            ));
-            api_manager.register_provider(SearchEngineType::BraveSearch, provider);
-        }
-
-        if let Some(ref exa_key) = config.search.exa_api_key {
-            info!(
-                "Registering Exa Search API provider{}",
-                if proxy_url.is_some() {
-                    " with proxy"
-                } else {
-                    ""
-                }
-            );
-            let provider = Box::new(ExaSearchProvider::new_api(exa_key.clone(), client.clone()));
-            api_manager.register_provider(SearchEngineType::Exa, provider);
-        }
-
-        if let Some(ref travily_key) = config.search.travily_api_key {
-            info!(
-                "Registering Travily Search API provider{}",
-                if proxy_url.is_some() {
-                    " with proxy"
-                } else {
-                    ""
-                }
-            );
-            let provider = Box::new(TravilySearchProvider::new(
-                travily_key.clone(),
-                client.clone(),
-            ));
-            api_manager.register_provider(SearchEngineType::Travily, provider);
-        }
-
-        if let Some(ref _baidu_key) = config.search.baidu_api_key {
-            info!(
-                "Registering Baidu Search API provider{}",
-                if proxy_url.is_some() {
-                    " with proxy"
-                } else {
-                    ""
-                }
-            );
-            // Note: BaiduSearchProvider needs to be implemented
-            // For now, we'll just register a placeholder
-            // let provider = Box::new(BaiduSearchProvider::new_api(baidu_key.clone(), client.clone()));
-            // api_manager.register_provider(SearchEngineType::Baidu, provider);
-        }
-
-        // DuckDuckGo doesn't require an API key but has limited functionality
-        info!("Registering DuckDuckGo API provider (limited functionality)");
-        let provider = Box::new(DuckDuckGoProvider::new_api(client.clone()));
-        api_manager.register_provider(SearchEngineType::DuckDuckGo, provider);
-
         Self {
             fetcher,
-            api_key: None, // Deprecated: specific API keys are now managed per provider
             engine_type,
             query_pattern,
             user_agent: config.fetcher.user_agent.clone(),
             parser_factory: ParserFactory::new(),
-            api_manager,
-            // provider_manager: ProviderManager::new(autoswitch_strategy), // Removed
         }
     }
 
@@ -210,16 +98,6 @@ impl SearchEngine {
                 if !self.engine_type.supports_api_query() {
                     return Err(TarziError::Config(format!(
                         "Engine {:?} does not support API query mode",
-                        self.engine_type
-                    )));
-                }
-
-                // Check if API key is required and available
-                if self.engine_type.requires_api_key()
-                    && !self.api_manager.has_provider(&self.engine_type)
-                {
-                    return Err(TarziError::Config(format!(
-                        "Engine {:?} requires API key for API query mode but no provider is registered",
                         self.engine_type
                     )));
                 }
@@ -287,17 +165,13 @@ impl SearchEngine {
         Ok(results)
     }
 
-    async fn search_api(&self, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
+    async fn search_api(&mut self, query: &str, _limit: usize) -> Result<Vec<SearchResult>> {
         info!("Starting API-based search for query: '{}'", query);
 
-        // Use the API manager to perform the search with automatic provider switching
-        let results = self
-            .api_manager
-            .search(&self.engine_type, query, limit)
-            .await?;
-
-        info!("API search completed, returning {} results", results.len());
-        Ok(results)
+        // For now, API search is not implemented in the simplified version
+        Err(TarziError::Config(
+            "API search not implemented in simplified version".to_string(),
+        ))
     }
 
     /// Search and fetch content for each result
@@ -391,15 +265,34 @@ impl SearchEngine {
             SearchMode::ApiQuery => {
                 info!("Creating proxy-enabled HTTP client");
                 // For API mode with proxy, we would use a proxy-enabled HTTP client
-                let _proxy_client = Client::builder()
-                    .timeout(crate::constants::DEFAULT_TIMEOUT)
-                    .user_agent(&self.user_agent)
-                    .proxy(reqwest::Proxy::http(&effective_proxy)?)
-                    .build()
-                    .map_err(|e| {
-                        error!("Failed to create proxy client: {}", e);
-                        TarziError::Config(format!("Failed to create proxy client: {e}"))
-                    })?;
+                let _proxy_client = match reqwest::Proxy::http(&effective_proxy) {
+                    Ok(proxy_config) => {
+                        match Client::builder()
+                            .timeout(crate::constants::DEFAULT_TIMEOUT)
+                            .user_agent(&self.user_agent)
+                            .proxy(proxy_config)
+                            .build()
+                        {
+                            Ok(client) => client,
+                            Err(e) => {
+                                warn!(
+                                    "Failed to create HTTP client with proxy '{}': {}. Falling back to no proxy.",
+                                    effective_proxy, e
+                                );
+                                return Err(TarziError::Config(format!(
+                                    "Failed to create proxy client: {e}"
+                                )));
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        warn!(
+                            "Invalid proxy URL '{}': {}. Falling back to no proxy.",
+                            effective_proxy, e
+                        );
+                        return Err(TarziError::Config(format!("Invalid proxy URL: {e}")));
+                    }
+                };
 
                 info!(
                     "Proxy client created successfully with proxy: {}",

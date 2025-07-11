@@ -28,3 +28,4 @@ You're working on **Tarzi**—a rust-native lite search for AI applications.
 ## IMPL. CONSIDERATIONS OF PYTHON
 
 - Always manage python project with `pyproject.toml`
+- Always run `make check` and fix errors before finishing code modification.

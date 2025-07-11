@@ -7,8 +7,6 @@ fn test_searchengine_from_config() {
     let mut config = Config::new();
     config.search.brave_api_key = Some("test-brave-api-key-123".to_string());
     let engine = SearchEngine::from_config(&config);
-    // Note: The general api_key is deprecated, specific API keys are managed per provider
-    assert_eq!(*engine.api_key(), None);
     assert_eq!(*engine.engine_type(), SearchEngineType::DuckDuckGo);
     assert_eq!(engine.query_pattern(), "https://duckduckgo.com/?q={query}");
     assert_eq!(engine.user_agent(), crate::constants::DEFAULT_USER_AGENT);
@@ -94,23 +92,15 @@ fn test_custom_user_agent() {
 #[test]
 fn test_searchengine_new() {
     let engine = SearchEngine::new();
-    assert_eq!(*engine.api_key(), None);
     assert_eq!(*engine.engine_type(), SearchEngineType::DuckDuckGo);
     assert_eq!(engine.query_pattern(), "https://duckduckgo.com/?q={query}");
     assert_eq!(engine.user_agent(), crate::constants::DEFAULT_USER_AGENT);
 }
 
 #[test]
-fn test_searchengine_with_api_key() {
-    let engine = SearchEngine::new().with_api_key("test-key".to_string());
-    assert_eq!(*engine.api_key(), Some("test-key".to_string()));
-}
-
-#[test]
 fn test_searchengine_default() {
     let engine1 = SearchEngine::new();
     let engine2 = SearchEngine::default();
-    assert_eq!(engine1.api_key(), engine2.api_key());
     assert_eq!(engine1.engine_type(), engine2.engine_type());
     assert_eq!(engine1.query_pattern(), engine2.query_pattern());
     assert_eq!(engine1.user_agent(), engine2.user_agent());

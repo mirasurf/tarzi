@@ -86,8 +86,8 @@ def main():
         print(f"Basic search engine found {len(results)} results")
 
         # Search engine with API key (commented out as it requires actual API key)
+        # Note: API keys are now configured per provider in the configuration
         # api_search_engine = tarzi.SearchEngine()
-        # api_search_engine = api_search_engine.with_api_key("your-actual-api-key")
         # api_results = api_search_engine.search("cryptocurrency", "apiquery", 2)
         # print(f"API search engine found {len(api_results)} results")
 
@@ -115,8 +115,8 @@ proxy = ""
 
 [search]
 engine = "bing"
-api_key = ""
-query_pattern = "https://www.bing.com/search?q={query}"
+# API keys are now configured per provider in the configuration
+# For API-based search, configure the specific provider's API key
 """,
             "DuckDuckGo": """
 [fetcher]
@@ -127,8 +127,8 @@ proxy = ""
 
 [search]
 engine = "duckduckgo"
-api_key = ""
-query_pattern = "https://duckduckgo.com/?q={query}"
+# API keys are now configured per provider in the configuration
+# For API-based search, configure the specific provider's API key
 """,
             "Google": """
 [fetcher]
@@ -139,8 +139,8 @@ proxy = ""
 
 [search]
 engine = "google"
-api_key = ""
-query_pattern = "https://www.google.com/search?q={query}"
+# API keys are now configured per provider in the configuration
+# For API-based search, configure the specific provider's API key
 """,
         }
 

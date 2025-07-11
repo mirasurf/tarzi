@@ -5,7 +5,7 @@ description = "MCP server for Tarzi search functionality with headless browser s
 requires-python = ">=3.10"
 dependencies = [
     "mcp>=1.10.0",
-    "tarzi>=0.0.13",
+    "tarzi>=0.0.14",
     "uvicorn>=0.30.0",
     "fastapi>=0.115.0",
     "pydantic>=2.0.0",

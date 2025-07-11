@@ -319,19 +319,6 @@ impl PySearchEngine {
         })
     }
 
-    /// Configure search engine with API key
-    ///
-    /// Args:
-    ///     api_key (str): API key for search services
-    ///     
-    /// Returns:
-    ///     SearchEngine: Self for method chaining
-    fn with_api_key(mut self_: PyRefMut<Self>, api_key: String) -> PyRefMut<Self> {
-        let inner = std::mem::take(&mut self_.inner);
-        self_.inner = inner.with_api_key(api_key);
-        self_
-    }
-
     /// Search for web pages
     ///
     /// Args:

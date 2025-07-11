@@ -97,11 +97,11 @@ def main():
     except Exception as e:
         print(f"Fetch failed: {e}")
 
-    # SearchEngine with API key
+    # SearchEngine
     search_engine = tarzi.SearchEngine()
     try:
-        # Set API key (if available)
-        # search_engine = search_engine.with_api_key("your-api-key")
+        # Note: API keys are now configured per provider in the configuration
+        # See the configuration example below for how to set up API keys
 
         results = search_engine.search("machine learning", "webquery", 2)
         print(f"Found {len(results)} search results:")

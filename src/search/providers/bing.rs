@@ -1,22 +1,28 @@
 use super::super::types::{SearchEngineType, SearchResult};
-use super::WebSearchProvider;
 use crate::Result;
 use crate::fetcher::{FetchMode, WebFetcher};
 use async_trait::async_trait;
 use tracing::info;
 
+#[derive(Debug)]
 pub struct BingSearchProvider {
     fetcher: WebFetcher,
 }
 
 impl BingSearchProvider {
-    pub fn new(fetcher: WebFetcher) -> Self {
+    pub fn new_web(fetcher: WebFetcher) -> Self {
         Self { fetcher }
     }
 }
 
 #[async_trait]
-impl WebSearchProvider for BingSearchProvider {
+impl super::SearchProvider for BingSearchProvider {
+    type Config = crate::fetcher::WebFetcher;
+
+    fn new(config: Self::Config) -> Self {
+        Self { fetcher: config }
+    }
+
     async fn search(&mut self, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let query_pattern = SearchEngineType::Bing
             .get_query_pattern_for_mode(super::super::types::SearchMode::WebQuery);
@@ -36,19 +42,15 @@ impl WebSearchProvider for BingSearchProvider {
         parser.parse(&search_page_content, limit)
     }
 
-    fn get_provider_name(&self) -> &str {
-        "Bing Search (Web)"
-    }
-
-    fn get_query_pattern(&self) -> &str {
-        "https://www.bing.com/search?q={query}"
-    }
-
     fn is_healthy(&self) -> bool {
         true // Web provider is always available
     }
 
     fn get_engine_type(&self) -> SearchEngineType {
         SearchEngineType::Bing
+    }
+
+    fn supported_modes(&self) -> Vec<super::super::types::SearchMode> {
+        vec![super::super::types::SearchMode::WebQuery]
     }
 }

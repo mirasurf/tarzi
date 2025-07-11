@@ -14,6 +14,7 @@ use thirtyfour::{ChromiumLikeCapabilities, DesiredCapabilities, WebDriver};
 use tracing::{error, info, warn};
 
 /// Browser instance manager
+#[derive(Debug)]
 pub struct BrowserManager {
     browsers: HashMap<String, (WebDriver, TempDir)>,
     driver_manager: Option<DriverManager>,

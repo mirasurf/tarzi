@@ -12,6 +12,7 @@ use url::Url;
 use super::{browser::BrowserManager, types::FetchMode};
 
 /// Main web content fetcher
+#[derive(Debug)]
 pub struct WebFetcher {
     http_client: Client,
     browser_manager: BrowserManager,
@@ -188,14 +189,34 @@ impl WebFetcher {
 
         let raw_content = match mode {
             FetchMode::PlainRequest => {
-                let proxy_client = Client::builder()
-                    .timeout(DEFAULT_TIMEOUT)
-                    .user_agent(DEFAULT_USER_AGENT)
-                    .proxy(reqwest::Proxy::http(proxy)?)
-                    .build()
-                    .map_err(|e| {
-                        TarziError::Config(format!("Failed to create proxy client: {e}"))
-                    })?;
+                let proxy_client = match reqwest::Proxy::http(proxy) {
+                    Ok(proxy_config) => {
+                        match Client::builder()
+                            .timeout(DEFAULT_TIMEOUT)
+                            .user_agent(DEFAULT_USER_AGENT)
+                            .proxy(proxy_config)
+                            .build()
+                        {
+                            Ok(client) => client,
+                            Err(e) => {
+                                warn!(
+                                    "Failed to create HTTP client with proxy '{}': {}. Falling back to no proxy.",
+                                    proxy, e
+                                );
+                                return Err(TarziError::Config(format!(
+                                    "Failed to create proxy client: {e}"
+                                )));
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        warn!(
+                            "Invalid proxy URL '{}': {}. Falling back to no proxy.",
+                            proxy, e
+                        );
+                        return Err(TarziError::Config(format!("Invalid proxy URL: {e}")));
+                    }
+                };
 
                 let url = Url::parse(url)?;
                 let response = proxy_client.get(url).send().await?;
