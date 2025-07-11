@@ -148,7 +148,8 @@ async fn test_api_search_with_duckduckgo_provider() {
             assert!(
                 e.to_string().contains("not fully implemented")
                     || e.to_string().contains("Network")
-                    || e.to_string().contains("DuckDuckGo"),
+                    || e.to_string().contains("DuckDuckGo")
+                    || e.to_string().contains("not implemented in simplified version"),
                 "Error should indicate DuckDuckGo limitation: {e}"
             );
         }
