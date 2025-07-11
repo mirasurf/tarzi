@@ -274,7 +274,7 @@ async fn test_concurrent_searches() {
         .enumerate()
         .map(|(i, mut engine)| {
             tokio::spawn(async move {
-                let query = format!("concurrent test query {}", i);
+                let query = format!("concurrent test query {i}");
                 let result = engine.search(&query, SearchMode::WebQuery, 2).await;
                 (i, result)
             })
@@ -293,7 +293,7 @@ async fn test_concurrent_searches() {
                     );
                 }
                 Err(e) => {
-                    println!("Concurrent search {} failed: {e}", i);
+                    println!("Concurrent search {i} failed: {e}");
                 }
             },
             Err(e) => {

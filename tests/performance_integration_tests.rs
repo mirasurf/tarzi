@@ -40,7 +40,7 @@ async fn test_search_engine_performance_comparison() {
     ];
 
     for (engine_name, mode, description) in all_engines {
-        println!("\n--- Testing {} ---", description);
+        println!("\n--- Testing {description} ---");
 
         let mut config = Config::new();
         config.search.engine = engine_name.to_string();
@@ -93,7 +93,7 @@ async fn test_search_engine_performance_comparison() {
                     );
                 }
                 Err(e) => {
-                    println!("  Query '{}': Failed in {:?} - {}", query, duration, e);
+                    println!("  Query '{query}': Failed in {duration:?} - {e}");
                 }
             }
         }
@@ -105,14 +105,14 @@ async fn test_search_engine_performance_comparison() {
                 successful_queries,
                 test_queries.len()
             );
-            println!("  Average response time: {:?}", avg_time);
-            println!("  Total results: {}", total_results);
+            println!("  Average response time: {avg_time:?}");
+            println!("  Total results: {total_results}");
             println!(
                 "  Average results per query: {:.1}",
                 total_results as f64 / successful_queries as f64
             );
         } else {
-            println!("  No successful queries for {}", description);
+            println!("  No successful queries for {description}");
         }
     }
 }
@@ -128,13 +128,10 @@ async fn test_search_latency_percentiles() {
     let num_requests = 10; // Small number for integration test
     let mut latencies = Vec::new();
 
-    println!(
-        "Performing {} search requests to measure latency distribution...",
-        num_requests
-    );
+    println!("Performing {num_requests} search requests to measure latency distribution...");
 
     for i in 0..num_requests {
-        let query = format!("test query {}", i);
+        let query = format!("test query {i}");
         let start = Instant::now();
         let result = engine.search(&query, SearchMode::WebQuery, 3).await;
         let duration = start.elapsed();
@@ -171,11 +168,11 @@ async fn test_search_latency_percentiles() {
         let avg = total / latencies.len() as u32;
 
         println!("\nLatency Statistics:");
-        println!("  Min: {:?}", min);
-        println!("  Avg: {:?}", avg);
-        println!("  Median: {:?}", median);
-        println!("  95th percentile: {:?}", p95);
-        println!("  Max: {:?}", max);
+        println!("  Min: {min:?}");
+        println!("  Avg: {avg:?}");
+        println!("  Median: {median:?}");
+        println!("  95th percentile: {p95:?}");
+        println!("  Max: {max:?}");
         println!("  Sample size: {}", latencies.len());
     } else {
         println!("No successful requests for latency analysis");
@@ -195,10 +192,7 @@ async fn test_search_throughput() {
         .map(|_| SearchEngine::from_config(&config))
         .collect();
 
-    println!(
-        "Testing throughput with {} concurrent requests...",
-        concurrent_requests
-    );
+    println!("Testing throughput with {concurrent_requests} concurrent requests...");
 
     let start_time = Instant::now();
 
@@ -207,7 +201,7 @@ async fn test_search_throughput() {
         .enumerate()
         .map(|(i, mut engine)| {
             tokio::spawn(async move {
-                let query = format!("throughput test {}", i);
+                let query = format!("throughput test {i}");
                 let start = Instant::now();
                 let result = engine.search(&query, SearchMode::WebQuery, 3).await;
                 let duration = start.elapsed();
@@ -233,11 +227,11 @@ async fn test_search_throughput() {
                     );
                 }
                 Err(e) => {
-                    println!("Concurrent request {} failed: {}", i, e);
+                    println!("Concurrent request {i} failed: {e}");
                 }
             },
             Err(e) => {
-                println!("Task failed: {}", e);
+                println!("Task failed: {e}");
             }
         }
     }
@@ -245,16 +239,13 @@ async fn test_search_throughput() {
     let total_time = start_time.elapsed();
 
     println!("\nThroughput Results:");
-    println!(
-        "  Successful requests: {}/{}",
-        successful_requests, concurrent_requests
-    );
-    println!("  Total time: {:?}", total_time);
-    println!("  Total results: {}", total_results);
+    println!("  Successful requests: {successful_requests}/{concurrent_requests}");
+    println!("  Total time: {total_time:?}");
+    println!("  Total results: {total_results}");
 
     if successful_requests > 0 {
         let throughput = successful_requests as f64 / total_time.as_secs_f64();
-        println!("  Throughput: {:.2} requests/second", throughput);
+        println!("  Throughput: {throughput:.2} requests/second");
         println!(
             "  Results per second: {:.2}",
             total_results as f64 / total_time.as_secs_f64()
@@ -269,7 +260,7 @@ async fn test_search_timeout_behavior() {
     let timeout_values = vec![1, 5, 10, 30]; // seconds
 
     for timeout_seconds in timeout_values {
-        println!("\nTesting with {}s timeout...", timeout_seconds);
+        println!("\nTesting with {timeout_seconds}s timeout...");
 
         let mut config = Config::new();
         config.search.engine = "duckduckgo".to_string();
@@ -291,12 +282,12 @@ async fn test_search_timeout_behavior() {
                     results.len()
                 );
                 assert!(
-                    duration.as_secs() <= timeout_seconds as u64 + 5,
+                    duration.as_secs() <= timeout_seconds + 5,
                     "Search should complete within reasonable time of timeout"
                 );
             }
             Err(e) => {
-                println!("  Failed in {:?}: {}", duration, e);
+                println!("  Failed in {duration:?}: {e}");
                 // Check if it's a timeout error
                 let error_msg = e.to_string().to_lowercase();
                 if error_msg.contains("timeout") || error_msg.contains("time") {
@@ -348,7 +339,7 @@ async fn test_parser_performance() {
     ];
 
     for (name, engine_type, mode) in parsers_to_test {
-        println!("\nTesting {} parser performance...", name);
+        println!("\nTesting {name} parser performance...");
 
         let parser = factory.get_parser(&engine_type, mode);
 
@@ -371,9 +362,9 @@ async fn test_parser_performance() {
         let total_time = start.elapsed();
         let avg_time = total_time / iterations;
 
-        println!("  {} iterations completed in {:?}", iterations, total_time);
-        println!("  Average parse time: {:?}", avg_time);
-        println!("  Total results found: {}", total_results);
+        println!("  {iterations} iterations completed in {total_time:?}");
+        println!("  Average parse time: {avg_time:?}");
+        println!("  Total results found: {total_results}");
 
         // Parsing should be fast
         assert!(
@@ -397,7 +388,7 @@ async fn test_memory_usage_pattern() {
         println!("Search iteration {}/{}", i + 1, num_searches);
 
         let mut engine = SearchEngine::from_config(&config);
-        let query = format!("memory test query {}", i);
+        let query = format!("memory test query {i}");
 
         let start = Instant::now();
         let result = engine.search(&query, SearchMode::WebQuery, 5).await;
@@ -415,14 +406,13 @@ async fn test_memory_usage_pattern() {
                 for (j, result) in results.iter().enumerate() {
                     assert!(
                         !result.title.is_empty() || !result.url.is_empty(),
-                        "Result {} should have title or URL",
-                        j
+                        "Result {j} should have title or URL"
                     );
-                    assert!(result.rank > 0, "Result {} should have valid rank", j);
+                    assert!(result.rank > 0, "Result {j} should have valid rank");
                 }
             }
             Err(e) => {
-                println!("  Search failed: {}", e);
+                println!("  Search failed: {e}");
             }
         }
 
@@ -455,7 +445,7 @@ async fn test_error_recovery_performance() {
     ];
 
     for (query, description) in error_scenarios {
-        println!("\nTesting error recovery for: {}", description);
+        println!("\nTesting error recovery for: {description}");
 
         let start = Instant::now();
         let result = engine.search(query, SearchMode::WebQuery, 5).await;
@@ -470,7 +460,7 @@ async fn test_error_recovery_performance() {
                 );
             }
             Err(e) => {
-                println!("  Failed gracefully in {:?}: {}", duration, e);
+                println!("  Failed gracefully in {duration:?}: {e}");
             }
         }
 
@@ -490,7 +480,7 @@ async fn test_error_recovery_performance() {
                 );
             }
             Err(e) => {
-                println!("  Recovery failed: {}", e);
+                println!("  Recovery failed: {e}");
             }
         }
 

@@ -112,63 +112,35 @@ test-python-coverage: install-python-dev ## Run Python tests with coverage
 # CODE QUALITY COMMANDS
 # =============================================================================
 
-.PHONY: check
-check: check-rust format-check lint clippy
-
-.PHONY: check-rust
-check-rust: ## Run cargo check (Rust only)
-	$(CARGO) check
-
-.PHONY: clippy
-clippy: ## Run clippy linter (Rust only)
-	$(CARGO) clippy --all-targets --all-features -- -D warnings
-
 .PHONY: format
-format: format-rust format-python ## Format all code (Rust + Python)
-
-.PHONY: format-rust
-format-rust: ## Format Rust code with rustfmt
+format:
 	$(CARGO) fmt
-
-.PHONY: format-python
-format-python: ## Format Python code (autoflake, isort, black)
 	@autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES)
 	@isort $(PYTHON_MODULES)
 	@black $(PYTHON_MODULES)
 
 .PHONY: format-check
-format-check: format-check-rust format-check-python ## Check all code formatting (Rust + Python)
-
-.PHONY: format-check-rust
-format-check-rust: ## Check Rust code formatting
+format-check:
 	$(CARGO) fmt -- --check
-
-.PHONY: format-check-python
-format-python-check: ## Check if Python code is properly formatted
-	@black --check $(PYTHON_MODULES) || (echo "$(RED)❌ Black formatting check failed. Run 'make format-python' to fix.$(RESET)" && exit 1)
-	@isort --check-only $(PYTHON_MODULES) || (echo "$(RED)❌ Import sorting check failed. Run 'make format-python' to fix.$(RESET)" && exit 1)
+	@black --check $(PYTHON_MODULES)
+	@isort --check-only $(PYTHON_MODULES)
 
 .PHONY: lint
-lint: lint-rust lint-python ## Lint all code (Rust + Python)
-
-.PHONY: lint-rust
-lint-rust: clippy format-check-rust ## Lint Rust code
-
-.PHONY: lint-python
-lint-python: ## Lint Python code with ruff
+lint: format-check
+	$(CARGO) clippy --all-targets --all-features -- -D warnings
 	@ruff check $(PYTHON_MODULES)
 
-.PHONY: autofix
-autofix: autofix-rust autofix-python ## Auto-fix all linting issues
-
-.PHONY: autofix-rust
-autofix-rust: ## Auto-fix Rust linting issues
+.PHONY: lint-fix
+lint-fix:
 	$(CARGO) clippy --fix --allow-dirty --allow-staged --all-targets --all-features -- -D warnings
-
-.PHONY: autofix-python
-autofix-python: ## Auto-fix Python linting issues
-	@autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES)
 	@ruff check --fix $(PYTHON_MODULES)
+
+.PHONY: check
+check: format-check lint
+	$(CARGO) check
+
+.PHONY: autofix
+autofix: lint-fix format
 
 # =============================================================================
 # CLEAN COMMANDS
