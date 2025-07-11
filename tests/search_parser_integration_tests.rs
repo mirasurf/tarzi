@@ -1,6 +1,6 @@
 use std::time::Duration;
 use tarzi::constants::CHROMEDRIVER_DEFAULT_URL;
-use tarzi::parser::{
+use tarzi::search::parser::{
     BaiduParser, BingParser, BraveParser, DuckDuckGoParser, GoogleParser, SearchResultParser,
 };
 use tarzi::search::types::SearchEngineType;

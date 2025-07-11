@@ -37,9 +37,8 @@ fn test_search_engine_type_parsing() {
         SearchEngineType::Baidu
     );
 
-    // Test custom engine
-    let custom = SearchEngineType::from_str("custom-engine").unwrap();
-    assert!(matches!(custom, SearchEngineType::Custom(_)));
+    // Test invalid engine (should return error)
+    assert!(SearchEngineType::from_str("custom-engine").is_err());
 }
 
 #[test]
@@ -204,19 +203,15 @@ fn test_engine_capabilities() {
     assert!(SearchEngineType::Travily.supports_api_query());
     assert!(SearchEngineType::Travily.requires_api_key());
 
-    assert!(SearchEngineType::GoogleSerper.supports_web_query());
-    assert!(SearchEngineType::GoogleSerper.supports_api_query());
-    assert!(SearchEngineType::GoogleSerper.requires_api_key());
+    assert!(SearchEngineType::Google.supports_web_query());
+    assert!(SearchEngineType::Google.supports_api_query());
+    assert!(SearchEngineType::Google.requires_api_key());
 }
 
 #[test]
 fn test_api_key_fields() {
     assert_eq!(SearchEngineType::Bing.get_api_key_field(), None);
     assert_eq!(SearchEngineType::DuckDuckGo.get_api_key_field(), None);
-    assert_eq!(
-        SearchEngineType::Google.get_api_key_field(),
-        Some("google_serper_api_key")
-    );
     assert_eq!(
         SearchEngineType::BraveSearch.get_api_key_field(),
         Some("brave_api_key")
@@ -232,10 +227,6 @@ fn test_api_key_fields() {
     assert_eq!(
         SearchEngineType::Travily.get_api_key_field(),
         Some("travily_api_key")
-    );
-    assert_eq!(
-        SearchEngineType::GoogleSerper.get_api_key_field(),
-        Some("google_serper_api_key")
     );
 }
 
@@ -300,7 +291,7 @@ fn test_query_patterns_for_modes() {
     );
     assert_eq!(
         SearchEngineType::Google.get_query_pattern_for_mode(SearchMode::ApiQuery),
-        "https://google.serper.dev/search"
+        ""
     );
 
     // Test Bing patterns
@@ -353,11 +344,11 @@ fn test_query_patterns_for_modes() {
     );
 
     assert_eq!(
-        SearchEngineType::GoogleSerper.get_query_pattern_for_mode(SearchMode::WebQuery),
+        SearchEngineType::Google.get_query_pattern_for_mode(SearchMode::WebQuery),
         "https://www.google.com/search?q={query}"
     );
     assert_eq!(
-        SearchEngineType::GoogleSerper.get_query_pattern_for_mode(SearchMode::ApiQuery),
-        "https://google.serper.dev/search"
+        SearchEngineType::Google.get_query_pattern_for_mode(SearchMode::ApiQuery),
+        ""
     );
 }

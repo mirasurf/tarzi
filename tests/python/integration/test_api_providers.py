@@ -48,33 +48,6 @@ brave_api_key = "{api_key}"
         except Exception as e:
             pytest.skip(f"Brave API search failed: {e}")
 
-    def test_google_serper_api_provider(self, test_query):
-        """Test Google Serper API provider."""
-        api_key = os.environ.get("GOOGLE_SERPER_API_KEY")
-        if not api_key:
-            pytest.skip("GOOGLE_SERPER_API_KEY not set")
-
-        config_str = f"""
-[search]
-engine = "googleserper"
-google_serper_api_key = "{api_key}"
-"""
-        try:
-            config = tarzi.Config.from_str(config_str)
-            engine = tarzi.SearchEngine.from_config(config)
-
-            results = engine.search(test_query, "apiquery", 3)
-            assert isinstance(results, list)
-
-            for result in results:
-                assert isinstance(result, tarzi.SearchResult)
-                assert hasattr(result, "title")
-                assert hasattr(result, "url")
-                assert hasattr(result, "snippet")
-
-        except Exception as e:
-            pytest.skip(f"Google Serper API search failed: {e}")
-
     def test_exa_api_provider(self, test_query):
         """Test Exa API provider."""
         api_key = os.environ.get("EXA_API_KEY")
@@ -253,7 +226,6 @@ brave_api_key = "{api_key}"
         """Test configuration with multiple API providers."""
         api_keys = {
             "brave": os.environ.get("BRAVE_API_KEY"),
-            "google_serper": os.environ.get("GOOGLE_SERPER_API_KEY"),
             "exa": os.environ.get("EXA_API_KEY"),
             "travily": os.environ.get("TRAVILY_API_KEY"),
         }
@@ -267,8 +239,6 @@ brave_api_key = "{api_key}"
         config_parts = ["[search]"]
         if "brave" in available_keys:
             config_parts.append(f'brave_api_key = "{available_keys["brave"]}"')
-        if "google_serper" in available_keys:
-            config_parts.append(f'google_serper_api_key = "{available_keys["google_serper"]}"')
         if "exa" in available_keys:
             config_parts.append(f'exa_api_key = "{available_keys["exa"]}"')
         if "travily" in available_keys:
@@ -276,8 +246,8 @@ brave_api_key = "{api_key}"
 
         # Use first available provider as primary
         primary_engine = list(available_keys.keys())[0]
-        if primary_engine == "google_serper":
-            primary_engine = "googleserper"
+        if primary_engine == "exa":
+            primary_engine = "exa"
         config_parts.append(f'engine = "{primary_engine}"')
 
         config_str = "\n".join(config_parts)

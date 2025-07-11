@@ -40,40 +40,6 @@ async fn test_api_search_with_brave_provider() {
 }
 
 #[tokio::test]
-async fn test_api_search_with_google_serper_provider() {
-    let mut config = Config::new();
-
-    // Skip test if no API key is available
-    if let Ok(api_key) = env::var("GOOGLE_SERPER_API_KEY") {
-        config.search.google_serper_api_key = Some(api_key);
-        config.search.engine = "googleserper".to_string();
-
-        let mut engine = SearchEngine::from_config(&config);
-        let results = engine
-            .search("machine learning", SearchMode::ApiQuery, 5)
-            .await;
-
-        match results {
-            Ok(search_results) => {
-                assert!(!search_results.is_empty(), "Should return search results");
-                assert!(search_results.len() <= 5, "Should respect limit parameter");
-
-                for result in &search_results {
-                    assert!(!result.title.is_empty(), "Title should not be empty");
-                    assert!(!result.url.is_empty(), "URL should not be empty");
-                    assert!(result.rank > 0, "Rank should be positive");
-                }
-            }
-            Err(_) => {
-                println!("API call failed - this may be due to network issues or API limits");
-            }
-        }
-    } else {
-        println!("Skipping Google Serper API test - GOOGLE_SERPER_API_KEY not set");
-    }
-}
-
-#[tokio::test]
 async fn test_api_search_with_exa_provider() {
     let mut config = Config::new();
 
@@ -358,13 +324,13 @@ async fn test_multiple_api_providers_registered() {
         providers_count += 1;
     }
 
-    if let Ok(api_key) = env::var("GOOGLE_SERPER_API_KEY") {
-        config.search.google_serper_api_key = Some(api_key);
+    if let Ok(api_key) = env::var("EXA_API_KEY") {
+        config.search.exa_api_key = Some(api_key);
         providers_count += 1;
     }
 
-    if let Ok(api_key) = env::var("EXA_API_KEY") {
-        config.search.exa_api_key = Some(api_key);
+    if let Ok(api_key) = env::var("TRAVILY_API_KEY") {
+        config.search.travily_api_key = Some(api_key);
         providers_count += 1;
     }
 

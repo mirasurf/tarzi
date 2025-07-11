@@ -50,7 +50,6 @@ pub struct SearchConfig {
     #[serde(default = "default_autoswitch_strategy")]
     pub autoswitch: String,
     pub brave_api_key: Option<String>,
-    pub google_serper_api_key: Option<String>,
     pub exa_api_key: Option<String>,
     pub travily_api_key: Option<String>,
     pub baidu_api_key: Option<String>,
@@ -164,9 +163,6 @@ impl Config {
         }
         if other.search.brave_api_key.is_some() {
             self.search.brave_api_key = other.search.brave_api_key.clone();
-        }
-        if other.search.google_serper_api_key.is_some() {
-            self.search.google_serper_api_key = other.search.google_serper_api_key.clone();
         }
         if other.search.exa_api_key.is_some() {
             self.search.exa_api_key = other.search.exa_api_key.clone();
@@ -315,7 +311,6 @@ impl Default for SearchConfig {
             limit: default_result_limit(),
             autoswitch: default_autoswitch_strategy(),
             brave_api_key: None,
-            google_serper_api_key: None,
             exa_api_key: None,
             travily_api_key: None,
             baidu_api_key: None,
@@ -499,7 +494,6 @@ query_pattern = ".*"
 limit = 5
 autoswitch = "none"
 brave_api_key = "brave_key_456"
-google_serper_api_key = "serper_key_789"
 exa_api_key = "exa_key_012"
 travily_api_key = "travily_key_345"
 "#;
@@ -530,10 +524,6 @@ travily_api_key = "travily_key_345"
         assert_eq!(
             config.search.brave_api_key,
             Some("brave_key_456".to_string())
-        );
-        assert_eq!(
-            config.search.google_serper_api_key,
-            Some("serper_key_789".to_string())
         );
         assert_eq!(config.search.exa_api_key, Some("exa_key_012".to_string()));
         assert_eq!(
@@ -591,7 +581,6 @@ web_driver_url = "http://localhost:9999"
         assert_eq!(config.search.autoswitch, "smart");
         // API keys should be None by default (commented out in tarzi.toml)
         assert_eq!(config.search.brave_api_key, None);
-        assert_eq!(config.search.google_serper_api_key, None);
         assert_eq!(config.search.exa_api_key, None);
         assert_eq!(config.search.travily_api_key, None);
     }
@@ -769,6 +758,8 @@ engine = "google"
 mode = "apiquery"
 limit = 5
 brave_api_key = "user_brave_key"
+exa_api_key = "user_exa_key"
+travily_api_key = "user_travily_key"
 "#;
         fs::write(&user_config_path, user_config_str).unwrap();
 
@@ -794,6 +785,11 @@ brave_api_key = "user_brave_key"
             config.search.brave_api_key,
             Some("user_brave_key".to_string())
         ); // from user config
+        assert_eq!(config.search.exa_api_key, Some("user_exa_key".to_string()));
+        assert_eq!(
+            config.search.travily_api_key,
+            Some("user_travily_key".to_string())
+        );
 
         // Restore original HOME
         if let Some(home) = original_home {
@@ -865,9 +861,8 @@ brave_api_key = "user_brave_key"
                 limit: 10,
                 autoswitch: "none".to_string(),
                 brave_api_key: Some("test_key".to_string()),
-                google_serper_api_key: None,
-                exa_api_key: None,
-                travily_api_key: None,
+                exa_api_key: Some("override_exa_key".to_string()),
+                travily_api_key: Some("override_travily_key".to_string()),
                 baidu_api_key: None,
             },
         };
@@ -899,6 +894,14 @@ brave_api_key = "user_brave_key"
         assert_eq!(
             base_config.search.brave_api_key,
             Some("test_key".to_string())
+        );
+        assert_eq!(
+            base_config.search.exa_api_key,
+            Some("override_exa_key".to_string())
+        );
+        assert_eq!(
+            base_config.search.travily_api_key,
+            Some("override_travily_key".to_string())
         );
     }
 }

@@ -1,6 +1,6 @@
 use super::{
-    BaiduParser, BingParser, BraveParser, CustomParser, CustomParserConfig, DuckDuckGoParser,
-    GoogleParser, ParserFactory, SearchResultParser,
+    BaiduParser, BingParser, BraveParser, DuckDuckGoParser, GoogleParser, ParserFactory,
+    SearchResultParser,
 };
 use crate::search::types::{SearchEngineType, SearchMode};
 
@@ -215,39 +215,7 @@ fn test_baidu_parser() {
     assert_eq!(results[1].rank, 2);
 }
 
-#[test]
-fn test_custom_parser() {
-    let parser = CustomParser::new("TestEngine".to_string());
-    let html = "<html><body>Mock HTML content</body></html>";
-    let results = parser.parse(html, 4).unwrap();
-
-    assert_eq!(results.len(), 4);
-    assert_eq!(parser.name(), "TestEngine");
-    assert!(parser.supports(&SearchEngineType::Custom("TestEngine".to_string())));
-    assert!(!parser.supports(&SearchEngineType::Custom("OtherEngine".to_string())));
-
-    // Check that results contain engine name
-    assert!(results[0].title.contains("TestEngine"));
-}
-
-#[test]
-fn test_custom_parser_with_config() {
-    let config = CustomParserConfig {
-        result_container_selector: ".custom-result".to_string(),
-        title_selector: ".custom-title".to_string(),
-        url_selector: ".custom-url".to_string(),
-        snippet_selector: ".custom-snippet".to_string(),
-        custom_rules: std::collections::HashMap::new(),
-    };
-
-    let parser = CustomParser::with_config("CustomEngine".to_string(), config);
-    let html = "<html><body>Mock HTML content</body></html>";
-    let results = parser.parse(html, 2).unwrap();
-
-    assert_eq!(results.len(), 2);
-    assert!(results[0].snippet.contains(".custom-result"));
-    assert!(results[0].snippet.contains(".custom-title"));
-}
+// Custom parser tests removed - custom engines are no longer supported
 
 #[test]
 fn test_parser_factory() {
@@ -259,53 +227,29 @@ fn test_parser_factory() {
     let duckduckgo_parser = factory.get_parser(&SearchEngineType::DuckDuckGo, SearchMode::WebQuery);
     let brave_parser = factory.get_parser(&SearchEngineType::BraveSearch, SearchMode::WebQuery);
     let baidu_parser = factory.get_parser(&SearchEngineType::Baidu, SearchMode::WebQuery);
-    let custom_parser = factory.get_parser(
-        &SearchEngineType::Custom("TestCustom".to_string()),
-        SearchMode::WebQuery,
-    );
-
     assert_eq!(bing_parser.name(), "BingParser");
     assert_eq!(google_parser.name(), "GoogleParser");
     assert_eq!(duckduckgo_parser.name(), "DuckDuckGoParser");
     assert_eq!(brave_parser.name(), "BraveParser");
     assert_eq!(baidu_parser.name(), "BaiduParser");
-    assert_eq!(custom_parser.name(), "TestCustom");
 
     // Test API query parsers
     let duckduckgo_api_parser =
         factory.get_parser(&SearchEngineType::DuckDuckGo, SearchMode::ApiQuery);
     let google_api_parser = factory.get_parser(&SearchEngineType::Google, SearchMode::ApiQuery);
     let brave_api_parser = factory.get_parser(&SearchEngineType::BraveSearch, SearchMode::ApiQuery);
-    let baidu_api_parser = factory.get_parser(&SearchEngineType::Baidu, SearchMode::ApiQuery);
+    let _baidu_api_parser = factory.get_parser(&SearchEngineType::Baidu, SearchMode::ApiQuery);
     let exa_api_parser = factory.get_parser(&SearchEngineType::Exa, SearchMode::ApiQuery);
     let travily_api_parser = factory.get_parser(&SearchEngineType::Travily, SearchMode::ApiQuery);
-    let google_serper_api_parser =
-        factory.get_parser(&SearchEngineType::GoogleSerper, SearchMode::ApiQuery);
 
     assert_eq!(duckduckgo_api_parser.name(), "DuckDuckGoApiParser");
-    assert_eq!(google_api_parser.name(), "GoogleApiParser");
+    assert_eq!(google_api_parser.name(), "GoogleParser"); // Google API parser removed, fallback to web parser
     assert_eq!(brave_api_parser.name(), "BraveApiParser");
-    assert_eq!(baidu_api_parser.name(), "BaiduApiParser");
     assert_eq!(exa_api_parser.name(), "ExaApiParser");
     assert_eq!(travily_api_parser.name(), "TravilyApiParser");
-    assert_eq!(google_serper_api_parser.name(), "GoogleSerperApiParser");
 }
 
-#[test]
-fn test_parser_factory_with_custom_parser() {
-    let mut factory = ParserFactory::new();
-
-    // Register a custom parser
-    let custom_parser = Box::new(CustomParser::new("MyCustomEngine".to_string()));
-    factory.register_custom_parser("MyCustomEngine".to_string(), custom_parser);
-
-    // Test that we can get the custom parser
-    let parser = factory.get_parser(
-        &SearchEngineType::Custom("MyCustomEngine".to_string()),
-        SearchMode::WebQuery,
-    );
-    assert_eq!(parser.name(), "MyCustomEngine");
-}
+// Custom parser factory test removed - custom engines are no longer supported
 
 #[test]
 fn test_all_parsers_with_different_limits() {

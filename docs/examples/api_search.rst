@@ -35,7 +35,6 @@ Python
    limit = 5
    
    brave_api_key = "your-brave-api-key"
-   google_serper_api_key = "your-google-serper-api-key"
    exa_api_key = "your-exa-api-key"
    """
 
@@ -77,7 +76,6 @@ Rust
        
        // Set API keys
        config.search.brave_api_key = Some("your-brave-api-key".to_string());
-       config.search.google_serper_api_key = Some("your-google-serper-api-key".to_string());
        config.search.exa_api_key = Some("your-exa-api-key".to_string());
 
        let mut search_engine = SearchEngine::from_config(&config);
@@ -122,14 +120,13 @@ The smart autoswitch strategy automatically falls back to available providers wh
    autoswitch = "smart"  # Enable automatic fallback
    
    brave_api_key = "your-brave-api-key"
-   google_serper_api_key = "your-google-serper-api-key"
    exa_api_key = "your-exa-api-key"
    """
 
    config = tarzi.Config.from_str(config_str)
    search_engine = tarzi.SearchEngine.from_config(config)
 
-   # If Brave fails, it will automatically try Google Serper, then Exa
+   # If Brave fails, it will automatically try Brave, then Exa
    results = search_engine.search("quantum computing", mode="apiquery", limit=3)
 
 No Fallback
@@ -149,7 +146,6 @@ The none strategy only uses the configured primary provider:
    autoswitch = "none"  # Disable automatic fallback
    
    brave_api_key = "your-brave-api-key"
-   google_serper_api_key = "your-google-serper-api-key"
    """
 
    config = tarzi.Config.from_str(config_str)
@@ -182,28 +178,6 @@ Brave Search API
 
    # Brave Search is fast and privacy-focused
    results = search_engine.search("privacy tools", mode="apiquery", limit=5)
-
-Google Serper API
-~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-   import tarzi
-
-   config_str = """
-   [search]
-   engine = "google_serper"
-   mode = "apiquery"
-   autoswitch = "none"
-   
-   google_serper_api_key = "your-google-serper-api-key"
-   """
-
-   config = tarzi.Config.from_str(config_str)
-   search_engine = tarzi.SearchEngine.from_config(config)
-
-   # Google Serper provides Google search results via API
-   results = search_engine.search("latest technology news", mode="apiquery", limit=5)
 
 Exa Search API
 ~~~~~~~~~~~~~
@@ -278,7 +252,6 @@ You can also configure API keys using environment variables:
 
    # Set API keys via environment variables
    export BRAVE_API_KEY=your-brave-api-key
-   export GOOGLE_SERPER_API_KEY=your-google-serper-api-key
    export EXA_API_KEY=your-exa-api-key
    export TRAVILY_API_KEY=your-travily-api-key
 

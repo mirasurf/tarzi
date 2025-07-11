@@ -17,8 +17,6 @@ pub enum SearchEngineType {
     Baidu,
     Exa,
     Travily,
-    GoogleSerper,
-    Custom(String),
 }
 
 impl FromStr for SearchEngineType {
@@ -33,8 +31,7 @@ impl FromStr for SearchEngineType {
             "baidu" => Ok(SearchEngineType::Baidu),
             "exa" => Ok(SearchEngineType::Exa),
             "travily" => Ok(SearchEngineType::Travily),
-            "google_serper" => Ok(SearchEngineType::GoogleSerper),
-            _ => Ok(SearchEngineType::Custom(s.to_string())),
+            _ => Err(TarziError::InvalidEngine(s.to_string())),
         }
     }
 }
@@ -56,8 +53,8 @@ impl SearchEngineType {
                 "https://www.google.com/search?q={query}".to_string()
             }
             (SearchEngineType::Google, SearchMode::ApiQuery) => {
-                "https://google.serper.dev/search".to_string()
-            } // Use Serper for Google API
+                "".to_string() // No API for Google (Serper support removed)
+            }
             (SearchEngineType::BraveSearch, SearchMode::WebQuery) => {
                 "https://search.brave.com/search?q={query}".to_string()
             }
@@ -80,13 +77,6 @@ impl SearchEngineType {
             (SearchEngineType::Travily, SearchMode::ApiQuery) => {
                 "https://api.tavily.com/search".to_string()
             }
-            (SearchEngineType::GoogleSerper, SearchMode::WebQuery) => {
-                "https://www.google.com/search?q={query}".to_string()
-            }
-            (SearchEngineType::GoogleSerper, SearchMode::ApiQuery) => {
-                "https://google.serper.dev/search".to_string()
-            }
-            (SearchEngineType::Custom(_), _) => "{query}".to_string(),
         }
     }
 
@@ -103,9 +93,7 @@ impl SearchEngineType {
             SearchEngineType::BraveSearch => true,
             SearchEngineType::Baidu => true,
             SearchEngineType::Exa => true,
-            SearchEngineType::GoogleSerper => true,
             SearchEngineType::Travily => false, // Travily only supports API
-            SearchEngineType::Custom(_) => true, // Custom engines assumed to support web query
         }
     }
 
@@ -119,8 +107,6 @@ impl SearchEngineType {
             SearchEngineType::Baidu => true,
             SearchEngineType::Exa => true,
             SearchEngineType::Travily => true,
-            SearchEngineType::GoogleSerper => true,
-            SearchEngineType::Custom(_) => true, // Custom engines assumed to support API
         }
     }
 
@@ -134,8 +120,6 @@ impl SearchEngineType {
             SearchEngineType::Baidu => true,
             SearchEngineType::Exa => true,
             SearchEngineType::Travily => true,
-            SearchEngineType::GoogleSerper => true,
-            SearchEngineType::Custom(_) => true, // Custom engines assumed to require API key
         }
     }
 
@@ -144,21 +128,16 @@ impl SearchEngineType {
         match self {
             SearchEngineType::Bing => None,
             SearchEngineType::DuckDuckGo => None,
-            SearchEngineType::Google => Some("google_serper_api_key"), // Use Serper for Google API
+            SearchEngineType::Google => None,
             SearchEngineType::BraveSearch => Some("brave_api_key"),
-            SearchEngineType::Baidu => Some("baidu_api_key"), // Note: baidu_api_key not in config yet
+            SearchEngineType::Baidu => Some("baidu_api_key"),
             SearchEngineType::Exa => Some("exa_api_key"),
             SearchEngineType::Travily => Some("travily_api_key"),
-            SearchEngineType::GoogleSerper => Some("google_serper_api_key"),
-            SearchEngineType::Custom(_) => None, // Custom engines don't have predefined API key fields
         }
     }
 
     pub fn is_api_based(&self) -> bool {
-        matches!(
-            self,
-            SearchEngineType::Exa | SearchEngineType::Travily | SearchEngineType::GoogleSerper
-        )
+        matches!(self, SearchEngineType::Exa | SearchEngineType::Travily)
     }
 }
 

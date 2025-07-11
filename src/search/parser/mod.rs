@@ -5,9 +5,10 @@ pub mod baidu;
 pub mod base;
 pub mod bing;
 pub mod brave;
-pub mod custom;
 pub mod duckduckgo;
+pub mod exa;
 pub mod google;
+pub mod travily;
 
 #[cfg(test)]
 mod tests;
@@ -15,9 +16,10 @@ mod tests;
 pub use baidu::{BaiduApiParser, BaiduParser};
 pub use bing::BingParser;
 pub use brave::{BraveApiParser, BraveParser};
-pub use custom::{CustomParser, CustomParserConfig, ExaApiParser, TravilyApiParser};
 pub use duckduckgo::{DuckDuckGoApiParser, DuckDuckGoParser};
-pub use google::{GoogleApiParser, GoogleParser, GoogleSerperApiParser};
+pub use exa::ExaApiParser;
+pub use google::GoogleParser;
+pub use travily::TravilyApiParser;
 
 use base::{ApiSearchParser, BaseSearchParser, WebSearchParser};
 
@@ -47,7 +49,7 @@ impl UnifiedParser {
 
     pub fn api_only(api_parser: Box<dyn ApiSearchParser>) -> Self {
         Self {
-            web_parser: Box::new(DummyWebParser::new()),
+            web_parser: Box::new(DummyParser::new("DummyWebParser".to_string())),
             api_parser: Some(api_parser),
         }
     }
@@ -83,34 +85,44 @@ impl SearchResultParser for UnifiedParser {
     }
 }
 
-/// Dummy web parser for API-only engines
-struct DummyWebParser {
+/// Dummy parser for unsupported combinations
+struct DummyParser {
     name: String,
-    engine_type: SearchEngineType,
 }
 
-impl DummyWebParser {
-    fn new() -> Self {
-        Self {
-            name: "DummyWebParser".to_string(),
-            engine_type: SearchEngineType::Custom("dummy".to_string()),
-        }
+impl DummyParser {
+    fn new(name: String) -> Self {
+        Self { name }
     }
 }
 
-impl BaseSearchParser for DummyWebParser {
+impl SearchResultParser for DummyParser {
+    fn parse(&self, _content: &str, _limit: usize) -> Result<Vec<SearchResult>> {
+        Ok(Vec::new()) // Return empty results for unsupported combinations
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+
+    fn supports(&self, _engine_type: &SearchEngineType) -> bool {
+        false
+    }
+}
+
+impl WebSearchParser for DummyParser {
+    fn parse_html(&self, _html: &str, _limit: usize) -> Result<Vec<SearchResult>> {
+        Ok(Vec::new()) // Return empty results for unsupported combinations
+    }
+}
+
+impl BaseSearchParser for DummyParser {
     fn name(&self) -> &str {
         &self.name
     }
 
     fn engine_type(&self) -> SearchEngineType {
-        self.engine_type.clone()
-    }
-}
-
-impl WebSearchParser for DummyWebParser {
-    fn parse_html(&self, _html: &str, _limit: usize) -> Result<Vec<SearchResult>> {
-        Ok(Vec::new()) // Return empty results for API-only engines
+        SearchEngineType::Bing // Use a default engine type
     }
 }
 
@@ -127,20 +139,11 @@ pub trait SearchResultParser: Send + Sync {
 }
 
 /// Factory for creating parsers based on search engine type
-pub struct ParserFactory {
-    custom_parsers: std::collections::HashMap<String, Box<dyn SearchResultParser>>,
-}
+pub struct ParserFactory;
 
 impl ParserFactory {
     pub fn new() -> Self {
-        Self {
-            custom_parsers: std::collections::HashMap::new(),
-        }
-    }
-
-    /// Register a custom parser
-    pub fn register_custom_parser(&mut self, name: String, parser: Box<dyn SearchResultParser>) {
-        self.custom_parsers.insert(name, parser);
+        Self
     }
 
     /// Get a parser for the given search engine type and mode
@@ -163,42 +166,29 @@ impl ParserFactory {
             (SearchEngineType::DuckDuckGo, SearchMode::ApiQuery) => {
                 Box::new(DuckDuckGoApiParser::new())
             }
-            (SearchEngineType::Google, SearchMode::ApiQuery) => Box::new(GoogleApiParser::new()),
             (SearchEngineType::BraveSearch, SearchMode::ApiQuery) => {
                 Box::new(BraveApiParser::new())
             }
             (SearchEngineType::Baidu, SearchMode::ApiQuery) => Box::new(BaiduApiParser::new()),
             (SearchEngineType::Exa, SearchMode::ApiQuery) => Box::new(ExaApiParser::new()),
             (SearchEngineType::Travily, SearchMode::ApiQuery) => Box::new(TravilyApiParser::new()),
-            (SearchEngineType::GoogleSerper, SearchMode::ApiQuery) => {
-                Box::new(GoogleSerperApiParser::new())
+            (SearchEngineType::Google, SearchMode::ApiQuery) => {
+                // Google doesn't have an API parser, return a fallback or error
+                Box::new(GoogleParser::new()) // Use web parser as fallback
             }
 
-            // Fallback for unsupported combinations
+            // Fallback for unsupported combinations - return empty results
             (SearchEngineType::Bing, SearchMode::ApiQuery) => {
-                // Bing doesn't support API queries, but we'll provide a fallback parser
-                Box::new(CustomParser::new("BingApiFallback".to_string()))
+                // Bing doesn't support API queries
+                Box::new(DummyParser::new("BingApiFallback".to_string()))
             }
             (SearchEngineType::Exa, SearchMode::WebQuery) => {
-                // Exa is API-only, but we'll provide a fallback parser
-                Box::new(CustomParser::new("ExaWebFallback".to_string()))
+                // Exa is API-only
+                Box::new(DummyParser::new("ExaWebFallback".to_string()))
             }
             (SearchEngineType::Travily, SearchMode::WebQuery) => {
-                // Travily is API-only, but we'll provide a fallback parser
-                Box::new(CustomParser::new("TravilyWebFallback".to_string()))
-            }
-            (SearchEngineType::GoogleSerper, SearchMode::WebQuery) => {
-                // GoogleSerper is API-only, but we'll provide a fallback parser
-                Box::new(CustomParser::new("GoogleSerperWebFallback".to_string()))
-            }
-
-            // Custom engine parsers
-            (SearchEngineType::Custom(name), _) => {
-                if let Some(_parser) = self.custom_parsers.get(name) {
-                    Box::new(CustomParser::new(name.clone()))
-                } else {
-                    Box::new(CustomParser::new(name.clone()))
-                }
+                // Travily is API-only
+                Box::new(DummyParser::new("TravilyWebFallback".to_string()))
             }
         }
     }

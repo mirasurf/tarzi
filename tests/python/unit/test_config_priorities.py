@@ -233,7 +233,9 @@ proxy = "http://config-proxy:8080"
 engine = "duckduckgo"
 limit = 5
 brave_api_key = "config_brave_key"
-google_serper_api_key = "config_serper_key"
+exa_api_key = "config_exa_key"
+travily_api_key = "config_travily_key"
+autoswitch = "smart"
 """
         config = tarzi.Config.from_str(config_str)
 
@@ -269,7 +271,6 @@ google_serper_api_key = "config_serper_key"
 [search]
 engine = "brave"
 brave_api_key = "config_brave_key"
-google_serper_api_key = "config_serper_key"
 exa_api_key = "config_exa_key"
 travily_api_key = "config_travily_key"
 autoswitch = "smart"
@@ -288,7 +289,6 @@ autoswitch = "smart"
 engine = "brave"
 autoswitch = "smart"
 brave_api_key = "brave_key_123"
-google_serper_api_key = "serper_key_456"
 exa_api_key = "exa_key_789"
 limit = 10
 """

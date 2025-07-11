@@ -1,10 +1,10 @@
-use super::api::{
-    ApiSearchManager, AutoSwitchStrategy, BraveSearchProvider, DuckDuckGoProvider,
-    ExaSearchProvider, GoogleSerperProvider, TravilySearchProvider,
+use super::api::{ApiSearchManager, AutoSwitchStrategy};
+use super::parser::ParserFactory;
+use super::providers::{
+    BraveSearchProvider, DuckDuckGoProvider, ExaSearchProvider, TravilySearchProvider,
 };
 use super::types::{SearchEngineType, SearchMode, SearchResult};
 use crate::config::Config;
-use crate::parser::{ParserFactory, SearchResultParser};
 use crate::{
     Result,
     error::TarziError,
@@ -17,13 +17,13 @@ use tracing::{error, info, warn};
 
 pub struct SearchEngine {
     fetcher: WebFetcher,
-    api_key: Option<String>,
+    api_key: Option<String>, // Deprecated: kept for backward compatibility
     #[allow(dead_code)]
     engine_type: SearchEngineType,
     query_pattern: String,
     user_agent: String,
     parser_factory: ParserFactory,
-    api_manager: ApiSearchManager,
+    api_manager: ApiSearchManager, // Legacy manager for backward compatibility
 }
 
 impl SearchEngine {
@@ -63,11 +63,7 @@ impl SearchEngine {
         &self.user_agent
     }
 
-    /// Register a custom parser for a specific engine
-    pub fn register_custom_parser(&mut self, name: String, parser: Box<dyn SearchResultParser>) {
-        info!("Registering custom parser: {}", name);
-        self.parser_factory.register_custom_parser(name, parser);
-    }
+    // Custom parser registration removed - custom engines are no longer supported
 
     pub fn from_config(config: &Config) -> Self {
         info!("Initializing SearchEngine from config");
@@ -90,7 +86,7 @@ impl SearchEngine {
 
         // Initialize API manager with autoswitch strategy
         let autoswitch_strategy = AutoSwitchStrategy::from(config.search.autoswitch.as_str());
-        let mut api_manager = ApiSearchManager::new(autoswitch_strategy);
+        let mut api_manager = ApiSearchManager::new(autoswitch_strategy.clone());
 
         // Check for proxy configuration
         let proxy_url = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
@@ -122,24 +118,11 @@ impl SearchEngine {
                     ""
                 }
             );
-            let provider = Box::new(BraveSearchProvider::new(brave_key.clone(), client.clone()));
-            api_manager.register_provider(SearchEngineType::BraveSearch, provider);
-        }
-
-        if let Some(ref serper_key) = config.search.google_serper_api_key {
-            info!(
-                "Registering Google Serper API provider{}",
-                if proxy_url.is_some() {
-                    " with proxy"
-                } else {
-                    ""
-                }
-            );
-            let provider = Box::new(GoogleSerperProvider::new(
-                serper_key.clone(),
+            let provider = Box::new(BraveSearchProvider::new_api(
+                brave_key.clone(),
                 client.clone(),
             ));
-            api_manager.register_provider(SearchEngineType::GoogleSerper, provider);
+            api_manager.register_provider(SearchEngineType::BraveSearch, provider);
         }
 
         if let Some(ref exa_key) = config.search.exa_api_key {
@@ -151,7 +134,7 @@ impl SearchEngine {
                     ""
                 }
             );
-            let provider = Box::new(ExaSearchProvider::new(exa_key.clone(), client.clone()));
+            let provider = Box::new(ExaSearchProvider::new_api(exa_key.clone(), client.clone()));
             api_manager.register_provider(SearchEngineType::Exa, provider);
         }
 
@@ -182,13 +165,13 @@ impl SearchEngine {
             );
             // Note: BaiduSearchProvider needs to be implemented
             // For now, we'll just register a placeholder
-            // let provider = Box::new(BaiduSearchProvider::new(baidu_key.clone(), client.clone()));
+            // let provider = Box::new(BaiduSearchProvider::new_api(baidu_key.clone(), client.clone()));
             // api_manager.register_provider(SearchEngineType::Baidu, provider);
         }
 
         // DuckDuckGo doesn't require an API key but has limited functionality
         info!("Registering DuckDuckGo API provider (limited functionality)");
-        let provider = Box::new(DuckDuckGoProvider::new(client.clone()));
+        let provider = Box::new(DuckDuckGoProvider::new_api(client.clone()));
         api_manager.register_provider(SearchEngineType::DuckDuckGo, provider);
 
         Self {
@@ -199,6 +182,7 @@ impl SearchEngine {
             user_agent: config.fetcher.user_agent.clone(),
             parser_factory: ParserFactory::new(),
             api_manager,
+            // provider_manager: ProviderManager::new(autoswitch_strategy), // Removed
         }
     }
 

@@ -226,7 +226,7 @@ API Search Providers
 tarzi supports multiple API search providers with automatic fallback:
 
 - **Brave Search API**: Fast, privacy-focused search
-- **Google Serper API**: Google search results via API
+- **Google API**: Google search results via API
 - **Exa Search API**: AI-powered semantic search
 - **Travily API**: Travel-focused search engine
 - **DuckDuckGo API**: Privacy-focused search (limited functionality)
@@ -270,7 +270,6 @@ Basic configuration can be done through environment variables or a `tarzi.toml` 
    
    # API keys for different providers
    brave_api_key = "your-brave-api-key"
-   google_serper_api_key = "your-google-serper-api-key"
    exa_api_key = "your-exa-api-key"
    travily_api_key = "your-travily-api-key"
 

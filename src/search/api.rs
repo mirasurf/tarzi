@@ -1,3 +1,4 @@
+use super::providers::{ApiSearchProvider, WebSearchProvider};
 use super::types::{SearchEngineType, SearchResult};
 use crate::{Result, error::TarziError};
 use async_trait::async_trait;
@@ -6,6 +7,7 @@ use serde_json::{Value, json};
 use std::collections::HashMap;
 use tracing::{info, warn};
 
+// Legacy trait for backward compatibility
 #[async_trait]
 pub trait SearchApiProvider: Send + Sync {
     async fn search(&self, query: &str, limit: usize) -> Result<Vec<SearchResult>>;
@@ -15,6 +17,13 @@ pub trait SearchApiProvider: Send + Sync {
 
 pub struct ApiSearchManager {
     providers: HashMap<SearchEngineType, Box<dyn SearchApiProvider>>,
+    autoswitch_strategy: AutoSwitchStrategy,
+    fallback_order: Vec<SearchEngineType>,
+}
+
+pub struct ProviderManager {
+    web_providers: HashMap<SearchEngineType, Box<dyn WebSearchProvider>>,
+    api_providers: HashMap<SearchEngineType, Box<dyn ApiSearchProvider>>,
     autoswitch_strategy: AutoSwitchStrategy,
     fallback_order: Vec<SearchEngineType>,
 }
@@ -38,7 +47,7 @@ impl From<&str> for AutoSwitchStrategy {
 impl ApiSearchManager {
     pub fn new(autoswitch_strategy: AutoSwitchStrategy) -> Self {
         let fallback_order = vec![
-            SearchEngineType::GoogleSerper,
+            SearchEngineType::Google,
             SearchEngineType::BraveSearch,
             SearchEngineType::Exa,
             SearchEngineType::Travily,
@@ -51,7 +60,227 @@ impl ApiSearchManager {
             fallback_order,
         }
     }
+}
 
+impl ProviderManager {
+    pub fn new(autoswitch_strategy: AutoSwitchStrategy) -> Self {
+        let fallback_order = vec![
+            SearchEngineType::Google,
+            SearchEngineType::BraveSearch,
+            SearchEngineType::Exa,
+            SearchEngineType::Travily,
+            SearchEngineType::DuckDuckGo,
+        ];
+
+        Self {
+            web_providers: HashMap::new(),
+            api_providers: HashMap::new(),
+            autoswitch_strategy,
+            fallback_order,
+        }
+    }
+
+    pub fn register_web_provider(
+        &mut self,
+        engine_type: SearchEngineType,
+        provider: Box<dyn WebSearchProvider>,
+    ) {
+        info!("Registering web provider for {:?}", engine_type);
+        self.web_providers.insert(engine_type, provider);
+    }
+
+    pub fn register_api_provider(
+        &mut self,
+        engine_type: SearchEngineType,
+        provider: Box<dyn ApiSearchProvider>,
+    ) {
+        info!("Registering API provider for {:?}", engine_type);
+        self.api_providers.insert(engine_type, provider);
+    }
+
+    /// Check if a web provider is registered for the given engine type
+    pub fn has_web_provider(&self, engine_type: &SearchEngineType) -> bool {
+        self.web_providers.contains_key(engine_type)
+    }
+
+    /// Check if an API provider is registered for the given engine type
+    pub fn has_api_provider(&self, engine_type: &SearchEngineType) -> bool {
+        self.api_providers.contains_key(engine_type)
+    }
+
+    pub async fn search_web(
+        &mut self,
+        engine_type: &SearchEngineType,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
+        match self.autoswitch_strategy {
+            AutoSwitchStrategy::None => {
+                self.search_with_web_provider(engine_type, query, limit)
+                    .await
+            }
+            AutoSwitchStrategy::Smart => {
+                self.search_with_web_fallback(engine_type, query, limit)
+                    .await
+            }
+        }
+    }
+
+    pub async fn search_api(
+        &self,
+        engine_type: &SearchEngineType,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
+        match self.autoswitch_strategy {
+            AutoSwitchStrategy::None => {
+                self.search_with_api_provider(engine_type, query, limit)
+                    .await
+            }
+            AutoSwitchStrategy::Smart => {
+                self.search_with_api_fallback(engine_type, query, limit)
+                    .await
+            }
+        }
+    }
+
+    async fn search_with_web_provider(
+        &mut self,
+        engine_type: &SearchEngineType,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
+        if let Some(provider) = self.web_providers.get_mut(engine_type) {
+            info!(
+                "Using web provider: {} for search",
+                provider.get_provider_name()
+            );
+            provider.search(query, limit).await
+        } else {
+            Err(TarziError::Config(format!(
+                "No web provider registered for {engine_type:?}"
+            )))
+        }
+    }
+
+    async fn search_with_api_provider(
+        &self,
+        engine_type: &SearchEngineType,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
+        if let Some(provider) = self.api_providers.get(engine_type) {
+            info!(
+                "Using API provider: {} for search",
+                provider.get_provider_name()
+            );
+            provider.search(query, limit).await
+        } else {
+            Err(TarziError::Config(format!(
+                "No API provider registered for {engine_type:?}"
+            )))
+        }
+    }
+
+    async fn search_with_web_fallback(
+        &mut self,
+        primary_engine: &SearchEngineType,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
+        // Try the primary engine first
+        if let Ok(results) = self
+            .search_with_web_provider(primary_engine, query, limit)
+            .await
+        {
+            return Ok(results);
+        }
+
+        warn!(
+            "Primary web engine {:?} failed, attempting fallback",
+            primary_engine
+        );
+
+        // Try fallback providers in order
+        let fallback_order = self.fallback_order.clone();
+        for engine_type in &fallback_order {
+            if engine_type == primary_engine {
+                continue; // Skip the primary engine we already tried
+            }
+
+            if self.web_providers.contains_key(engine_type) {
+                info!("Trying fallback web provider: {:?}", engine_type);
+                match self
+                    .search_with_web_provider(engine_type, query, limit)
+                    .await
+                {
+                    Ok(results) => {
+                        info!("Fallback web provider {:?} succeeded", engine_type);
+                        return Ok(results);
+                    }
+                    Err(e) => {
+                        warn!("Fallback web provider {:?} failed: {}", engine_type, e);
+                        continue;
+                    }
+                }
+            }
+        }
+
+        Err(TarziError::Config(
+            "All web search providers failed".to_string(),
+        ))
+    }
+
+    async fn search_with_api_fallback(
+        &self,
+        primary_engine: &SearchEngineType,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<SearchResult>> {
+        // Try the primary engine first
+        if let Ok(results) = self
+            .search_with_api_provider(primary_engine, query, limit)
+            .await
+        {
+            return Ok(results);
+        }
+
+        warn!(
+            "Primary API engine {:?} failed, attempting fallback",
+            primary_engine
+        );
+
+        // Try fallback providers in order
+        for engine_type in &self.fallback_order {
+            if engine_type == primary_engine {
+                continue; // Skip the primary engine we already tried
+            }
+
+            if self.api_providers.contains_key(engine_type) {
+                info!("Trying fallback API provider: {:?}", engine_type);
+                match self
+                    .search_with_api_provider(engine_type, query, limit)
+                    .await
+                {
+                    Ok(results) => {
+                        info!("Fallback API provider {:?} succeeded", engine_type);
+                        return Ok(results);
+                    }
+                    Err(e) => {
+                        warn!("Fallback API provider {:?} failed: {}", engine_type, e);
+                        continue;
+                    }
+                }
+            }
+        }
+
+        Err(TarziError::Config(
+            "All API search providers failed".to_string(),
+        ))
+    }
+}
+
+impl ApiSearchManager {
     pub fn register_provider(
         &mut self,
         engine_type: SearchEngineType,
@@ -229,95 +458,6 @@ impl BraveSearchProvider {
                         title: title.to_string(),
                         url: url.to_string(),
                         snippet: description.to_string(),
-                        rank: index + 1,
-                    });
-                }
-            }
-        }
-
-        Ok(results)
-    }
-}
-
-// Google Serper API Provider
-pub struct GoogleSerperProvider {
-    api_key: String,
-    client: Client,
-}
-
-impl GoogleSerperProvider {
-    pub fn new(api_key: String, client: Client) -> Self {
-        Self { api_key, client }
-    }
-
-    pub fn new_with_proxy(api_key: String, proxy_url: &str) -> Result<Self> {
-        let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(30))
-            .proxy(reqwest::Proxy::http(proxy_url)?)
-            .build()
-            .map_err(|e| TarziError::Network(format!("Failed to create proxy client: {e}")))?;
-
-        Ok(Self { api_key, client })
-    }
-}
-
-#[async_trait]
-impl SearchApiProvider for GoogleSerperProvider {
-    async fn search(&self, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        let url = "https://google.serper.dev/search";
-        let payload = json!({
-            "q": query,
-            "num": limit,
-        });
-
-        let response = self
-            .client
-            .post(url)
-            .header("X-API-KEY", &self.api_key)
-            .header("Content-Type", "application/json")
-            .json(&payload)
-            .send()
-            .await
-            .map_err(|e| TarziError::Network(format!("Google Serper API request failed: {e}")))?;
-
-        if !response.status().is_success() {
-            return Err(TarziError::Network(format!(
-                "Google Serper API returned status: {}",
-                response.status()
-            )));
-        }
-
-        let data: Value = response.json().await.map_err(|e| {
-            TarziError::Parse(format!("Failed to parse Google Serper API response: {e}"))
-        })?;
-
-        self.parse_serper_response(data)
-    }
-
-    fn get_provider_name(&self) -> &str {
-        "Google Serper API"
-    }
-
-    fn is_healthy(&self) -> bool {
-        !self.api_key.is_empty()
-    }
-}
-
-impl GoogleSerperProvider {
-    fn parse_serper_response(&self, data: Value) -> Result<Vec<SearchResult>> {
-        let mut results = Vec::new();
-
-        if let Some(organic_results) = data.get("organic").and_then(|o| o.as_array()) {
-            for (index, result) in organic_results.iter().enumerate() {
-                if let (Some(title), Some(link), Some(snippet)) = (
-                    result.get("title").and_then(|t| t.as_str()),
-                    result.get("link").and_then(|l| l.as_str()),
-                    result.get("snippet").and_then(|s| s.as_str()),
-                ) {
-                    results.push(SearchResult {
-                        title: title.to_string(),
-                        url: link.to_string(),
-                        snippet: snippet.to_string(),
                         rank: index + 1,
                     });
                 }

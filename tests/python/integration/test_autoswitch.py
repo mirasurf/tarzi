@@ -25,8 +25,8 @@ class TestAutoswitchStrategies:
         # Try to get multiple API keys for comprehensive testing
         api_keys = {
             "brave": os.environ.get("BRAVE_API_KEY"),
-            "google_serper": os.environ.get("GOOGLE_SERPER_API_KEY"),
             "exa": os.environ.get("EXA_API_KEY"),
+            "travily": os.environ.get("TRAVILY_API_KEY"),
         }
 
         available_keys = {k: v for k, v in api_keys.items() if v}
@@ -39,15 +39,15 @@ class TestAutoswitchStrategies:
 
         if "brave" in available_keys:
             config_parts.append(f'brave_api_key = "{available_keys["brave"]}"')
-        if "google_serper" in available_keys:
-            config_parts.append(f'google_serper_api_key = "{available_keys["google_serper"]}"')
         if "exa" in available_keys:
             config_parts.append(f'exa_api_key = "{available_keys["exa"]}"')
+        if "travily" in available_keys:
+            config_parts.append(f'travily_api_key = "{available_keys["travily"]}"')
 
         # Set primary engine to first available
         primary = list(available_keys.keys())[0]
-        if primary == "google_serper":
-            primary = "googleserper"
+        if primary == "travily":
+            primary = "travily"
         config_parts.append(f'engine = "{primary}"')
 
         config_str = "\n".join(config_parts)
@@ -156,10 +156,10 @@ autoswitch = "{strategy}"
     def test_smart_fallback_with_invalid_primary(self, test_query):
         """Test smart autoswitch with invalid primary provider."""
         fallback_keys = {}
-        if os.environ.get("GOOGLE_SERPER_API_KEY"):
-            fallback_keys["google_serper"] = os.environ.get("GOOGLE_SERPER_API_KEY")
         if os.environ.get("EXA_API_KEY"):
             fallback_keys["exa"] = os.environ.get("EXA_API_KEY")
+        if os.environ.get("TRAVILY_API_KEY"):
+            fallback_keys["travily"] = os.environ.get("TRAVILY_API_KEY")
 
         if not fallback_keys:
             pytest.skip("Need at least one fallback API key")
@@ -172,10 +172,10 @@ autoswitch = "{strategy}"
             'autoswitch = "smart"',
         ]
 
-        if "google_serper" in fallback_keys:
-            config_parts.append(f'google_serper_api_key = "{fallback_keys["google_serper"]}"')
         if "exa" in fallback_keys:
             config_parts.append(f'exa_api_key = "{fallback_keys["exa"]}"')
+        if "travily" in fallback_keys:
+            config_parts.append(f'travily_api_key = "{fallback_keys["travily"]}"')
 
         config_str = "\n".join(config_parts)
 
@@ -224,8 +224,8 @@ autoswitch = "none"
 [search]
 engine = "brave"
 brave_api_key = "invalid_brave_key"
-google_serper_api_key = "invalid_serper_key"
 exa_api_key = "invalid_exa_key"
+travily_api_key = "invalid_travily_key"
 autoswitch = "smart"
 """
         config = tarzi.Config.from_str(config_str)
@@ -245,15 +245,14 @@ autoswitch = "smart"
 
     def test_autoswitch_provider_order(self, test_query):
         """Test that autoswitch respects provider fallback order."""
-        # According to the Rust code, fallback order is: GoogleSerper, BraveSearch, Exa, Travily, DuckDuckGo
         multiple_keys = {}
 
-        if os.environ.get("GOOGLE_SERPER_API_KEY"):
-            multiple_keys["google_serper"] = os.environ.get("GOOGLE_SERPER_API_KEY")
-        if os.environ.get("BRAVE_API_KEY"):
-            multiple_keys["brave"] = os.environ.get("BRAVE_API_KEY")
         if os.environ.get("EXA_API_KEY"):
             multiple_keys["exa"] = os.environ.get("EXA_API_KEY")
+        if os.environ.get("BRAVE_API_KEY"):
+            multiple_keys["brave"] = os.environ.get("BRAVE_API_KEY")
+        if os.environ.get("TRAVILY_API_KEY"):
+            multiple_keys["travily"] = os.environ.get("TRAVILY_API_KEY")
 
         if len(multiple_keys) < 2:
             pytest.skip("Need multiple API keys to test provider order")
@@ -261,17 +260,17 @@ autoswitch = "smart"
         # Set primary to a provider that should be later in fallback order
         config_parts = [
             "[search]",
-            'engine = "exa"',  # Should fallback to GoogleSerper and Brave
+            'engine = "exa"',
             'autoswitch = "smart"',
         ]
 
         for provider, key in multiple_keys.items():
-            if provider == "google_serper":
-                config_parts.append(f'google_serper_api_key = "{key}"')
+            if provider == "exa":
+                config_parts.append(f'exa_api_key = "{key}"')
             elif provider == "brave":
                 config_parts.append(f'brave_api_key = "{key}"')
-            elif provider == "exa":
-                config_parts.append(f'exa_api_key = "{key}"')
+            elif provider == "travily":
+                config_parts.append(f'travily_api_key = "{key}"')
 
         config_str = "\n".join(config_parts)
 

@@ -47,7 +47,7 @@
 # mode = "webquery"
 
 # Search engine to use
-# Options: "google", "bing", "duckduckgo", "brave", "baidu", "exa", "travily", "google_serper"
+# Options: "google", "bing", "duckduckgo", "brave", "baidu", "exa", "travily"
 # engine = "duckduckgo"
 
 # URL pattern for search queries when engine is "custom"
@@ -63,7 +63,6 @@
 
 # API keys for supported providers
 # brave_api_key = "your-brave-api-key"
-# google_serper_api_key = "your-google-serper-api-key"
 # exa_api_key = "your-exa-api-key"
 # travily_api_key = "your-travily-api-key"
 # baidu_api_key = "your-baidu-api-key"

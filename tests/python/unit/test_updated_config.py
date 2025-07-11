@@ -28,7 +28,6 @@ engine = "brave"
 limit = 10
 autoswitch = "smart"
 brave_api_key = "brave_key_123"
-google_serper_api_key = "serper_key_456"
 exa_api_key = "exa_key_789"
 travily_api_key = "travily_key_000"
 """
@@ -95,7 +94,6 @@ engine = "duckduckgo"
 [search]
 engine = "brave"
 brave_api_key = "brave_test_key"
-google_serper_api_key = "serper_test_key"
 exa_api_key = "exa_test_key"
 travily_api_key = "travily_test_key"
 autoswitch = "smart"
@@ -153,7 +151,7 @@ engine = "duckduckgo"
 
     def test_search_engine_options(self):
         """Test different search engine configuration options."""
-        engines = ["duckduckgo", "brave", "googleserper", "exa", "travily"]
+        engines = ["duckduckgo", "brave", "exa", "travily"]
 
         for engine in engines:
             config_str = f"""

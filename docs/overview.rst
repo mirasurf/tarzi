@@ -76,7 +76,7 @@ The Search module provides comprehensive search engine integration with a unifie
 **API-Based Search**
    Direct API integration for supported search engines:
    
-   - **Multiple API Providers**: Brave Search, Google Serper, Exa, Travily, DuckDuckGo (more to come)
+   - **Multiple API Providers**: Brave, Google, Exa, Travily, DuckDuckGo (more to come)
    - **Automatic Provider Switching**: Smart fallback when primary provider fails
    - **Proxy Support**: Full proxy support for all API providers
    - **Structured Results**: Consistent result format across all providers

@@ -26,7 +26,6 @@ proxy = "http://proxy.example.com:8080"
 [search]
 engine = "brave"
 brave_api_key = "test_brave_key"
-google_serper_api_key = "test_serper_key"
 autoswitch = "smart"
 query_pattern = "https://www.bing.com/search?q={query}"
 """

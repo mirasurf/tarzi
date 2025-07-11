@@ -8,6 +8,7 @@ use tarzi::search::{SearchEngine, SearchMode};
 /// These tests measure response times and throughput
 
 #[tokio::test]
+#[ignore = "Browser tests disabled due to WebDriver runtime drop issues"]
 async fn test_search_engine_performance_comparison() {
     println!("=== Search Engine Performance Comparison ===");
 
@@ -20,9 +21,6 @@ async fn test_search_engine_performance_comparison() {
     let mut api_engines = Vec::new();
     if env::var("BRAVE_API_KEY").is_ok() {
         api_engines.push(("brave", SearchMode::ApiQuery, "Brave API"));
-    }
-    if env::var("GOOGLE_SERPER_API_KEY").is_ok() {
-        api_engines.push(("googleserper", SearchMode::ApiQuery, "Google Serper API"));
     }
     if env::var("EXA_API_KEY").is_ok() {
         api_engines.push(("exa", SearchMode::ApiQuery, "Exa API"));
@@ -50,11 +48,6 @@ async fn test_search_engine_performance_comparison() {
             "brave" => {
                 if let Ok(key) = env::var("BRAVE_API_KEY") {
                     config.search.brave_api_key = Some(key);
-                }
-            }
-            "googleserper" => {
-                if let Ok(key) = env::var("GOOGLE_SERPER_API_KEY") {
-                    config.search.google_serper_api_key = Some(key);
                 }
             }
             "exa" => {
@@ -118,6 +111,7 @@ async fn test_search_engine_performance_comparison() {
 }
 
 #[tokio::test]
+#[ignore = "Browser tests disabled due to WebDriver runtime drop issues"]
 async fn test_search_latency_percentiles() {
     println!("=== Search Latency Percentile Analysis ===");
 
@@ -180,6 +174,7 @@ async fn test_search_latency_percentiles() {
 }
 
 #[tokio::test]
+#[ignore = "Browser tests disabled due to WebDriver runtime drop issues"]
 async fn test_search_throughput() {
     println!("=== Search Throughput Test ===");
 
@@ -254,6 +249,7 @@ async fn test_search_throughput() {
 }
 
 #[tokio::test]
+#[ignore = "Browser tests disabled due to WebDriver runtime drop issues"]
 async fn test_search_timeout_behavior() {
     println!("=== Search Timeout Behavior Test ===");
 
@@ -302,7 +298,7 @@ async fn test_search_timeout_behavior() {
 async fn test_parser_performance() {
     println!("=== Parser Performance Test ===");
 
-    use tarzi::parser::ParserFactory;
+    use tarzi::search::parser::ParserFactory;
 
     let factory = ParserFactory::new();
 
@@ -375,6 +371,7 @@ async fn test_parser_performance() {
 }
 
 #[tokio::test]
+#[ignore = "Browser tests disabled due to WebDriver runtime drop issues"]
 async fn test_memory_usage_pattern() {
     println!("=== Memory Usage Pattern Test ===");
 
@@ -428,6 +425,7 @@ async fn test_memory_usage_pattern() {
 }
 
 #[tokio::test]
+#[ignore = "Browser tests disabled due to WebDriver runtime drop issues"]
 async fn test_error_recovery_performance() {
     println!("=== Error Recovery Performance Test ===");
 

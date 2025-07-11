@@ -1,0 +1,26 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+Here is the definition and logics about search engines:
+- Each engine provider can serve either webquery or apiquery, or both.
+- The webquery mode always requires no api-key.
+- The apiquery mode of some engines may require api-key.
+- Here is a known engine list:
+
+| Engine        | Web Query | API Query | API Key Required |
+|---------------|-----------|-----------|------------------|
+| Bing          | Yes       | No        | N/A              |
+| Google        | Yes       | Yes       | Yes              |
+| Brave         | Yes       | Yes       | Yes              |
+| DuckDuckGo    | Yes       | Yes       | No               |
+| Exa           | Yes       | Yes       | Yes              |
+| Travily       | No        | Yes       | Yes              |
+| Baidu         | Yes       | Yes       | Yes              |
+
+- Engine google and google_serpe are different search providers.
+- Each engine has specific query pattern, and webquery and apiquery modes always have different query patterns.
+- Each engine should have specific parser for webquery and apiquery modes.
+- Each engine should have different impl. about search functionalities in webquery or apiquery mode.

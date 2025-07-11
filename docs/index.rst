@@ -56,7 +56,7 @@ Key Features
    Support for Bing, Google, DuckDuckGo, Brave Search, and custom engines
 
 🚀 **API Search Providers**
-   Direct API integration with Brave Search, Google Serper, Exa, Travily, and DuckDuckGo
+   Direct API integration with Brave Search, Exa, Travily, and DuckDuckGo
 
 🔄 **Automatic Provider Switching**
    Smart fallback between API providers for enhanced reliability
