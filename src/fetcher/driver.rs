@@ -6,7 +6,7 @@
 
 use crate::{
     Result, TarziError,
-    constants::{CHROMEDRIVER_DEFAULT_PORT, DEFAULT_TIMEOUT},
+    constants::{CHROMEDRIVER_DEFAULT_PORT, DEFAULT_TIMEOUT_SECS},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -69,7 +69,7 @@ impl Default for DriverConfig {
             driver_type: DriverType::Chrome,
             port: CHROMEDRIVER_DEFAULT_PORT,
             args: Vec::new(),
-            timeout: DEFAULT_TIMEOUT,
+            timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
             verbose: false,
         }
     }
@@ -359,45 +359,34 @@ impl DriverManager {
 
     /// Perform a health check on a driver
     pub fn is_driver_healthy(&self, endpoint: &str) -> bool {
-        // Try to make a simple HTTP request to the driver's status endpoint
-        let client = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(5))
-            .build()
-            .unwrap_or_else(|_| reqwest::blocking::Client::new());
+        // Use a simple TCP connection check instead of HTTP to avoid blocking runtime issues
+        use std::net::TcpStream;
 
-        match client.get(format!("{endpoint}/status")).send() {
-            Ok(response) => response.status().is_success(),
-            Err(_) => false,
+        if let Ok(stream) = TcpStream::connect_timeout(
+            &endpoint.replace("http://", "").parse().unwrap(),
+            Duration::from_secs(2),
+        ) {
+            stream.shutdown(std::net::Shutdown::Both).ok();
+            true
+        } else {
+            false
         }
     }
 
     /// Wait for a driver to be ready
     fn wait_for_driver_ready(&self, endpoint: &str, timeout: Duration) -> Result<()> {
         let start = Instant::now();
-        let mut last_error = None;
 
         while start.elapsed() < timeout {
             if self.is_driver_healthy(endpoint) {
                 return Ok(());
             }
 
-            // Try to get more detailed error information
-            let client = reqwest::blocking::Client::builder()
-                .timeout(Duration::from_secs(2))
-                .build()
-                .unwrap_or_else(|_| reqwest::blocking::Client::new());
-
-            if let Err(e) = client.get(format!("{endpoint}/status")).send() {
-                last_error = Some(e.to_string());
-            }
-
             thread::sleep(Duration::from_millis(500));
         }
 
         Err(TarziError::Driver(format!(
-            "Driver failed to become ready within {:?}. Last error: {}",
-            timeout,
-            last_error.unwrap_or_else(|| "Unknown error".to_string())
+            "Driver failed to become ready within {timeout:?}"
         )))
     }
 
@@ -421,7 +410,7 @@ impl DriverManager {
             driver_type,
             port,
             args: Vec::new(),
-            timeout: Duration::from_secs(30),
+            timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
             verbose: false,
         }
     }
@@ -436,8 +425,12 @@ impl Default for DriverManager {
 impl Drop for DriverManager {
     fn drop(&mut self) {
         // Clean up all running drivers when the manager is dropped
-        if let Err(e) = self.stop_all_drivers() {
-            log::warn!("Failed to stop all drivers during cleanup: {e}");
+        // Use a simple approach that doesn't block the async runtime
+        if let Ok(mut drivers) = self.drivers.lock() {
+            for (port, mut driver_process) in drivers.drain() {
+                let _ = driver_process.child.kill();
+                log::info!("Killed driver process on port {port}");
+            }
         }
     }
 }
@@ -482,8 +475,8 @@ mod tests {
     fn test_driver_config_default() {
         let config = DriverConfig::default();
         assert_eq!(config.driver_type, DriverType::Chrome);
-        assert_eq!(config.port, 9515);
-        assert_eq!(config.timeout, Duration::from_secs(30));
+        assert_eq!(config.port, CHROMEDRIVER_DEFAULT_PORT);
+        assert_eq!(config.timeout, Duration::from_secs(DEFAULT_TIMEOUT_SECS));
         assert!(!config.verbose);
         assert!(config.args.is_empty());
     }
@@ -492,16 +485,16 @@ mod tests {
     fn test_driver_manager_new() {
         let manager = DriverManager::new();
         assert_eq!(manager.default_config.driver_type, DriverType::Chrome);
-        assert_eq!(manager.default_config.port, 9515);
+        assert_eq!(manager.default_config.port, CHROMEDRIVER_DEFAULT_PORT);
     }
 
     #[test]
     fn test_driver_manager_with_config() {
         let config = DriverConfig {
             driver_type: DriverType::Firefox,
-            port: 4444,
+            port: 19515, // Use a different port for testing
             args: vec!["--verbose".to_string()],
-            timeout: Duration::from_secs(60),
+            timeout: Duration::from_secs(10),
             verbose: true,
         };
 
@@ -523,18 +516,18 @@ mod tests {
 
     #[test]
     fn test_create_config() {
-        let config = DriverManager::create_config(DriverType::Firefox, 4444);
+        let config = DriverManager::create_config(DriverType::Firefox, 19515);
         assert_eq!(config.driver_type, DriverType::Firefox);
-        assert_eq!(config.port, 4444);
-        assert_eq!(config.timeout, Duration::from_secs(30));
+        assert_eq!(config.port, 19515);
+        assert_eq!(config.timeout, Duration::from_secs(DEFAULT_TIMEOUT_SECS));
         assert!(!config.verbose);
     }
 
     #[test]
     fn test_is_port_in_use() {
         let manager = DriverManager::new();
-        assert!(!manager.is_port_in_use(9515));
-        assert!(!manager.is_port_in_use(4444));
+        assert!(!manager.is_port_in_use(CHROMEDRIVER_DEFAULT_PORT));
+        assert!(!manager.is_port_in_use(19515));
     }
 
     #[test]
@@ -564,18 +557,20 @@ mod tests {
     #[test]
     fn test_get_driver_info_not_found() {
         let manager = DriverManager::new();
-        let info = manager.get_driver_info(9515);
+        let info = manager.get_driver_info(CHROMEDRIVER_DEFAULT_PORT);
         assert!(info.is_none());
     }
 
     #[test]
     fn test_stop_driver_not_found() {
         let manager = DriverManager::new();
-        let result = manager.stop_driver(9515);
+        let result = manager.stop_driver(CHROMEDRIVER_DEFAULT_PORT);
         assert!(result.is_err());
 
         if let Err(TarziError::Driver(msg)) = result {
-            assert!(msg.contains("No driver running on port 9515"));
+            assert!(msg.contains(&format!(
+                "No driver running on port {CHROMEDRIVER_DEFAULT_PORT}"
+            )));
         } else {
             panic!("Expected Driver error");
         }

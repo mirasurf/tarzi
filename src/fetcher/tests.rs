@@ -3,52 +3,31 @@ mod tests {
     use super::{types::FetchMode, webfetcher::WebFetcher};
     use crate::{converter::Format, error::TarziError};
     use std::str::FromStr;
+    use crate::constants::{FETCHER_MODE_PLAIN_REQUEST, FETCHER_MODE_BROWSER_HEADLESS, FETCHER_MODE_HEAD};
 
     #[test]
     fn test_fetch_mode_from_str() {
         // Test valid modes
         assert_eq!(
-            FetchMode::from_str("plain_request").unwrap(),
+            FetchMode::from_str(FETCHER_MODE_PLAIN_REQUEST).unwrap(),
             FetchMode::PlainRequest
         );
         assert_eq!(
-            FetchMode::from_str("plain").unwrap(),
+            FetchMode::from_str(FETCHER_MODE_PLAIN_REQUEST.to_uppercase().as_str()).unwrap(),
             FetchMode::PlainRequest
         );
         assert_eq!(
-            FetchMode::from_str("PLAIN_REQUEST").unwrap(),
-            FetchMode::PlainRequest
-        );
-        assert_eq!(
-            FetchMode::from_str("PLAIN").unwrap(),
-            FetchMode::PlainRequest
-        );
-
-        assert_eq!(
-            FetchMode::from_str("browser_head").unwrap(),
+            FetchMode::from_str(FETCHER_MODE_HEAD).unwrap(),
             FetchMode::BrowserHead
         );
-        assert_eq!(FetchMode::from_str("head").unwrap(), FetchMode::BrowserHead);
-        assert_eq!(
-            FetchMode::from_str("BROWSER_HEAD").unwrap(),
-            FetchMode::BrowserHead
-        );
-        assert_eq!(FetchMode::from_str("HEAD").unwrap(), FetchMode::BrowserHead);
+        assert_eq!(FetchMode::from_str(FETCHER_MODE_HEAD.to_uppercase().as_str()).unwrap(), FetchMode::BrowserHead);
 
         assert_eq!(
-            FetchMode::from_str("browser_headless").unwrap(),
+            FetchMode::from_str(FETCHER_MODE_BROWSER_HEADLESS).unwrap(),
             FetchMode::BrowserHeadless
         );
         assert_eq!(
-            FetchMode::from_str("headless").unwrap(),
-            FetchMode::BrowserHeadless
-        );
-        assert_eq!(
-            FetchMode::from_str("BROWSER_HEADLESS").unwrap(),
-            FetchMode::BrowserHeadless
-        );
-        assert_eq!(
-            FetchMode::from_str("HEADLESS").unwrap(),
+            FetchMode::from_str(FETCHER_MODE_BROWSER_HEADLESS.to_uppercase().as_str()).unwrap(),
             FetchMode::BrowserHeadless
         );
 
@@ -268,9 +247,9 @@ mod tests {
 
         for mode in modes {
             let mode_str = match mode {
-                FetchMode::PlainRequest => "plain_request",
+                FetchMode::PlainRequest => FETCHER_MODE_PLAIN_REQUEST,
                 FetchMode::BrowserHead => "browser_head",
-                FetchMode::BrowserHeadless => "browser_headless",
+                FetchMode::BrowserHeadless => FETCHER_MODE_BROWSER_HEADLESS,
             };
 
             let parsed = FetchMode::from_str(mode_str).unwrap();

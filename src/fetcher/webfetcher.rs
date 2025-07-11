@@ -6,7 +6,7 @@ use crate::{
     error::TarziError,
 };
 use reqwest::Client;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 use url::Url;
 
 use super::{browser::BrowserManager, types::FetchMode};
@@ -67,11 +67,6 @@ impl WebFetcher {
 
     /// Fetch content from URL and convert to specified format
     pub async fn fetch(&mut self, url: &str, mode: FetchMode, format: Format) -> Result<String> {
-        info!(
-            "Fetching URL: {} with mode: {:?}, format: {:?}",
-            url, mode, format
-        );
-
         // First fetch the raw content
         let raw_content = match mode {
             FetchMode::PlainRequest => self.fetch_plain_request(url).await?,
@@ -80,36 +75,17 @@ impl WebFetcher {
         };
 
         // Then convert to the specified format
-        info!("Converting content to format: {:?}", format);
         let converted_content = self.converter.convert(&raw_content, format).await?;
 
-        info!(
-            "Successfully fetched and converted content ({} characters)",
-            converted_content.len()
-        );
         Ok(converted_content)
     }
 
     /// Fetch raw content using plain HTTP request (no JS rendering)
     async fn fetch_plain_request(&self, url: &str) -> Result<String> {
-        info!("Fetching URL with plain request: {}", url);
         let url = Url::parse(url)?;
-        debug!("Parsed URL: {:?}", url);
-
-        info!("Sending HTTP request...");
         let response = self.http_client.get(url).send().await?;
-        info!("Received HTTP response with status: {}", response.status());
-
         let response = response.error_for_status()?;
-        info!("HTTP request successful");
-
-        info!("Reading response body...");
         let content = response.text().await?;
-        info!(
-            "Successfully read response body ({} characters)",
-            content.len()
-        );
-
         Ok(content)
     }
 
@@ -135,13 +111,23 @@ impl WebFetcher {
             }
             Ok(Err(e)) => {
                 error!("Failed to navigate to URL: {}", e);
-                return Err(TarziError::Browser(format!("Failed to navigate: {e}")));
+                // Check if it's a network-related error and provide more specific guidance
+                let error_msg = if e.to_string().contains("nssFailure")
+                    || e.to_string().contains("network")
+                {
+                    format!(
+                        "Network error while navigating to {url}: {e}. This may be due to network connectivity issues, firewall restrictions, or the site being temporarily unavailable."
+                    )
+                } else {
+                    format!("Failed to navigate to {url}: {e}")
+                };
+                return Err(TarziError::Browser(error_msg));
             }
             Err(_) => {
                 error!("Timeout while navigating to URL (30 seconds)");
-                return Err(TarziError::Browser(
-                    "Timeout while navigating to URL".to_string(),
-                ));
+                return Err(TarziError::Browser(format!(
+                    "Timeout while navigating to {url} (30 seconds). The page may be slow to load or the site may be experiencing issues."
+                )));
             }
         }
 
@@ -482,6 +468,10 @@ impl WebFetcher {
     pub fn get_managed_driver_info(&self) -> Option<&super::driver::DriverInfo> {
         self.browser_manager.get_managed_driver_info()
     }
+
+    pub async fn shutdown(&mut self) {
+        self.browser_manager.shutdown().await;
+    }
 }
 
 impl Default for WebFetcher {
@@ -492,11 +482,10 @@ impl Default for WebFetcher {
 
 impl Drop for WebFetcher {
     fn drop(&mut self) {
-        if self.browser_manager.has_browsers() {
-            warn!("Cleaning up browser resources manually");
-        }
-        if self.browser_manager.has_managed_driver() {
-            warn!("Managed WebDriver will be cleaned up automatically");
+        if self.browser_manager.has_browsers() || self.browser_manager.has_managed_driver() {
+            warn!(
+                "WebFetcher dropped without explicit shutdown. Resources may not be cleaned up properly. Consider calling shutdown() before dropping."
+            );
         }
     }
 }

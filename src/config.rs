@@ -1,3 +1,8 @@
+use crate::constants::{
+    AUTOSWITCH_STRATEGY_SMART, DEFAULT_QUERY_PATTERN, DEFAULT_SEARCH_LIMIT, DEFAULT_TIMEOUT_SECS,
+    FETCHER_MODE_BROWSER_HEADLESS, FORMAT_MARKDOWN, LOG_LEVEL_INFO, SEARCH_ENGINE_DUCKDUCKGO,
+    SEARCH_MODE_WEBQUERY,
+};
 use crate::{Result, error::TarziError};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -326,19 +331,19 @@ impl Default for Config {
 
 // Default value functions
 fn default_log_level() -> String {
-    "info".to_string()
+    LOG_LEVEL_INFO.to_string()
 }
 
 fn default_timeout() -> u64 {
-    30
+    DEFAULT_TIMEOUT_SECS
 }
 
 fn default_fetcher_mode() -> String {
-    "browser_headless".to_string()
+    FETCHER_MODE_BROWSER_HEADLESS.to_string()
 }
 
 fn default_fetcher_format() -> String {
-    "markdown".to_string()
+    FORMAT_MARKDOWN.to_string()
 }
 
 fn default_user_agent() -> String {
@@ -350,19 +355,19 @@ fn default_fetch_timeout() -> u64 {
 }
 
 fn default_search_mode() -> String {
-    "webquery".to_string()
+    SEARCH_MODE_WEBQUERY.to_string()
 }
 
 fn default_search_engine() -> String {
-    "duckduckgo".to_string()
+    SEARCH_ENGINE_DUCKDUCKGO.to_string()
 }
 
 fn default_query_pattern() -> String {
-    "https://duckduckgo.com/?q={query}".to_string()
+    DEFAULT_QUERY_PATTERN.to_string()
 }
 
 fn default_result_limit() -> usize {
-    5
+    DEFAULT_SEARCH_LIMIT
 }
 
 fn default_web_driver() -> String {
@@ -370,7 +375,7 @@ fn default_web_driver() -> String {
 }
 
 fn default_autoswitch_strategy() -> String {
-    "smart".to_string()
+    AUTOSWITCH_STRATEGY_SMART.to_string()
 }
 
 /// Get proxy configuration with environment variable override
@@ -395,6 +400,7 @@ pub fn get_proxy_from_env_or_config(config_proxy: &Option<String>) -> Option<Str
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::constants::*;
     use std::fs;
     use tempfile::tempdir;
 
@@ -402,30 +408,27 @@ mod tests {
     fn test_default_config() {
         let config = Config::new();
 
-        assert_eq!(config.general.log_level, "info");
-        assert_eq!(config.general.timeout, 30);
-        assert_eq!(config.fetcher.mode, "browser_headless");
-        assert_eq!(config.fetcher.format, "markdown");
+        assert_eq!(config.general.log_level, LOG_LEVEL_INFO);
+        assert_eq!(config.general.timeout, DEFAULT_TIMEOUT_SECS);
+        assert_eq!(config.fetcher.mode, FETCHER_MODE_BROWSER_HEADLESS);
+        assert_eq!(config.fetcher.format, FORMAT_MARKDOWN);
         assert_eq!(
             config.fetcher.user_agent,
             crate::constants::DEFAULT_USER_AGENT
         );
         assert_eq!(config.fetcher.timeout, 30);
-        assert_eq!(config.search.mode, "webquery");
-        assert_eq!(config.search.engine, "duckduckgo");
-        assert_eq!(
-            config.search.query_pattern,
-            "https://duckduckgo.com/?q={query}"
-        );
-        assert_eq!(config.search.limit, 5);
+        assert_eq!(config.search.mode, SEARCH_MODE_WEBQUERY);
+        assert_eq!(config.search.engine, SEARCH_ENGINE_DUCKDUCKGO);
+        assert_eq!(config.search.query_pattern, DEFAULT_QUERY_PATTERN);
+        assert_eq!(config.search.limit, DEFAULT_SEARCH_LIMIT);
     }
 
     #[test]
     fn test_config_serialization() {
         let mut config = Config::new();
         config.search.brave_api_key = Some("test_key".to_string());
-        config.search.limit = 5;
-        config.fetcher.mode = "head".to_string();
+        config.search.limit = DEFAULT_SEARCH_LIMIT;
+        config.fetcher.mode = FETCHER_MODE_HEAD.to_string();
 
         let toml_str = toml::to_string_pretty(&config).unwrap();
         let parsed_config: Config = toml::from_str(&toml_str).unwrap();
@@ -434,8 +437,8 @@ mod tests {
             parsed_config.search.brave_api_key,
             Some("test_key".to_string())
         );
-        assert_eq!(parsed_config.search.limit, 5);
-        assert_eq!(parsed_config.fetcher.mode, "head");
+        assert_eq!(parsed_config.search.limit, DEFAULT_SEARCH_LIMIT);
+        assert_eq!(parsed_config.fetcher.mode, FETCHER_MODE_HEAD);
     }
 
     #[test]
@@ -446,8 +449,8 @@ mod tests {
         // Create a test config
         let mut config = Config::new();
         config.search.brave_api_key = Some("test_brave_key".to_string());
-        config.search.limit = 10;
-        config.general.log_level = "debug".to_string();
+        config.search.limit = DEFAULT_SEARCH_LIMIT;
+        config.general.log_level = LOG_LEVEL_DEBUG.to_string();
 
         // Save config to temporary file
         let content = toml::to_string_pretty(&config).unwrap();
@@ -461,8 +464,8 @@ mod tests {
             loaded_config.search.brave_api_key,
             Some("test_brave_key".to_string())
         );
-        assert_eq!(loaded_config.search.limit, 10);
-        assert_eq!(loaded_config.general.log_level, "debug");
+        assert_eq!(loaded_config.search.limit, DEFAULT_SEARCH_LIMIT);
+        assert_eq!(loaded_config.general.log_level, LOG_LEVEL_DEBUG);
     }
 
     #[test]
@@ -502,8 +505,8 @@ travily_api_key = "travily_key_345"
 
         assert_eq!(config.general.log_level, "debug");
         assert_eq!(config.general.timeout, 60);
-        assert_eq!(config.fetcher.mode, "head");
-        assert_eq!(config.fetcher.format, "json");
+        assert_eq!(config.fetcher.mode, FETCHER_MODE_HEAD);
+        assert_eq!(config.fetcher.format, FORMAT_JSON);
         assert_eq!(config.fetcher.user_agent, "Custom User Agent");
         assert_eq!(config.fetcher.timeout, 45);
         assert_eq!(
@@ -519,7 +522,7 @@ travily_api_key = "travily_key_345"
         assert_eq!(config.search.engine, "google.com");
         assert_eq!(config.search.query_pattern, ".*");
         assert_eq!(config.search.limit, 5);
-        assert_eq!(config.search.autoswitch, "none");
+        assert_eq!(config.search.autoswitch, AUTOSWITCH_STRATEGY_NONE);
 
         assert_eq!(
             config.search.brave_api_key,
@@ -540,7 +543,7 @@ web_driver_url = "http://localhost:9999"
 "#;
         let config: Config = toml::from_str(config_str).unwrap();
         // Should use default for web_driver
-        assert_eq!(config.fetcher.web_driver, "geckodriver");
+        assert_eq!(config.fetcher.web_driver, GECKODRIVER);
         assert_eq!(
             config.fetcher.web_driver_url,
             Some("http://localhost:9999".to_string())
@@ -560,10 +563,10 @@ web_driver_url = "http://localhost:9999"
         let config = config.unwrap();
 
         // Verify the structure matches our expectations
-        assert_eq!(config.general.log_level, "info");
-        assert_eq!(config.general.timeout, 30);
-        assert_eq!(config.fetcher.mode, "browser_headless");
-        assert_eq!(config.fetcher.format, "markdown");
+        assert_eq!(config.general.log_level, LOG_LEVEL_INFO);
+        assert_eq!(config.general.timeout, DEFAULT_TIMEOUT_SECS);
+        assert_eq!(config.fetcher.mode, FETCHER_MODE_BROWSER_HEADLESS);
+        assert_eq!(config.fetcher.format, FORMAT_MARKDOWN);
         assert_eq!(
             config.fetcher.user_agent,
             crate::constants::DEFAULT_USER_AGENT
@@ -571,14 +574,11 @@ web_driver_url = "http://localhost:9999"
         assert_eq!(config.fetcher.timeout, 30);
         // Proxy should be None by default (commented out in tarzi.toml)
         assert_eq!(config.fetcher.proxy, None);
-        assert_eq!(config.search.mode, "webquery");
-        assert_eq!(config.search.engine, "duckduckgo");
-        assert_eq!(
-            config.search.query_pattern,
-            "https://duckduckgo.com/?q={query}"
-        );
-        assert_eq!(config.search.limit, 5);
-        assert_eq!(config.search.autoswitch, "smart");
+        assert_eq!(config.search.mode, SEARCH_MODE_WEBQUERY);
+        assert_eq!(config.search.engine, SEARCH_ENGINE_DUCKDUCKGO);
+        assert_eq!(config.search.query_pattern, DEFAULT_QUERY_PATTERN);
+        assert_eq!(config.search.limit, DEFAULT_SEARCH_LIMIT);
+        assert_eq!(config.search.autoswitch, AUTOSWITCH_STRATEGY_SMART);
         // API keys should be None by default (commented out in tarzi.toml)
         assert_eq!(config.search.brave_api_key, None);
         assert_eq!(config.search.exa_api_key, None);
@@ -775,11 +775,11 @@ travily_api_key = "user_travily_key"
         // User config should take precedence over project config
         assert_eq!(config.general.log_level, "warn"); // from user config
         assert_eq!(config.general.timeout, 45); // from user config
-        assert_eq!(config.fetcher.mode, "plain_request"); // from user config
-        assert_eq!(config.fetcher.format, "json"); // from user config
+        assert_eq!(config.fetcher.mode, FETCHER_MODE_PLAIN_REQUEST); // from user config
+        assert_eq!(config.fetcher.format, FORMAT_JSON); // from user config
         assert_eq!(config.fetcher.timeout, 60); // from user config
-        assert_eq!(config.search.engine, "google"); // from user config
-        assert_eq!(config.search.mode, "apiquery"); // from user config
+        assert_eq!(config.search.engine, SEARCH_ENGINE_GOOGLE); // from user config
+        assert_eq!(config.search.mode, SEARCH_MODE_APIQUERY); // from user config
         assert_eq!(config.search.limit, 5); // from user config
         assert_eq!(
             config.search.brave_api_key,
@@ -808,27 +808,27 @@ travily_api_key = "user_travily_key"
         let mut config = Config::new();
 
         // Set some default values
-        config.fetcher.mode = "browser_headless".to_string();
-        config.fetcher.format = "markdown".to_string();
-        config.search.mode = "webquery".to_string();
-        config.search.limit = 5;
-        config.search.engine = "bing".to_string();
+        config.fetcher.mode = FETCHER_MODE_BROWSER_HEADLESS.to_string();
+        config.fetcher.format = FORMAT_MARKDOWN.to_string();
+        config.search.mode = SEARCH_MODE_WEBQUERY.to_string();
+        config.search.limit = DEFAULT_SEARCH_LIMIT;
+        config.search.engine = SEARCH_ENGINE_BING.to_string();
 
         // Create CLI parameters
         let mut cli_params = CliConfigParams::new();
-        cli_params.fetcher_format = Some("json".to_string());
-        cli_params.search_limit = Some(10);
-        cli_params.search_engine = Some("google".to_string());
+        cli_params.fetcher_format = Some(FORMAT_JSON.to_string());
+        cli_params.search_limit = Some(DEFAULT_SEARCH_LIMIT);
+        cli_params.search_engine = Some(SEARCH_ENGINE_GOOGLE.to_string());
 
         // Apply CLI parameters
         config.apply_cli_params(&cli_params);
 
         // CLI parameters should override config values
-        assert_eq!(config.fetcher.mode, "browser_headless");
-        assert_eq!(config.fetcher.format, "json");
-        assert_eq!(config.search.mode, "webquery");
-        assert_eq!(config.search.limit, 10);
-        assert_eq!(config.search.engine, "google");
+        assert_eq!(config.fetcher.mode, FETCHER_MODE_BROWSER_HEADLESS);
+        assert_eq!(config.fetcher.format, FORMAT_JSON);
+        assert_eq!(config.search.mode, SEARCH_MODE_WEBQUERY);
+        assert_eq!(config.search.limit, DEFAULT_SEARCH_LIMIT);
+        assert_eq!(config.search.engine, SEARCH_ENGINE_GOOGLE);
     }
 
     #[test]
@@ -836,30 +836,30 @@ travily_api_key = "user_travily_key"
         let mut base_config = Config::new();
 
         // Set some base values
-        base_config.general.log_level = "info".to_string();
-        base_config.fetcher.mode = "browser_headless".to_string();
-        base_config.search.engine = "bing".to_string();
+        base_config.general.log_level = LOG_LEVEL_INFO.to_string();
+        base_config.fetcher.mode = FETCHER_MODE_BROWSER_HEADLESS.to_string();
+        base_config.search.engine = SEARCH_ENGINE_BING.to_string();
 
         let override_config = Config {
             general: GeneralConfig {
-                log_level: "debug".to_string(),
+                log_level: LOG_LEVEL_DEBUG.to_string(),
                 timeout: 60,
             },
             fetcher: FetcherConfig {
-                mode: "plain_request".to_string(),
-                format: "json".to_string(),
+                mode: FETCHER_MODE_PLAIN_REQUEST.to_string(),
+                format: FORMAT_JSON.to_string(),
                 user_agent: "Custom Agent".to_string(),
                 timeout: 45,
                 proxy: Some("http://proxy:8080".to_string()),
-                web_driver: "chromedriver".to_string(),
+                web_driver: CHROMEDRIVER.to_string(),
                 web_driver_url: Some("http://localhost:4444".to_string()),
             },
             search: SearchConfig {
-                mode: "apiquery".to_string(),
-                engine: "google".to_string(),
+                mode: SEARCH_MODE_APIQUERY.to_string(),
+                engine: SEARCH_ENGINE_GOOGLE.to_string(),
                 query_pattern: "custom pattern".to_string(),
-                limit: 10,
-                autoswitch: "none".to_string(),
+                limit: DEFAULT_SEARCH_LIMIT,
+                autoswitch: AUTOSWITCH_STRATEGY_NONE.to_string(),
                 brave_api_key: Some("test_key".to_string()),
                 exa_api_key: Some("override_exa_key".to_string()),
                 travily_api_key: Some("override_travily_key".to_string()),
@@ -871,26 +871,26 @@ travily_api_key = "user_travily_key"
         base_config.merge(&override_config);
 
         // Override config values should take precedence
-        assert_eq!(base_config.general.log_level, "debug");
+        assert_eq!(base_config.general.log_level, LOG_LEVEL_DEBUG);
         assert_eq!(base_config.general.timeout, 60);
-        assert_eq!(base_config.fetcher.mode, "plain_request");
-        assert_eq!(base_config.fetcher.format, "json");
+        assert_eq!(base_config.fetcher.mode, FETCHER_MODE_PLAIN_REQUEST);
+        assert_eq!(base_config.fetcher.format, FORMAT_JSON);
         assert_eq!(base_config.fetcher.user_agent, "Custom Agent");
         assert_eq!(base_config.fetcher.timeout, 45);
         assert_eq!(
             base_config.fetcher.proxy,
             Some("http://proxy:8080".to_string())
         );
-        assert_eq!(base_config.fetcher.web_driver, "chromedriver");
+        assert_eq!(base_config.fetcher.web_driver, CHROMEDRIVER);
         assert_eq!(
             base_config.fetcher.web_driver_url,
             Some("http://localhost:4444".to_string())
         );
-        assert_eq!(base_config.search.mode, "apiquery");
-        assert_eq!(base_config.search.engine, "google");
+        assert_eq!(base_config.search.mode, SEARCH_MODE_APIQUERY);
+        assert_eq!(base_config.search.engine, SEARCH_ENGINE_GOOGLE);
         assert_eq!(base_config.search.query_pattern, "custom pattern");
-        assert_eq!(base_config.search.limit, 10);
-        assert_eq!(base_config.search.autoswitch, "none");
+        assert_eq!(base_config.search.limit, DEFAULT_SEARCH_LIMIT);
+        assert_eq!(base_config.search.autoswitch, AUTOSWITCH_STRATEGY_NONE);
         assert_eq!(
             base_config.search.brave_api_key,
             Some("test_key".to_string())

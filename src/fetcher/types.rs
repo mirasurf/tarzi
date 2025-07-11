@@ -1,3 +1,6 @@
+use crate::constants::{
+    FETCHER_MODE_BROWSER_HEADLESS, FETCHER_MODE_HEAD, FETCHER_MODE_PLAIN_REQUEST,
+};
 use crate::error::TarziError;
 
 /// Different modes for fetching web content
@@ -16,9 +19,9 @@ impl std::str::FromStr for FetchMode {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "plain_request" | "plain" => Ok(FetchMode::PlainRequest),
-            "browser_head" | "head" => Ok(FetchMode::BrowserHead),
-            "browser_headless" | "headless" => Ok(FetchMode::BrowserHeadless),
+            FETCHER_MODE_PLAIN_REQUEST | "plain" => Ok(FetchMode::PlainRequest),
+            FETCHER_MODE_HEAD | "browser_head" => Ok(FetchMode::BrowserHead),
+            FETCHER_MODE_BROWSER_HEADLESS => Ok(FetchMode::BrowserHeadless),
             _ => Err(TarziError::InvalidMode(s.to_string())),
         }
     }

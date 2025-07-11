@@ -33,7 +33,12 @@ impl WebSearchParser for BraveParser {
     fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
-        for (rank, node) in document.find(Class("result-row")).take(limit).enumerate() {
+        for node in document.find(Class("result-row")) {
+            // Check if we've reached the limit
+            if results.len() >= limit {
+                break;
+            }
+
             let title_link = node.find(Name("a")).next();
             let title = title_link
                 .map(|n| n.text().trim().to_string())
@@ -60,7 +65,7 @@ impl WebSearchParser for BraveParser {
                     title,
                     url,
                     snippet,
-                    rank: rank + 1,
+                    rank: results.len() + 1, // Use results.len() + 1 for proper ranking
                 });
             }
         }
@@ -112,12 +117,17 @@ impl ApiSearchParser for BraveApiParser {
         let json: Value = serde_json::from_str(json_content)?;
         let mut results = Vec::new();
         if let Some(web_results) = json["web"]["results"].as_array() {
-            for (i, result) in web_results.iter().take(limit).enumerate() {
+            for result in web_results.iter() {
+                // Check if we've reached the limit
+                if results.len() >= limit {
+                    break;
+                }
+
                 results.push(SearchResult {
                     title: result["title"].as_str().unwrap_or("").to_string(),
                     url: result["url"].as_str().unwrap_or("").to_string(),
                     snippet: result["description"].as_str().unwrap_or("").to_string(),
-                    rank: i,
+                    rank: results.len() + 1, // Use results.len() + 1 for proper ranking
                 });
             }
         }

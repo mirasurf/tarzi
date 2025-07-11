@@ -348,10 +348,6 @@ impl BrowserManager {
         // Try the primary driver first
         match driver_manager.check_driver_binary(&primary_driver) {
             Ok(()) => {
-                info!(
-                    "{:?} found, starting driver with DriverManager",
-                    primary_driver
-                );
                 let (port, args) = match &primary_driver {
                     DriverType::Chrome => (CHROMEDRIVER_DEFAULT_PORT, CHROME_DRIVER_ARGS),
                     DriverType::Firefox => (GECKODRIVER_DEFAULT_PORT, FIREFOX_DRIVER_ARGS),
@@ -368,10 +364,6 @@ impl BrowserManager {
 
                 match driver_manager.start_driver_with_config(config) {
                     Ok(driver_info) => {
-                        info!(
-                            "Successfully started {:?} at: {}",
-                            primary_driver, driver_info.endpoint
-                        );
                         self.managed_driver_info = Some(driver_info.clone());
                         return Ok(driver_info.endpoint);
                     }
@@ -445,10 +437,8 @@ impl BrowserManager {
         if let (Some(driver_manager), Some(driver_info)) =
             (&mut self.driver_manager, &self.managed_driver_info)
         {
-            info!("Cleaning up managed driver: {}", driver_info.endpoint);
             match driver_manager.stop_driver(driver_info.config.port) {
                 Ok(()) => {
-                    info!("Successfully stopped managed driver");
                     self.managed_driver_info = None;
                 }
                 Err(e) => {
@@ -499,6 +489,40 @@ impl BrowserManager {
         }
 
         result
+    }
+
+    /// Asynchronously shut down all browser instances and managed driver
+    pub async fn shutdown(&mut self) {
+        // Clean up all browser instances
+        let browser_ids: Vec<String> = self.browsers.keys().cloned().collect();
+        for instance_id in browser_ids {
+            if let Some((driver, _temp_dir)) = self.browsers.remove(&instance_id) {
+                info!("Shutting down browser instance: {}", instance_id);
+                if let Err(e) = driver.quit().await {
+                    error!("Failed to quit browser instance {}: {}", instance_id, e);
+                }
+            }
+        }
+        // Clean up managed driver
+        if let (Some(driver_manager), Some(driver_info)) =
+            (&mut self.driver_manager, &self.managed_driver_info)
+        {
+            info!("Shutting down managed driver: {}", driver_info.endpoint);
+            if let Err(e) = driver_manager.stop_driver(driver_info.config.port) {
+                error!("Failed to stop managed driver: {}", e);
+            }
+            self.managed_driver_info = None;
+        }
+    }
+}
+
+impl Drop for BrowserManager {
+    fn drop(&mut self) {
+        if !self.browsers.is_empty() || self.managed_driver_info.is_some() {
+            warn!(
+                "BrowserManager dropped without explicit shutdown. Resources may not be cleaned up properly. Consider calling shutdown() before dropping."
+            );
+        }
     }
 }
 

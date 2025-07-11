@@ -21,6 +21,12 @@ pub const GECKODRIVER_DEFAULT_PORT: u16 = 4444;
 /// Default HTTP client user agent
 pub const DEFAULT_USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
+/// Default ChromeDriver
+pub const CHROMEDRIVER: &str = "chromedriver";
+
+/// Default GeckoDriver
+pub const GECKODRIVER: &str = "geckodriver";
+
 // ============================================================================
 // Timeout Constants
 // ============================================================================
@@ -117,3 +123,75 @@ pub const DEFAULT_SEARCH_ENGINE: &str = "duckduckgo";
 
 /// Default search mode
 pub const DEFAULT_SEARCH_MODE: &str = "webquery";
+
+// Default log levels
+pub const LOG_LEVEL_INFO: &str = "info";
+pub const LOG_LEVEL_DEBUG: &str = "debug";
+pub const LOG_LEVEL_WARN: &str = "warn";
+
+// Default formats
+pub const FORMAT_MARKDOWN: &str = "markdown";
+pub const FORMAT_JSON: &str = "json";
+pub const FORMAT_YAML: &str = "yaml";
+pub const FORMAT_HTML: &str = "html";
+
+// Default fetcher modes
+pub const FETCHER_MODE_BROWSER_HEADLESS: &str = "browser_headless";
+pub const FETCHER_MODE_PLAIN_REQUEST: &str = "plain_request";
+pub const FETCHER_MODE_HEAD: &str = "head";
+
+// Default search engines
+pub const SEARCH_ENGINE_DUCKDUCKGO: &str = "duckduckgo";
+pub const SEARCH_ENGINE_BING: &str = "bing";
+pub const SEARCH_ENGINE_GOOGLE: &str = "google";
+pub const SEARCH_ENGINE_BRAVE: &str = "brave";
+pub const SEARCH_ENGINE_BAIDU: &str = "baidu";
+pub const SEARCH_ENGINE_EXA: &str = "exa";
+pub const SEARCH_ENGINE_TRAVILY: &str = "travily";
+
+// Default search modes
+pub const SEARCH_MODE_WEBQUERY: &str = "webquery";
+pub const SEARCH_MODE_APIQUERY: &str = "apiquery";
+
+// Default autoswitch strategy
+pub const AUTOSWITCH_STRATEGY_SMART: &str = "smart";
+pub const AUTOSWITCH_STRATEGY_NONE: &str = "none";
+
+// ============================================================================
+// Search Engine Query Patterns
+// ============================================================================
+
+/// Web query patterns
+pub const DUCKDUCKGO_QUERY_PATTERN: &str = "https://duckduckgo.com/?q={query}";
+pub const BING_QUERY_PATTERN: &str = "https://www.bing.com/search?q={query}";
+pub const GOOGLE_QUERY_PATTERN: &str = "https://www.google.com/search?q={query}";
+pub const BRAVE_QUERY_PATTERN: &str = "https://search.brave.com/search?q={query}";
+pub const BAIDU_QUERY_PATTERN: &str = "https://www.baidu.com/s?wd={query}";
+pub const EXA_QUERY_PATTERN: &str = "https://exa.ai/search?q={query}";
+
+/// API query patterns
+pub const DUCKDUCKGO_API_PATTERN: &str = "https://api.duckduckgo.com/?q={query}&format=json";
+pub const BRAVE_API_PATTERN: &str = "https://api.search.brave.com/res/v1/web/search";
+pub const BAIDU_API_PATTERN: &str = "https://api.baidu.com/search";
+pub const EXA_API_PATTERN: &str = "https://api.exa.ai/search";
+pub const TRAVILY_API_PATTERN: &str = "https://api.tavily.com/search";
+
+/// Empty pattern for engines that don't support certain modes
+pub const EMPTY_PATTERN: &str = "";
+
+// ============================================================================
+// API Key Field Names
+// ============================================================================
+
+/// API key field names for configuration
+pub const BRAVE_API_KEY_FIELD: &str = "brave_api_key";
+pub const BAIDU_API_KEY_FIELD: &str = "baidu_api_key";
+pub const EXA_API_KEY_FIELD: &str = "exa_api_key";
+pub const TRAVILY_API_KEY_FIELD: &str = "travily_api_key";
+
+// ============================================================================
+// Default Values
+// ============================================================================
+
+/// Default query pattern (DuckDuckGo)
+pub const DEFAULT_QUERY_PATTERN: &str = DUCKDUCKGO_QUERY_PATTERN;

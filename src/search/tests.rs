@@ -1,4 +1,10 @@
 use super::{SearchEngine, SearchEngineType, SearchMode};
+use crate::constants::{
+    BAIDU_QUERY_PATTERN, BING_QUERY_PATTERN, BRAVE_QUERY_PATTERN, DUCKDUCKGO_QUERY_PATTERN,
+    GOOGLE_QUERY_PATTERN, SEARCH_ENGINE_BAIDU, SEARCH_ENGINE_BING, SEARCH_ENGINE_BRAVE,
+    SEARCH_ENGINE_DUCKDUCKGO, SEARCH_ENGINE_EXA, SEARCH_ENGINE_GOOGLE, SEARCH_ENGINE_TRAVILY,
+    SEARCH_MODE_APIQUERY, SEARCH_MODE_WEBQUERY,
+};
 use std::str::FromStr;
 
 #[test]
@@ -15,24 +21,32 @@ fn test_searchengine_from_config() {
 #[test]
 fn test_search_engine_type_parsing() {
     assert_eq!(
-        SearchEngineType::from_str("bing").unwrap(),
+        SearchEngineType::from_str(SEARCH_ENGINE_BING).unwrap(),
         SearchEngineType::Bing
     );
     assert_eq!(
-        SearchEngineType::from_str("google").unwrap(),
+        SearchEngineType::from_str(SEARCH_ENGINE_GOOGLE).unwrap(),
         SearchEngineType::Google
     );
     assert_eq!(
-        SearchEngineType::from_str("duckduckgo").unwrap(),
+        SearchEngineType::from_str(SEARCH_ENGINE_DUCKDUCKGO).unwrap(),
         SearchEngineType::DuckDuckGo
     );
     assert_eq!(
-        SearchEngineType::from_str("brave").unwrap(),
+        SearchEngineType::from_str(SEARCH_ENGINE_BRAVE).unwrap(),
         SearchEngineType::BraveSearch
     );
     assert_eq!(
-        SearchEngineType::from_str("baidu").unwrap(),
+        SearchEngineType::from_str(SEARCH_ENGINE_BAIDU).unwrap(),
         SearchEngineType::Baidu
+    );
+    assert_eq!(
+        SearchEngineType::from_str(SEARCH_ENGINE_EXA).unwrap(),
+        SearchEngineType::Exa
+    );
+    assert_eq!(
+        SearchEngineType::from_str(SEARCH_ENGINE_TRAVILY).unwrap(),
+        SearchEngineType::Travily
     );
 
     // Test invalid engine (should return error)
@@ -43,23 +57,23 @@ fn test_search_engine_type_parsing() {
 fn test_query_patterns() {
     assert_eq!(
         SearchEngineType::Bing.get_query_pattern(),
-        "https://www.bing.com/search?q={query}"
+        BING_QUERY_PATTERN
     );
     assert_eq!(
         SearchEngineType::Google.get_query_pattern(),
-        "https://www.google.com/search?q={query}"
+        GOOGLE_QUERY_PATTERN
     );
     assert_eq!(
         SearchEngineType::DuckDuckGo.get_query_pattern(),
-        "https://duckduckgo.com/?q={query}"
+        DUCKDUCKGO_QUERY_PATTERN
     );
     assert_eq!(
         SearchEngineType::BraveSearch.get_query_pattern(),
-        "https://search.brave.com/search?q={query}"
+        BRAVE_QUERY_PATTERN
     );
     assert_eq!(
         SearchEngineType::Baidu.get_query_pattern(),
-        "https://www.baidu.com/s?wd={query}"
+        BAIDU_QUERY_PATTERN
     );
 }
 
@@ -67,7 +81,7 @@ fn test_query_patterns() {
 fn test_custom_query_pattern() {
     use crate::config::Config;
     let mut config = Config::new();
-    config.search.engine = "google".to_string();
+    config.search.engine = SEARCH_ENGINE_GOOGLE.to_string();
     config.search.query_pattern =
         "https://custom-search.com/search?query={query}&lang=en".to_string();
 
@@ -109,19 +123,19 @@ fn test_searchengine_default() {
 #[test]
 fn test_search_mode_parsing() {
     assert_eq!(
-        SearchMode::from_str("webquery").unwrap(),
+        SearchMode::from_str(SEARCH_MODE_WEBQUERY).unwrap(),
         SearchMode::WebQuery
     );
     assert_eq!(
-        SearchMode::from_str("apiquery").unwrap(),
+        SearchMode::from_str(SEARCH_MODE_APIQUERY).unwrap(),
         SearchMode::ApiQuery
     );
     assert_eq!(
-        SearchMode::from_str("WEBQUERY").unwrap(),
+        SearchMode::from_str(SEARCH_MODE_WEBQUERY.to_uppercase().as_str()).unwrap(),
         SearchMode::WebQuery
     );
     assert_eq!(
-        SearchMode::from_str("APIQUERY").unwrap(),
+        SearchMode::from_str(SEARCH_MODE_APIQUERY.to_uppercase().as_str()).unwrap(),
         SearchMode::ApiQuery
     );
 
@@ -226,8 +240,8 @@ fn test_engine_mode_validation() {
 
     // Test that Bing doesn't support API query
     let mut config = Config::new();
-    config.search.engine = "bing".to_string();
-    config.search.mode = "apiquery".to_string();
+    config.search.engine = SEARCH_ENGINE_BING.to_string();
+    config.search.mode = SEARCH_MODE_APIQUERY.to_string();
 
     let engine = SearchEngine::from_config(&config);
     // Test the validation logic directly
@@ -236,8 +250,8 @@ fn test_engine_mode_validation() {
 
     // Test that Travily doesn't support web query
     let mut config2 = Config::new();
-    config2.search.engine = "travily".to_string();
-    config2.search.mode = "webquery".to_string();
+    config2.search.engine = SEARCH_ENGINE_TRAVILY.to_string();
+    config2.search.mode = SEARCH_MODE_WEBQUERY.to_string();
 
     let engine2 = SearchEngine::from_config(&config2);
     assert!(!engine2.engine_type().supports_web_query());
@@ -245,8 +259,8 @@ fn test_engine_mode_validation() {
 
     // Test that Google supports both modes
     let mut config3 = Config::new();
-    config3.search.engine = "google".to_string();
-    config3.search.mode = "webquery".to_string();
+    config3.search.engine = SEARCH_ENGINE_GOOGLE.to_string();
+    config3.search.mode = SEARCH_MODE_WEBQUERY.to_string();
 
     let engine3 = SearchEngine::from_config(&config3);
     assert!(engine3.engine_type().supports_web_query());
