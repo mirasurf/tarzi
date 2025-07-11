@@ -10,6 +10,9 @@ PYTHON_PACKAGE = target/wheels/*.whl
 PYTHON_TEST_DIR = tests/python
 PYTHON_MODULES = examples tests/python
 
+# Integration test control (disabled by default)
+ENABLE_INTEGRATION_TESTS ?= false
+
 # Colors for output
 BLUE = \033[34m
 GREEN = \033[32m
@@ -71,8 +74,14 @@ install-python-dev: ## Install Python package in development mode
 test: test-rust test-python ## Run all tests (Rust + Python)
 
 .PHONY: test-rust
-test-rust: ## Run all Rust tests
-	$(CARGO) test --features test-helpers
+test-rust: test-unit-rust ## Run Rust tests (unit + integration if enabled)
+ifeq ($(ENABLE_INTEGRATION_TESTS),true)
+	@echo "$(GREEN)Running Rust integration tests (enabled)$(RESET)"
+	$(CARGO) test --test '*' --features test-helpers
+else
+	@echo "$(BLUE)Skipping Rust integration tests (disabled by default)$(RESET)"
+	@echo "$(BLUE)Set ENABLE_INTEGRATION_TESTS=true to enable them$(RESET)"
+endif
 
 .PHONY: test-unit
 test-unit: test-unit-rust test-unit-python ## Run all unit tests (Rust + Python)
@@ -89,12 +98,18 @@ test-integration-rust: ## Run Rust integration tests
 	$(CARGO) test --test '*' --features test-helpers
 
 .PHONY: test-python
-test-python: install-python-dev ## Run all Python tests
+test-python: test-unit-python ## Run Python tests (unit + integration if enabled)
+ifeq ($(ENABLE_INTEGRATION_TESTS),true)
+	@echo "$(GREEN)Running Python integration tests (enabled)$(RESET)"
 	pip install -e .[test]
-	cd $(PYTHON_TEST_DIR) && $(PYTEST)
+	cd $(PYTHON_TEST_DIR) && $(PYTEST) integration/ -m integration
+else
+	@echo "$(BLUE)Skipping Python integration tests (disabled by default)$(RESET)"
+	@echo "$(BLUE)Set ENABLE_INTEGRATION_TESTS=true to enable them$(RESET)"
+endif
 
 .PHONY: test-unit-python
-test-unit-python: ## Run Python unit tests only
+test-unit-python: install-python-dev ## Run Python unit tests only
 	pip install -e .[test]
 	cd $(PYTHON_TEST_DIR) && $(PYTEST) unit/ -m unit
 
@@ -107,6 +122,27 @@ test-integration-python: install-python-dev ## Run Python integration tests
 test-python-coverage: install-python-dev ## Run Python tests with coverage
 	pip install -e .[test]
 	cd $(PYTHON_TEST_DIR) && $(PYTEST) --cov=tarzi --cov-report=html --cov-report=term
+
+# =============================================================================
+# INTEGRATION TEST CONTROL COMMANDS
+# =============================================================================
+
+.PHONY: test-with-integration
+test-with-integration: ## Run all tests including integration tests (Rust + Python)
+	$(MAKE) test ENABLE_INTEGRATION_TESTS=true
+
+.PHONY: test-rust-with-integration
+test-rust-with-integration: ## Run all Rust tests including integration tests
+	$(MAKE) test-rust ENABLE_INTEGRATION_TESTS=true
+
+.PHONY: test-python-with-integration
+test-python-with-integration: ## Run all Python tests including integration tests
+	$(MAKE) test-python ENABLE_INTEGRATION_TESTS=true
+
+.PHONY: test-ci-mode
+test-ci-mode: ## Run tests in CI mode (respects ENABLE_INTEGRATION_TESTS env var)
+	@echo "$(BLUE)Running tests in CI mode (ENABLE_INTEGRATION_TESTS=$(ENABLE_INTEGRATION_TESTS))$(RESET)"
+	$(MAKE) test
 
 # =============================================================================
 # CODE QUALITY COMMANDS

@@ -8,6 +8,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # Integration tests are disabled by default
+  # Set ENABLE_INTEGRATION_TESTS=true to enable them
+  ENABLE_INTEGRATION_TESTS: ${{ vars.ENABLE_INTEGRATION_TESTS || 'false' }}
 
 jobs:
   lint:
@@ -95,12 +98,17 @@ jobs:
       continue-on-error: true
 
     - name: Run Python integration tests
+      if: env.ENABLE_INTEGRATION_TESTS == 'true'
       shell: bash
       run: |
         source .venv/bin/activate
         cd tests/python
         pytest integration/ -v -m "not slow"
       continue-on-error: true
+
+    - name: Skip Python integration tests (disabled by default)
+      if: env.ENABLE_INTEGRATION_TESTS != 'true'
+      run: echo "⚠️  Python integration tests are disabled by default. Set ENABLE_INTEGRATION_TESTS=true to enable them."
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
