@@ -271,7 +271,10 @@ impl BrowserManager {
                     // External driver type: web_driver_url is explicitly configured
                     info!("Using external WebDriver URL from config: {}", url);
                     if is_webdriver_available_at_url(url).await {
-                        info!("External WebDriver server is available and ready at: {}", url);
+                        info!(
+                            "External WebDriver server is available and ready at: {}",
+                            url
+                        );
                         return Ok(url.clone());
                     } else {
                         error!(
@@ -279,9 +282,9 @@ impl BrowserManager {
                             url
                         );
                         return Err(TarziError::Browser(format!(
-                            "External WebDriver server is not available at configured URL: {}. \
-                            Please ensure the WebDriver server is running at this URL, or remove \
-                            the web_driver_url configuration to use self-managed drivers.", url
+                            "External WebDriver server is not available at configured URL: {url}. \
+                         Please ensure the WebDriver server is running at this URL, or remove \
+                         the web_driver_url configuration to use self-managed drivers."
                         )));
                     }
                 }
@@ -311,14 +314,22 @@ impl BrowserManager {
             format!("http://localhost:{GECKODRIVER_DEFAULT_PORT}")
         };
 
-        info!("Checking for existing self-managed WebDriver at: {}", default_url);
+        info!(
+            "Checking for existing self-managed WebDriver at: {}",
+            default_url
+        );
         if is_webdriver_available_at_url(&default_url).await {
-            info!("Found existing self-managed WebDriver server at: {}", default_url);
+            info!(
+                "Found existing self-managed WebDriver server at: {}",
+                default_url
+            );
             return Ok(default_url);
         }
 
         // No existing WebDriver found, start one using DriverManager
-        info!("No existing WebDriver server found, starting self-managed driver using DriverManager");
+        info!(
+            "No existing WebDriver server found, starting self-managed driver using DriverManager"
+        );
 
         // Initialize DriverManager if not already done
         if self.driver_manager.is_none() {
@@ -333,15 +344,21 @@ impl BrowserManager {
         let (primary_driver, fallback_driver) = if let Some(config) = &self.config {
             match config.fetcher.web_driver.as_str() {
                 "geckodriver" | "firefox" => {
-                    info!("Configuration specifies geckodriver, trying Firefox first for self-managed driver");
+                    info!(
+                        "Configuration specifies geckodriver, trying Firefox first for self-managed driver"
+                    );
                     (DriverType::Firefox, DriverType::Chrome)
                 }
                 "chromedriver" | "chrome" => {
-                    info!("Configuration specifies chromedriver, trying Chrome first for self-managed driver");
+                    info!(
+                        "Configuration specifies chromedriver, trying Chrome first for self-managed driver"
+                    );
                     (DriverType::Chrome, DriverType::Firefox)
                 }
                 _ => {
-                    info!("Unknown driver type in config, trying Firefox first for self-managed driver");
+                    info!(
+                        "Unknown driver type in config, trying Firefox first for self-managed driver"
+                    );
                     (DriverType::Firefox, DriverType::Chrome)
                 }
             }
@@ -369,7 +386,10 @@ impl BrowserManager {
 
                 match driver_manager.start_driver_with_config(config) {
                     Ok(driver_info) => {
-                        info!("Successfully started self-managed {:?} at: {}", primary_driver, driver_info.endpoint);
+                        info!(
+                            "Successfully started self-managed {:?} at: {}",
+                            primary_driver, driver_info.endpoint
+                        );
                         self.managed_driver_info = Some(driver_info.clone());
                         return Ok(driver_info.endpoint);
                     }
