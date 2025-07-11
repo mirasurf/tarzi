@@ -482,6 +482,10 @@ impl WebFetcher {
     pub fn get_managed_driver_info(&self) -> Option<&super::driver::DriverInfo> {
         self.browser_manager.get_managed_driver_info()
     }
+
+    pub async fn shutdown(&mut self) {
+        self.browser_manager.shutdown().await;
+    }
 }
 
 impl Default for WebFetcher {
@@ -492,11 +496,10 @@ impl Default for WebFetcher {
 
 impl Drop for WebFetcher {
     fn drop(&mut self) {
-        if self.browser_manager.has_browsers() {
-            warn!("Cleaning up browser resources manually");
-        }
-        if self.browser_manager.has_managed_driver() {
-            warn!("Managed WebDriver will be cleaned up automatically");
+        if self.browser_manager.has_browsers() || self.browser_manager.has_managed_driver() {
+            warn!(
+                "WebFetcher dropped without explicit shutdown. Resources may not be cleaned up properly."
+            );
         }
     }
 }

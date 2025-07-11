@@ -500,6 +500,40 @@ impl BrowserManager {
 
         result
     }
+
+    /// Asynchronously shut down all browser instances and managed driver
+    pub async fn shutdown(&mut self) {
+        // Clean up all browser instances
+        let browser_ids: Vec<String> = self.browsers.keys().cloned().collect();
+        for instance_id in browser_ids {
+            if let Some((driver, _temp_dir)) = self.browsers.remove(&instance_id) {
+                info!("Shutting down browser instance: {}", instance_id);
+                if let Err(e) = driver.quit().await {
+                    error!("Failed to quit browser instance {}: {}", instance_id, e);
+                }
+            }
+        }
+        // Clean up managed driver
+        if let (Some(driver_manager), Some(driver_info)) =
+            (&mut self.driver_manager, &self.managed_driver_info)
+        {
+            info!("Shutting down managed driver: {}", driver_info.endpoint);
+            if let Err(e) = driver_manager.stop_driver(driver_info.config.port) {
+                error!("Failed to stop managed driver: {}", e);
+            }
+            self.managed_driver_info = None;
+        }
+    }
+}
+
+impl Drop for BrowserManager {
+    fn drop(&mut self) {
+        if !self.browsers.is_empty() || self.managed_driver_info.is_some() {
+            warn!(
+                "BrowserManager dropped without explicit shutdown. Resources may not be cleaned up properly."
+            );
+        }
+    }
 }
 
 /// Helper function to check if webdriver is available at a specific URL

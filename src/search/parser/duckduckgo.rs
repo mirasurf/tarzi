@@ -36,21 +36,20 @@ impl WebSearchParser for DuckDuckGoParser {
         let document = Document::from(html);
         let mut results = Vec::new();
 
-        // DuckDuckGo search results are typically in elements with class "result__body"
-        for (i, result_element) in document.find(Class("result__body")).take(limit).enumerate() {
-            // Extract title and URL from a.result__a element
+        for (i, result_element) in document.find(Class("result")).take(limit).enumerate() {
+            // Title and URL
             let title_link = result_element
                 .find(Name("a").and(Class("result__a")))
                 .next();
 
             let title = title_link
+                .as_ref()
                 .map(|n| n.text().trim().to_string())
                 .unwrap_or_default();
 
             let url = title_link
                 .and_then(|n| n.attr("href"))
                 .map(|href| {
-                    // DuckDuckGo sometimes uses redirect URLs or relative paths
                     if href.starts_with("http") {
                         href.to_string()
                     } else if href.starts_with("/") {
@@ -61,20 +60,26 @@ impl WebSearchParser for DuckDuckGoParser {
                 })
                 .unwrap_or_default();
 
-            // Extract snippet from .result__snippet element
+            // Snippet
             let snippet = result_element
                 .find(Class("result__snippet"))
                 .next()
                 .map(|n| n.text().trim().to_string())
-                .unwrap_or_default();
+                .unwrap_or_else(|| {
+                    // Fallback: some pages use 'div.result__content' or 'div.result__extras'
+                    result_element
+                        .find(Class("result__content"))
+                        .next()
+                        .map(|n| n.text().trim().to_string())
+                        .unwrap_or_default()
+                });
 
-            // Only add if we have at least a title
             if !title.is_empty() {
                 results.push(SearchResult {
                     title,
                     url,
                     snippet,
-                    rank: i + 1, // Test expects 1-based ranking
+                    rank: i + 1,
                 });
             }
         }

@@ -58,12 +58,13 @@ impl SearchEngine {
         let mode = SearchMode::from_str(&config.search.mode).unwrap_or(SearchMode::WebQuery);
 
         // Use custom query pattern if provided, otherwise use the default for the engine type and mode
-        let query_pattern =
-            if config.search.query_pattern != engine_type.get_query_pattern_for_mode(mode) {
-                config.search.query_pattern.clone()
-            } else {
-                engine_type.get_query_pattern_for_mode(mode)
-            };
+        let query_pattern = if config.search.query_pattern != "https://duckduckgo.com/?q={query}" {
+            // If a custom query pattern is explicitly set in config, use it
+            config.search.query_pattern.clone()
+        } else {
+            // Otherwise use the engine-specific pattern
+            engine_type.get_query_pattern_for_mode(mode)
+        };
 
         Self {
             fetcher,
@@ -220,9 +221,10 @@ impl SearchEngine {
             {
                 Ok(content) => {
                     info!(
-                        "Successfully fetched content for {} ({} characters)",
+                        "Successfully fetched content for {} ({} characters) {}",
                         result.url,
-                        content.len()
+                        content.len(),
+                        content.chars().collect::<String>()
                     );
                     results_with_content.push((result, content));
                 }
@@ -312,6 +314,11 @@ impl SearchEngine {
         // The fetcher will handle its own cleanup
         Ok(())
     }
+
+    /// Explicitly shut down browser and driver resources
+    pub async fn shutdown(&mut self) {
+        self.fetcher.shutdown().await;
+    }
 }
 
 impl Default for SearchEngine {
@@ -322,7 +329,7 @@ impl Default for SearchEngine {
 
 impl Drop for SearchEngine {
     fn drop(&mut self) {
-        info!("Cleaning up SearchEngine resources");
+        info!("SearchEngine dropping - cleanup will be handled by WebFetcher");
         // The fetcher will handle its own cleanup
     }
 }

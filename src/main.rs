@@ -7,7 +7,7 @@ use tarzi::{
     fetcher::{FetchMode, WebFetcher},
     search::{SearchEngine, SearchMode},
 };
-use tracing::{Level, debug, info};
+use tracing::{debug, info};
 
 #[derive(Parser)]
 #[command(name = "tarzi")]
@@ -90,10 +90,18 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize logging as early as possible
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
+
     let cli = Cli::parse();
 
     // Load configuration with proper precedence
     let mut config = Config::load_with_precedence()?;
+
+    // Apply CLI parameters to config
+    let mut cli_params = CliConfigParams::new();
 
     match cli.command {
         Commands::Convert {
@@ -103,9 +111,6 @@ async fn main() -> Result<()> {
             verbose,
         } => {
             // Initialize logging for this subcommand
-            let log_level = if verbose { Level::DEBUG } else { Level::INFO };
-            tracing_subscriber::fmt().with_max_level(log_level).init();
-
             info!("Tarzi Convert starting with verbose mode: {}", verbose);
             info!("Converting input to {}", format);
             debug!("Input length: {} characters", input.len());
@@ -128,15 +133,11 @@ async fn main() -> Result<()> {
             verbose,
         } => {
             // Initialize logging for this subcommand
-            let log_level = if verbose { Level::DEBUG } else { Level::INFO };
-            tracing_subscriber::fmt().with_max_level(log_level).init();
-
             info!("Tarzi Fetch starting with verbose mode: {}", verbose);
             info!("Fetching URL: {} with mode: {}", url, format);
             debug!("Using format: {}", format);
 
             // Apply CLI parameters to config
-            let mut cli_params = CliConfigParams::new();
             cli_params.fetcher_format = Some(format.clone());
             config.apply_cli_params(&cli_params);
 
@@ -165,9 +166,6 @@ async fn main() -> Result<()> {
             verbose,
         } => {
             // Initialize logging for this subcommand
-            let log_level = if verbose { Level::DEBUG } else { Level::INFO };
-            tracing_subscriber::fmt().with_max_level(log_level).init();
-
             info!("Tarzi Search starting with verbose mode: {}", verbose);
             info!("Starting search operation");
             info!("Query: '{}'", query);
@@ -175,7 +173,6 @@ async fn main() -> Result<()> {
             info!("Format: {}", format);
 
             // Apply CLI parameters to config
-            let mut cli_params = CliConfigParams::new();
             cli_params.search_limit = Some(limit);
             config.apply_cli_params(&cli_params);
 
@@ -197,6 +194,9 @@ async fn main() -> Result<()> {
             } else {
                 println!("{result}");
             }
+
+            // Explicitly clean up browser and driver resources before exit
+            search_engine.shutdown().await;
         }
         Commands::SearchAndFetch {
             query,
@@ -206,9 +206,6 @@ async fn main() -> Result<()> {
             verbose,
         } => {
             // Initialize logging for this subcommand
-            let log_level = if verbose { Level::DEBUG } else { Level::INFO };
-            tracing_subscriber::fmt().with_max_level(log_level).init();
-
             info!(
                 "Tarzi SearchAndFetch starting with verbose mode: {}",
                 verbose
@@ -219,7 +216,6 @@ async fn main() -> Result<()> {
             info!("Format: {}", format);
 
             // Apply CLI parameters to config
-            let mut cli_params = CliConfigParams::new();
             cli_params.search_limit = Some(limit);
             cli_params.fetcher_format = Some(format.clone());
             config.apply_cli_params(&cli_params);
