@@ -261,33 +261,39 @@ impl BrowserManager {
     }
 
     /// Get or create a webdriver endpoint, using configuration or DriverManager
-    /// If no webdriver is available, use DriverManager to start one
+    /// Two mutually exclusive types:
+    /// 1. External: configured by web_driver_url - if set, use it exclusively and fail if unavailable
+    /// 2. Self-managed: managed by DriverManager - used only if web_driver_url is not set
     async fn get_or_create_webdriver_endpoint(&mut self) -> Result<String> {
-        // Use web_driver_url from config if set
         if let Some(config) = &self.config {
             if let Some(ref url) = config.fetcher.web_driver_url {
                 if !url.is_empty() {
-                    info!("Using web_driver_url from config: {}", url);
+                    // External driver type: web_driver_url is explicitly configured
+                    info!("Using external WebDriver URL from config: {}", url);
                     if is_webdriver_available_at_url(url).await {
-                        info!("WebDriver server is available and ready at: {}", url);
+                        info!("External WebDriver server is available and ready at: {}", url);
                         return Ok(url.clone());
                     } else {
-                        warn!(
-                            "web_driver_url is set but WebDriver is not available at: {}",
+                        error!(
+                            "External WebDriver URL '{}' is configured but server is not available",
                             url
                         );
                         return Err(TarziError::Browser(format!(
-                            "WebDriver server is not available at {url}. Please start the WebDriver server."
+                            "External WebDriver server is not available at configured URL: {}. \
+                            Please ensure the WebDriver server is running at this URL, or remove \
+                            the web_driver_url configuration to use self-managed drivers.", url
                         )));
                     }
                 }
             }
         }
 
-        // If web_driver_url is not set, try configured WebDriver URL
+        // Self-managed driver type: no web_driver_url configured, use DriverManager
+        info!("No external WebDriver URL configured, using self-managed driver");
+
+        // Try to find an already running WebDriver first (from previous self-managed instance)
         let default_url = if let Some(config) = &self.config {
             let web_driver = &config.fetcher.web_driver;
-
             match web_driver.as_str() {
                 "geckodriver" | "firefox" => {
                     format!("http://localhost:{GECKODRIVER_DEFAULT_PORT}")
@@ -305,19 +311,18 @@ impl BrowserManager {
             format!("http://localhost:{GECKODRIVER_DEFAULT_PORT}")
         };
 
-        info!("Checking configured WebDriver at: {}", default_url);
-
+        info!("Checking for existing self-managed WebDriver at: {}", default_url);
         if is_webdriver_available_at_url(&default_url).await {
-            info!("WebDriver server found at configured URL: {}", default_url);
+            info!("Found existing self-managed WebDriver server at: {}", default_url);
             return Ok(default_url);
         }
 
-        // If no webdriver is available, try to start one using DriverManager
-        info!("No WebDriver server found, attempting to start one using DriverManager");
+        // No existing WebDriver found, start one using DriverManager
+        info!("No existing WebDriver server found, starting self-managed driver using DriverManager");
 
         // Initialize DriverManager if not already done
         if self.driver_manager.is_none() {
-            info!("Initializing DriverManager");
+            info!("Initializing DriverManager for self-managed driver");
             self.driver_manager = Some(DriverManager::new());
         }
 
@@ -328,20 +333,20 @@ impl BrowserManager {
         let (primary_driver, fallback_driver) = if let Some(config) = &self.config {
             match config.fetcher.web_driver.as_str() {
                 "geckodriver" | "firefox" => {
-                    info!("Configuration specifies geckodriver, trying Firefox first");
+                    info!("Configuration specifies geckodriver, trying Firefox first for self-managed driver");
                     (DriverType::Firefox, DriverType::Chrome)
                 }
                 "chromedriver" | "chrome" => {
-                    info!("Configuration specifies chromedriver, trying Chrome first");
+                    info!("Configuration specifies chromedriver, trying Chrome first for self-managed driver");
                     (DriverType::Chrome, DriverType::Firefox)
                 }
                 _ => {
-                    info!("Unknown driver type in config, trying Firefox first");
+                    info!("Unknown driver type in config, trying Firefox first for self-managed driver");
                     (DriverType::Firefox, DriverType::Chrome)
                 }
             }
         } else {
-            info!("No configuration available, trying Firefox first");
+            info!("No configuration available, trying Firefox first for self-managed driver");
             (DriverType::Firefox, DriverType::Chrome)
         };
 
@@ -364,19 +369,20 @@ impl BrowserManager {
 
                 match driver_manager.start_driver_with_config(config) {
                     Ok(driver_info) => {
+                        info!("Successfully started self-managed {:?} at: {}", primary_driver, driver_info.endpoint);
                         self.managed_driver_info = Some(driver_info.clone());
                         return Ok(driver_info.endpoint);
                     }
                     Err(e) => {
                         warn!(
-                            "Failed to start {:?} with DriverManager: {}",
+                            "Failed to start self-managed {:?} with DriverManager: {}",
                             primary_driver, e
                         );
                     }
                 }
             }
             Err(e) => {
-                warn!("{:?} not available: {}", primary_driver, e);
+                warn!("Self-managed {:?} not available: {}", primary_driver, e);
             }
         }
 
@@ -384,7 +390,7 @@ impl BrowserManager {
         match driver_manager.check_driver_binary(&fallback_driver) {
             Ok(()) => {
                 info!(
-                    "{:?} found, starting driver with DriverManager",
+                    "Self-managed {:?} found, starting driver with DriverManager",
                     fallback_driver
                 );
                 let (port, args) = match &fallback_driver {
@@ -404,7 +410,7 @@ impl BrowserManager {
                 match driver_manager.start_driver_with_config(config) {
                     Ok(driver_info) => {
                         info!(
-                            "Successfully started {:?} at: {}",
+                            "Successfully started self-managed {:?} at: {}",
                             fallback_driver, driver_info.endpoint
                         );
                         self.managed_driver_info = Some(driver_info.clone());
@@ -412,23 +418,22 @@ impl BrowserManager {
                     }
                     Err(e) => {
                         warn!(
-                            "Failed to start {:?} with DriverManager: {}",
+                            "Failed to start self-managed {:?} with DriverManager: {}",
                             fallback_driver, e
                         );
                     }
                 }
             }
             Err(e) => {
-                warn!("{:?} not available: {}", fallback_driver, e);
+                warn!("Self-managed {:?} not available: {}", fallback_driver, e);
             }
         }
 
         // If all attempts failed, return an error with helpful guidance
         Err(TarziError::Browser(
-            "No WebDriver server is available. Please either:\n\
+            "No self-managed WebDriver could be started. Please either:\n\
             1. Install ChromeDriver (https://chromedriver.chromium.org/) or GeckoDriver (https://github.com/mozilla/geckodriver/releases) and ensure they're in your PATH, or\n\
-            2. Start a WebDriver server manually and configure it in your tarzi.toml file, or\n\
-            3. Let tarzi automatically start a WebDriver using DriverManager".to_string()
+            2. Configure web_driver_url in your tarzi.toml file to use an external WebDriver server".to_string()
         ))
     }
 
