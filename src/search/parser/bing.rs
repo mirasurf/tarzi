@@ -29,7 +29,12 @@ impl WebSearchParser for BingParser {
     fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
-        for (rank, node) in document.find(Class("b_algo")).take(limit).enumerate() {
+        for (_, node) in document.find(Class("b_algo")).enumerate() {
+            // Check if we've reached the limit
+            if results.len() >= limit {
+                break;
+            }
+
             let title_link = node.find(Descendant(Name("h2"), Name("a"))).next();
             let title = title_link
                 .map(|n| n.text().trim().to_string())
@@ -56,7 +61,7 @@ impl WebSearchParser for BingParser {
                     title,
                     url,
                     snippet,
-                    rank: rank + 1,
+                    rank: results.len() + 1, // Use results.len() + 1 for proper ranking
                 });
             }
         }

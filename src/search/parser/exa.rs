@@ -30,12 +30,17 @@ impl ApiSearchParser for ExaApiParser {
         let json: Value = serde_json::from_str(json_content)?;
         let mut results = Vec::new();
         if let Some(results_array) = json["results"].as_array() {
-            for (i, result) in results_array.iter().take(limit).enumerate() {
+            for (_, result) in results_array.iter().enumerate() {
+                // Check if we've reached the limit
+                if results.len() >= limit {
+                    break;
+                }
+
                 results.push(SearchResult {
                     title: result["title"].as_str().unwrap_or("").to_string(),
                     url: result["url"].as_str().unwrap_or("").to_string(),
                     snippet: result["text"].as_str().unwrap_or("").to_string(),
-                    rank: i,
+                    rank: results.len() + 1, // Use results.len() + 1 for proper ranking
                 });
             }
         }

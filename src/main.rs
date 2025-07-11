@@ -57,8 +57,8 @@ enum Commands {
         #[arg(short, long)]
         query: String,
         /// Number of results to return
-        #[arg(short, long, default_value = "10")]
-        limit: usize,
+        #[arg(short, long)]
+        limit: Option<usize>,
         /// Output format: json or yaml
         #[arg(short, long, default_value = FORMAT_JSON)]
         format: String,
@@ -158,14 +158,17 @@ async fn main() -> Result<()> {
             verbose: _,
         } => {
             // Perform web search and return results
+            // Use CLI limit if provided, otherwise use config limit
+            let effective_limit = limit.unwrap_or(config.search.limit);
+
             // Apply CLI parameters to config
-            cli_params.search_limit = Some(limit);
+            cli_params.search_limit = Some(effective_limit);
             config.apply_cli_params(&cli_params);
 
             let mut search_engine = SearchEngine::from_config(&config);
             let mode = SearchMode::from_str(&config.search.mode)?;
 
-            let results = search_engine.search(&query, mode, limit).await?;
+            let results = search_engine.search(&query, mode, effective_limit).await?;
 
             debug!("Processing results for output format: {}", format);
 

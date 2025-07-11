@@ -116,19 +116,17 @@ impl WebFetcher {
                     || e.to_string().contains("network")
                 {
                     format!(
-                        "Network error while navigating to {}: {}. This may be due to network connectivity issues, firewall restrictions, or the site being temporarily unavailable.",
-                        url, e
+                        "Network error while navigating to {url}: {e}. This may be due to network connectivity issues, firewall restrictions, or the site being temporarily unavailable."
                     )
                 } else {
-                    format!("Failed to navigate to {}: {}", url, e)
+                    format!("Failed to navigate to {url}: {e}")
                 };
                 return Err(TarziError::Browser(error_msg));
             }
             Err(_) => {
                 error!("Timeout while navigating to URL (30 seconds)");
                 return Err(TarziError::Browser(format!(
-                    "Timeout while navigating to {} (30 seconds). The page may be slow to load or the site may be experiencing issues.",
-                    url
+                    "Timeout while navigating to {url} (30 seconds). The page may be slow to load or the site may be experiencing issues."
                 )));
             }
         }

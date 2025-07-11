@@ -34,7 +34,12 @@ impl WebSearchParser for GoogleParser {
         let mut results = Vec::new();
 
         // Google search results are typically in elements with class "tF2Cxc"
-        for (i, result_element) in document.find(Class("tF2Cxc")).take(limit).enumerate() {
+        for (_, result_element) in document.find(Class("tF2Cxc")).enumerate() {
+            // Check if we've reached the limit
+            if results.len() >= limit {
+                break;
+            }
+
             // Extract title and URL from .yuRUbf a element
             let title_link = result_element.find(Name("a")).next();
 
@@ -66,7 +71,7 @@ impl WebSearchParser for GoogleParser {
                     title,
                     url,
                     snippet,
-                    rank: i + 1,
+                    rank: results.len() + 1, // Use results.len() + 1 for proper ranking
                 });
             }
         }

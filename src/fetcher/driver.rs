@@ -386,8 +386,7 @@ impl DriverManager {
         }
 
         Err(TarziError::Driver(format!(
-            "Driver failed to become ready within {:?}",
-            timeout
+            "Driver failed to become ready within {timeout:?}"
         )))
     }
 
@@ -430,7 +429,7 @@ impl Drop for DriverManager {
         if let Ok(mut drivers) = self.drivers.lock() {
             for (port, mut driver_process) in drivers.drain() {
                 let _ = driver_process.child.kill();
-                log::info!("Killed driver process on port {}", port);
+                log::info!("Killed driver process on port {port}");
             }
         }
     }

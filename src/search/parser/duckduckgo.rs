@@ -33,55 +33,103 @@ impl BaseSearchParser for DuckDuckGoParser {
 
 impl WebSearchParser for DuckDuckGoParser {
     fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+        use std::collections::HashSet;
         let document = Document::from(html);
         let mut results = Vec::new();
+        let mut seen_urls = HashSet::new();
 
-        // Look for result__body elements (matches test HTML structure)
-        for (i, result_element) in document.find(Class("result__body")).take(limit).enumerate() {
-            // Title and URL
-            let title_link = result_element
-                .find(Name("a").and(Class("result__a")))
-                .next();
+        let article_elements = document.find(Name("article"));
 
-            let title = title_link
-                .as_ref()
-                .map(|n| n.text().trim().to_string())
-                .unwrap_or_default();
+        for result_element in article_elements {
+            // Title extraction
+            let title_selectors = [
+                Name("a").and(Class("eVNpHGjtxRBq_gLOfGDr")),
+                Name("a").and(Class("LQNqh2U1kzYxREs65IJu")),
+                // Legacy selectors as fallback
+                Name("a").and(Class("result__a")),
+                Name("a").and(Class("serp-item__title")),
+                Name("a").and(Class("result__title")),
+            ];
 
-            let url = title_link
-                .and_then(|n| n.attr("href"))
-                .map(|href| {
-                    if href.starts_with("http") {
-                        href.to_string()
-                    } else if href.starts_with("/") {
-                        format!("https://duckduckgo.com{href}")
-                    } else {
-                        href.to_string()
-                    }
+            let (title, url) = title_selectors
+                .iter()
+                .find_map(|sel| {
+                    result_element.find(*sel).next().map(|link| {
+                        let title = link.text().trim().to_string();
+                        let url = link
+                            .attr("href")
+                            .map(|href| {
+                                if href.starts_with("http") {
+                                    href.to_string()
+                                } else if href.starts_with("/") {
+                                    format!("https://duckduckgo.com{href}")
+                                } else {
+                                    href.to_string()
+                                }
+                            })
+                            .unwrap_or_default();
+                        (title, url)
+                    })
                 })
-                .unwrap_or_default();
-
-            // Snippet
-            let snippet = result_element
-                .find(Class("result__snippet"))
-                .next()
-                .map(|n| n.text().trim().to_string())
                 .unwrap_or_else(|| {
-                    // Fallback: some pages use 'div.result__content' or 'div.result__extras'
+                    // Fallback: any link
                     result_element
-                        .find(Class("result__content"))
+                        .find(Name("a"))
                         .next()
-                        .map(|n| n.text().trim().to_string())
+                        .map(|link| {
+                            let title = link.text().trim().to_string();
+                            let url = link
+                                .attr("href")
+                                .map(|href| {
+                                    if href.starts_with("http") {
+                                        href.to_string()
+                                    } else if href.starts_with("/") {
+                                        format!("https://duckduckgo.com{href}")
+                                    } else {
+                                        href.to_string()
+                                    }
+                                })
+                                .unwrap_or_default();
+                            (title, url)
+                        })
                         .unwrap_or_default()
                 });
 
-            if !title.is_empty() {
-                results.push(SearchResult {
-                    title,
-                    url,
-                    snippet,
-                    rank: i + 1,
-                });
+            if title.is_empty() || url.is_empty() || seen_urls.contains(&url) {
+                continue;
+            }
+
+            // Snippet extraction
+            let snippet_selectors = [
+                Class("OgdwYG6KE2qthn9XQWFC"),
+                Class("kY2IgmnCmOGjharHErah"),
+                // Legacy selectors as fallback
+                Class("result__snippet"),
+                Class("serp-item__snippet"),
+                Class("result__content"),
+                Class("web-result__snippet"),
+                Class("organic-result__snippet"),
+                Class("result__extras"),
+            ];
+            let snippet = snippet_selectors
+                .iter()
+                .find_map(|sel| {
+                    result_element
+                        .find(*sel)
+                        .next()
+                        .map(|el| el.text().trim().to_string())
+                })
+                .unwrap_or_default();
+
+            seen_urls.insert(url.clone());
+            results.push(SearchResult {
+                title,
+                url,
+                snippet,
+                rank: results.len() + 1,
+            });
+            if results.len() >= limit {
+                break;
             }
         }
 
@@ -153,10 +201,12 @@ impl ApiSearchParser for DuckDuckGoApiParser {
 
         // Parse RelatedTopics if available
         if let Some(related_topics) = helpers::extract_json_array(&json, "RelatedTopics") {
-            for topic in related_topics
-                .iter()
-                .take(limit.saturating_sub(results.len()))
-            {
+            for topic in related_topics.iter() {
+                // Check if we've reached the limit
+                if results.len() >= limit {
+                    break;
+                }
+
                 let text = helpers::extract_json_text(topic, "Text");
                 let first_url = helpers::extract_json_text(topic, "FirstURL");
                 if !text.is_empty() && !first_url.is_empty() {
@@ -164,13 +214,13 @@ impl ApiSearchParser for DuckDuckGoApiParser {
                         title: text.split(" - ").next().unwrap_or("").to_string(),
                         url: first_url,
                         snippet: text,
-                        rank: results.len(),
+                        rank: results.len() + 1, // Use results.len() + 1 for proper ranking
                     });
                 }
             }
         }
 
-        Ok(results.into_iter().take(limit).collect())
+        Ok(results)
     }
 }
 
