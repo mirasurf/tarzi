@@ -212,6 +212,9 @@ async fn main() -> Result<()> {
             } else {
                 println!("{result}");
             }
+
+            // Explicitly clean up browser and driver resources before exit
+            search_engine.shutdown().await;
         }
     }
 

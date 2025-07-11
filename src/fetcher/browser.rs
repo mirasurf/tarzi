@@ -520,7 +520,7 @@ impl Drop for BrowserManager {
     fn drop(&mut self) {
         if !self.browsers.is_empty() || self.managed_driver_info.is_some() {
             warn!(
-                "BrowserManager dropped without explicit shutdown. Resources may not be cleaned up properly."
+                "BrowserManager dropped without explicit shutdown. Resources may not be cleaned up properly. Consider calling shutdown() before dropping."
             );
         }
     }

@@ -111,13 +111,25 @@ impl WebFetcher {
             }
             Ok(Err(e)) => {
                 error!("Failed to navigate to URL: {}", e);
-                return Err(TarziError::Browser(format!("Failed to navigate: {e}")));
+                // Check if it's a network-related error and provide more specific guidance
+                let error_msg = if e.to_string().contains("nssFailure")
+                    || e.to_string().contains("network")
+                {
+                    format!(
+                        "Network error while navigating to {}: {}. This may be due to network connectivity issues, firewall restrictions, or the site being temporarily unavailable.",
+                        url, e
+                    )
+                } else {
+                    format!("Failed to navigate to {}: {}", url, e)
+                };
+                return Err(TarziError::Browser(error_msg));
             }
             Err(_) => {
                 error!("Timeout while navigating to URL (30 seconds)");
-                return Err(TarziError::Browser(
-                    "Timeout while navigating to URL".to_string(),
-                ));
+                return Err(TarziError::Browser(format!(
+                    "Timeout while navigating to {} (30 seconds). The page may be slow to load or the site may be experiencing issues.",
+                    url
+                )));
             }
         }
 
@@ -474,7 +486,7 @@ impl Drop for WebFetcher {
     fn drop(&mut self) {
         if self.browser_manager.has_browsers() || self.browser_manager.has_managed_driver() {
             warn!(
-                "WebFetcher dropped without explicit shutdown. Resources may not be cleaned up properly."
+                "WebFetcher dropped without explicit shutdown. Resources may not be cleaned up properly. Consider calling shutdown() before dropping."
             );
         }
     }

@@ -359,45 +359,35 @@ impl DriverManager {
 
     /// Perform a health check on a driver
     pub fn is_driver_healthy(&self, endpoint: &str) -> bool {
-        // Try to make a simple HTTP request to the driver's status endpoint
-        let client = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(DEFAULT_TIMEOUT_SECS))
-            .build()
-            .unwrap_or_else(|_| reqwest::blocking::Client::new());
+        // Use a simple TCP connection check instead of HTTP to avoid blocking runtime issues
+        use std::net::TcpStream;
 
-        match client.get(format!("{endpoint}/status")).send() {
-            Ok(response) => response.status().is_success(),
-            Err(_) => false,
+        if let Ok(stream) = TcpStream::connect_timeout(
+            &endpoint.replace("http://", "").parse().unwrap(),
+            Duration::from_secs(2),
+        ) {
+            stream.shutdown(std::net::Shutdown::Both).ok();
+            true
+        } else {
+            false
         }
     }
 
     /// Wait for a driver to be ready
     fn wait_for_driver_ready(&self, endpoint: &str, timeout: Duration) -> Result<()> {
         let start = Instant::now();
-        let mut last_error = None;
 
         while start.elapsed() < timeout {
             if self.is_driver_healthy(endpoint) {
                 return Ok(());
             }
 
-            // Try to get more detailed error information
-            let client = reqwest::blocking::Client::builder()
-                .timeout(Duration::from_secs(2))
-                .build()
-                .unwrap_or_else(|_| reqwest::blocking::Client::new());
-
-            if let Err(e) = client.get(format!("{endpoint}/status")).send() {
-                last_error = Some(e.to_string());
-            }
-
             thread::sleep(Duration::from_millis(500));
         }
 
         Err(TarziError::Driver(format!(
-            "Driver failed to become ready within {:?}. Last error: {}",
-            timeout,
-            last_error.unwrap_or_else(|| "Unknown error".to_string())
+            "Driver failed to become ready within {:?}",
+            timeout
         )))
     }
 
@@ -436,8 +426,12 @@ impl Default for DriverManager {
 impl Drop for DriverManager {
     fn drop(&mut self) {
         // Clean up all running drivers when the manager is dropped
-        if let Err(e) = self.stop_all_drivers() {
-            log::warn!("Failed to stop all drivers during cleanup: {e}");
+        // Use a simple approach that doesn't block the async runtime
+        if let Ok(mut drivers) = self.drivers.lock() {
+            for (port, mut driver_process) in drivers.drain() {
+                let _ = driver_process.child.kill();
+                log::info!("Killed driver process on port {}", port);
+            }
         }
     }
 }

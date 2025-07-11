@@ -111,9 +111,18 @@ impl SearchEngine {
             .query_pattern
             .replace("{query}", &urlencoding::encode(query));
 
-        // For webquery mode, default to browser_headless but allow config to override
-        let fetch_mode = FetchMode::BrowserHeadless;
-        let search_page_content = self.fetcher.fetch_raw(&search_url, fetch_mode).await?;
+        // Try browser mode first, then fallback to plain HTTP if it fails
+        let search_page_content = match self
+            .fetch_with_retry(&search_url, FetchMode::BrowserHeadless)
+            .await
+        {
+            Ok(content) => content,
+            Err(browser_error) => {
+                return Err(TarziError::Search(format!(
+                    "Browser mode failed: {browser_error}"
+                )));
+            }
+        };
 
         // Extract search results from the HTML content using webquery parser
         let results = self.extract_search_results_from_html(
@@ -123,6 +132,45 @@ impl SearchEngine {
         )?;
 
         Ok(results)
+    }
+
+    async fn fetch_with_retry(&mut self, url: &str, fetch_mode: FetchMode) -> Result<String> {
+        const MAX_RETRIES: usize = 3;
+        const RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
+
+        for attempt in 1..=MAX_RETRIES {
+            match self.fetcher.fetch_raw(url, fetch_mode).await {
+                Ok(content) => {
+                    if attempt > 1 {
+                        info!("Successfully fetched content on attempt {}", attempt);
+                    }
+                    return Ok(content);
+                }
+                Err(e) => {
+                    let error_str = e.to_string();
+                    let is_network_error = error_str.contains("nssFailure")
+                        || error_str.contains("network")
+                        || error_str.contains("timeout")
+                        || error_str.contains("connection");
+
+                    if is_network_error && attempt < MAX_RETRIES {
+                        warn!(
+                            "Network error on attempt {}: {}. Retrying in {} seconds...",
+                            attempt,
+                            e,
+                            RETRY_DELAY.as_secs()
+                        );
+                        tokio::time::sleep(RETRY_DELAY).await;
+                        continue;
+                    } else {
+                        return Err(e);
+                    }
+                }
+            }
+        }
+
+        // This should never be reached, but just in case
+        Err(TarziError::Network("Max retries exceeded".to_string()))
     }
 
     fn extract_search_results_from_html(
