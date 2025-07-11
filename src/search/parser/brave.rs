@@ -33,7 +33,7 @@ impl WebSearchParser for BraveParser {
     fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
-        for (_, node) in document.find(Class("result-row")).enumerate() {
+        for node in document.find(Class("result-row")) {
             // Check if we've reached the limit
             if results.len() >= limit {
                 break;
@@ -117,7 +117,7 @@ impl ApiSearchParser for BraveApiParser {
         let json: Value = serde_json::from_str(json_content)?;
         let mut results = Vec::new();
         if let Some(web_results) = json["web"]["results"].as_array() {
-            for (_, result) in web_results.iter().enumerate() {
+            for result in web_results.iter() {
                 // Check if we've reached the limit
                 if results.len() >= limit {
                     break;

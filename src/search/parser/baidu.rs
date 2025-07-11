@@ -115,7 +115,7 @@ impl ApiSearchParser for BaiduApiParser {
         let json: Value = serde_json::from_str(json_content)?;
         let mut results = Vec::new();
         if let Some(results_array) = json["results"].as_array() {
-            for (_, result) in results_array.iter().enumerate() {
+            for result in results_array.iter() {
                 // Check if we've reached the limit
                 if results.len() >= limit {
                     break;

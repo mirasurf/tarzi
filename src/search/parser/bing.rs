@@ -29,7 +29,7 @@ impl WebSearchParser for BingParser {
     fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
-        for (_, node) in document.find(Class("b_algo")).enumerate() {
+        for node in document.find(Class("b_algo")) {
             // Check if we've reached the limit
             if results.len() >= limit {
                 break;
