@@ -9,6 +9,7 @@ use crate::{
 use reqwest::Client;
 use std::str::FromStr;
 
+use crate::constants::DEFAULT_QUERY_PATTERN;
 use tracing::{info, warn};
 
 pub struct SearchEngine {
@@ -21,7 +22,7 @@ pub struct SearchEngine {
 
 impl SearchEngine {
     pub fn new() -> Self {
-        info!("Initializing SearchEngine");
+        // Initialize SearchEngine with default configuration
         Self {
             fetcher: WebFetcher::new(),
             engine_type: SearchEngineType::DuckDuckGo,
@@ -47,7 +48,6 @@ impl SearchEngine {
     // Custom parser registration removed - custom engines are no longer supported
 
     pub fn from_config(config: &Config) -> Self {
-        info!("Initializing SearchEngine from config");
         let fetcher = crate::fetcher::WebFetcher::from_config(config);
 
         // Parse the search engine type from config
@@ -58,7 +58,7 @@ impl SearchEngine {
         let mode = SearchMode::from_str(&config.search.mode).unwrap_or(SearchMode::WebQuery);
 
         // Use custom query pattern if provided, otherwise use the default for the engine type and mode
-        let query_pattern = if config.search.query_pattern != "https://duckduckgo.com/?q={query}" {
+        let query_pattern = if config.search.query_pattern != DEFAULT_QUERY_PATTERN {
             // If a custom query pattern is explicitly set in config, use it
             config.search.query_pattern.clone()
         } else {
@@ -81,8 +81,6 @@ impl SearchEngine {
         mode: SearchMode,
         limit: usize,
     ) -> Result<Vec<SearchResult>> {
-        info!("Starting search with mode: {:?}, limit: {}", mode, limit);
-
         // Validate that the engine supports the requested mode
         match mode {
             SearchMode::WebQuery => {
@@ -92,7 +90,6 @@ impl SearchEngine {
                         self.engine_type
                     )));
                 }
-                info!("Using browser mode for search");
                 self.search_browser(query, limit).await
             }
             SearchMode::ApiQuery => {
@@ -103,28 +100,20 @@ impl SearchEngine {
                     )));
                 }
 
-                info!("Using API mode for search");
                 self.search_api(query, limit).await
             }
         }
     }
 
     async fn search_browser(&mut self, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        info!("Starting browser-based search for query: '{}'", query);
-
         // Use the query pattern from config to build the search URL
         let search_url = self
             .query_pattern
             .replace("{query}", &urlencoding::encode(query));
-        info!("Fetching search results from: {}", search_url);
 
         // For webquery mode, default to browser_headless but allow config to override
         let fetch_mode = FetchMode::BrowserHeadless;
         let search_page_content = self.fetcher.fetch_raw(&search_url, fetch_mode).await?;
-        info!(
-            "Successfully fetched search page ({} characters)",
-            search_page_content.len()
-        );
 
         // Extract search results from the HTML content using webquery parser
         let results = self.extract_search_results_from_html(
@@ -132,7 +121,6 @@ impl SearchEngine {
             limit,
             SearchMode::WebQuery,
         )?;
-        info!("Successfully extracted {} search results", results.len());
 
         Ok(results)
     }
@@ -143,32 +131,16 @@ impl SearchEngine {
         limit: usize,
         mode: SearchMode,
     ) -> Result<Vec<SearchResult>> {
-        info!("Extracting search results from content using mode-specific parser");
-
         // Get the appropriate parser for the current engine type and mode
         let parser = self.parser_factory.get_parser(&self.engine_type, mode);
-
-        info!(
-            "Using parser: {} for engine type: {:?} and mode: {:?}",
-            parser.name(),
-            self.engine_type,
-            mode
-        );
 
         // Use the parser to extract results
         let results = parser.parse(html, limit)?;
 
-        info!(
-            "Successfully extracted {} search results using {}",
-            results.len(),
-            parser.name()
-        );
         Ok(results)
     }
 
-    async fn search_api(&mut self, query: &str, _limit: usize) -> Result<Vec<SearchResult>> {
-        info!("Starting API-based search for query: '{}'", query);
-
+    async fn search_api(&mut self, _query: &str, _limit: usize) -> Result<Vec<SearchResult>> {
         // For now, API search is not implemented in the simplified version
         Err(TarziError::Config(
             "API search not implemented in simplified version".to_string(),
@@ -184,22 +156,17 @@ impl SearchEngine {
         fetch_mode: FetchMode,
         format: crate::converter::Format,
     ) -> Result<Vec<(SearchResult, String)>> {
-        info!("Searching and fetching content for query: '{}'", query);
-
         // Enforce fetcher mode constraints based on search mode
         let effective_fetch_mode = match mode {
             SearchMode::ApiQuery => {
                 // For apiquery mode, always use plain_request regardless of what's passed
-                info!("Enforcing plain_request mode for apiquery search");
                 FetchMode::PlainRequest
             }
             SearchMode::WebQuery => {
                 // For webquery mode, use the provided fetch_mode or default to browser_headless
                 if matches!(fetch_mode, FetchMode::PlainRequest) {
-                    info!("Using plain_request mode for webquery search");
                     FetchMode::PlainRequest
                 } else {
-                    info!("Using browser_headless mode for webquery search");
                     FetchMode::BrowserHeadless
                 }
             }
@@ -207,25 +174,17 @@ impl SearchEngine {
 
         // First, perform the search
         let search_results = self.search(query, mode, limit).await?;
-        info!("Found {} search results", search_results.len());
 
         // Then, fetch content for each result using the effective fetch mode
         let mut results_with_content = Vec::new();
 
         for result in search_results.clone() {
-            info!("Fetching content for: {}", result.url);
             match self
                 .fetcher
                 .fetch(&result.url, effective_fetch_mode, format)
                 .await
             {
                 Ok(content) => {
-                    info!(
-                        "Successfully fetched content for {} ({} characters) {}",
-                        result.url,
-                        content.len(),
-                        content.chars().collect::<String>()
-                    );
                     results_with_content.push((result, content));
                 }
                 Err(e) => {
@@ -235,11 +194,6 @@ impl SearchEngine {
             }
         }
 
-        info!(
-            "Successfully fetched content for {}/{} results",
-            results_with_content.len(),
-            search_results.len()
-        );
         Ok(results_with_content)
     }
 

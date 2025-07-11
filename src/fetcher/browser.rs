@@ -348,10 +348,6 @@ impl BrowserManager {
         // Try the primary driver first
         match driver_manager.check_driver_binary(&primary_driver) {
             Ok(()) => {
-                info!(
-                    "{:?} found, starting driver with DriverManager",
-                    primary_driver
-                );
                 let (port, args) = match &primary_driver {
                     DriverType::Chrome => (CHROMEDRIVER_DEFAULT_PORT, CHROME_DRIVER_ARGS),
                     DriverType::Firefox => (GECKODRIVER_DEFAULT_PORT, FIREFOX_DRIVER_ARGS),
@@ -368,10 +364,6 @@ impl BrowserManager {
 
                 match driver_manager.start_driver_with_config(config) {
                     Ok(driver_info) => {
-                        info!(
-                            "Successfully started {:?} at: {}",
-                            primary_driver, driver_info.endpoint
-                        );
                         self.managed_driver_info = Some(driver_info.clone());
                         return Ok(driver_info.endpoint);
                     }
@@ -445,10 +437,8 @@ impl BrowserManager {
         if let (Some(driver_manager), Some(driver_info)) =
             (&mut self.driver_manager, &self.managed_driver_info)
         {
-            info!("Cleaning up managed driver: {}", driver_info.endpoint);
             match driver_manager.stop_driver(driver_info.config.port) {
                 Ok(()) => {
-                    info!("Successfully stopped managed driver");
                     self.managed_driver_info = None;
                 }
                 Err(e) => {

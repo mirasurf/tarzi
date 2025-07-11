@@ -36,7 +36,8 @@ impl WebSearchParser for DuckDuckGoParser {
         let document = Document::from(html);
         let mut results = Vec::new();
 
-        for (i, result_element) in document.find(Class("result")).take(limit).enumerate() {
+        // Look for result__body elements (matches test HTML structure)
+        for (i, result_element) in document.find(Class("result__body")).take(limit).enumerate() {
             // Title and URL
             let title_link = result_element
                 .find(Name("a").and(Class("result__a")))

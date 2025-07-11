@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use std::str::FromStr;
+use tarzi::constants::{FORMAT_HTML, FORMAT_JSON, FORMAT_MARKDOWN};
 use tarzi::{
     Result,
     config::{CliConfigParams, Config},
@@ -26,7 +27,7 @@ enum Commands {
         #[arg(short, long)]
         input: String,
         /// Output format: markdown, json, or yaml
-        #[arg(short, long, default_value = "markdown")]
+        #[arg(short, long, default_value = FORMAT_MARKDOWN)]
         format: String,
         /// Output file path (optional)
         #[arg(short, long)]
@@ -41,7 +42,7 @@ enum Commands {
         #[arg(short, long)]
         url: String,
         /// Output format: html, markdown, json, or yaml
-        #[arg(short, long, default_value = "html")]
+        #[arg(short, long, default_value = FORMAT_HTML)]
         format: String,
         /// Output file path (optional)
         #[arg(short, long)]
@@ -59,7 +60,7 @@ enum Commands {
         #[arg(short, long, default_value = "10")]
         limit: usize,
         /// Output format: json or yaml
-        #[arg(short, long, default_value = "json")]
+        #[arg(short, long, default_value = FORMAT_JSON)]
         format: String,
         /// Output file path (optional)
         #[arg(short, long)]
@@ -77,7 +78,7 @@ enum Commands {
         #[arg(short, long, default_value = "5")]
         limit: usize,
         /// Output format: html, markdown, json, or yaml
-        #[arg(short, long, default_value = "markdown")]
+        #[arg(short, long, default_value = FORMAT_MARKDOWN)]
         format: String,
         /// Output file path (optional)
         #[arg(short, long)]
@@ -108,11 +109,9 @@ async fn main() -> Result<()> {
             input,
             format,
             output,
-            verbose,
+            verbose: _,
         } => {
-            // Initialize logging for this subcommand
-            info!("Tarzi Convert starting with verbose mode: {}", verbose);
-            info!("Converting input to {}", format);
+            // Convert HTML input to specified format
             debug!("Input length: {} characters", input.len());
 
             let converter = Converter::new();
@@ -130,11 +129,9 @@ async fn main() -> Result<()> {
             url,
             format,
             output,
-            verbose,
+            verbose: _,
         } => {
-            // Initialize logging for this subcommand
-            info!("Tarzi Fetch starting with verbose mode: {}", verbose);
-            info!("Fetching URL: {} with mode: {}", url, format);
+            // Fetch and convert web content
             debug!("Using format: {}", format);
 
             // Apply CLI parameters to config
@@ -145,11 +142,6 @@ async fn main() -> Result<()> {
             let format = Format::from_str(&format)?;
 
             let result = fetcher.fetch(&url, FetchMode::PlainRequest, format).await?;
-
-            info!(
-                "Successfully fetched and converted content ({} characters)",
-                result.len()
-            );
 
             if let Some(output_path) = output {
                 std::fs::write(&output_path, result)?;
@@ -163,15 +155,9 @@ async fn main() -> Result<()> {
             limit,
             format,
             output,
-            verbose,
+            verbose: _,
         } => {
-            // Initialize logging for this subcommand
-            info!("Tarzi Search starting with verbose mode: {}", verbose);
-            info!("Starting search operation");
-            info!("Query: '{}'", query);
-            info!("Limit: {}", limit);
-            info!("Format: {}", format);
-
+            // Perform web search and return results
             // Apply CLI parameters to config
             cli_params.search_limit = Some(limit);
             config.apply_cli_params(&cli_params);
@@ -179,10 +165,8 @@ async fn main() -> Result<()> {
             let mut search_engine = SearchEngine::from_config(&config);
             let mode = SearchMode::from_str(&config.search.mode)?;
 
-            info!("Search engine initialized, starting search...");
             let results = search_engine.search(&query, mode, limit).await?;
 
-            info!("Search completed, found {} results", results.len());
             debug!("Processing results for output format: {}", format);
 
             let format = Format::from_str(&format)?;
@@ -203,18 +187,9 @@ async fn main() -> Result<()> {
             limit,
             format,
             output,
-            verbose,
+            verbose: _,
         } => {
-            // Initialize logging for this subcommand
-            info!(
-                "Tarzi SearchAndFetch starting with verbose mode: {}",
-                verbose
-            );
-            info!("Starting search and fetch operation");
-            info!("Query: '{}'", query);
-            info!("Limit: {}", limit);
-            info!("Format: {}", format);
-
+            // Search and fetch content for each result
             // Apply CLI parameters to config
             cli_params.search_limit = Some(limit);
             cli_params.fetcher_format = Some(format.clone());
@@ -224,15 +199,9 @@ async fn main() -> Result<()> {
             let mode = SearchMode::from_str(&config.search.mode)?;
             let format = Format::from_str(&format)?;
 
-            info!("Search engine initialized, starting search and fetch...");
             let results_with_content = search_engine
                 .search_and_fetch(&query, mode, limit, FetchMode::PlainRequest, format)
                 .await?;
-
-            info!(
-                "Search and fetch completed, processed {} results",
-                results_with_content.len()
-            );
 
             // Convert results to JSON for output
             let result = serde_json::to_string_pretty(&results_with_content)?;

@@ -15,6 +15,7 @@ You're working on **Tarzi**—a rust-native lite search for AI applications.
 - Always perfer modularized design for each module.
 - Always declared contants value modules to contain magic values. DO NOT treat error messages as constants.
 - For Makefile, always classify subcommands into category and unify subcommands pattern: make foo (to run foo for Rust and Python), make foo-python (to run foo for python), make foo-rust (to run foo for Rust)
+- DO NOT declare magic values used in multiple positions. Declare constant values instead.
 
 ## IMPL. CONSIDERATIONS OF RUST
 

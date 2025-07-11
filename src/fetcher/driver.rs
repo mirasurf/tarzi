@@ -6,7 +6,7 @@
 
 use crate::{
     Result, TarziError,
-    constants::{CHROMEDRIVER_DEFAULT_PORT, DEFAULT_TIMEOUT},
+    constants::{CHROMEDRIVER_DEFAULT_PORT, DEFAULT_TIMEOUT_SECS},
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -69,7 +69,7 @@ impl Default for DriverConfig {
             driver_type: DriverType::Chrome,
             port: CHROMEDRIVER_DEFAULT_PORT,
             args: Vec::new(),
-            timeout: DEFAULT_TIMEOUT,
+            timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
             verbose: false,
         }
     }
@@ -361,7 +361,7 @@ impl DriverManager {
     pub fn is_driver_healthy(&self, endpoint: &str) -> bool {
         // Try to make a simple HTTP request to the driver's status endpoint
         let client = reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(DEFAULT_TIMEOUT_SECS))
             .build()
             .unwrap_or_else(|_| reqwest::blocking::Client::new());
 
@@ -421,7 +421,7 @@ impl DriverManager {
             driver_type,
             port,
             args: Vec::new(),
-            timeout: Duration::from_secs(30),
+            timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
             verbose: false,
         }
     }
@@ -482,8 +482,8 @@ mod tests {
     fn test_driver_config_default() {
         let config = DriverConfig::default();
         assert_eq!(config.driver_type, DriverType::Chrome);
-        assert_eq!(config.port, 9515);
-        assert_eq!(config.timeout, Duration::from_secs(30));
+        assert_eq!(config.port, CHROMEDRIVER_DEFAULT_PORT);
+        assert_eq!(config.timeout, Duration::from_secs(DEFAULT_TIMEOUT_SECS));
         assert!(!config.verbose);
         assert!(config.args.is_empty());
     }
@@ -492,16 +492,16 @@ mod tests {
     fn test_driver_manager_new() {
         let manager = DriverManager::new();
         assert_eq!(manager.default_config.driver_type, DriverType::Chrome);
-        assert_eq!(manager.default_config.port, 9515);
+        assert_eq!(manager.default_config.port, CHROMEDRIVER_DEFAULT_PORT);
     }
 
     #[test]
     fn test_driver_manager_with_config() {
         let config = DriverConfig {
             driver_type: DriverType::Firefox,
-            port: 4444,
+            port: 19515, // Use a different port for testing
             args: vec!["--verbose".to_string()],
-            timeout: Duration::from_secs(60),
+            timeout: Duration::from_secs(10),
             verbose: true,
         };
 
@@ -523,18 +523,18 @@ mod tests {
 
     #[test]
     fn test_create_config() {
-        let config = DriverManager::create_config(DriverType::Firefox, 4444);
+        let config = DriverManager::create_config(DriverType::Firefox, 19515);
         assert_eq!(config.driver_type, DriverType::Firefox);
-        assert_eq!(config.port, 4444);
-        assert_eq!(config.timeout, Duration::from_secs(30));
+        assert_eq!(config.port, 19515);
+        assert_eq!(config.timeout, Duration::from_secs(DEFAULT_TIMEOUT_SECS));
         assert!(!config.verbose);
     }
 
     #[test]
     fn test_is_port_in_use() {
         let manager = DriverManager::new();
-        assert!(!manager.is_port_in_use(9515));
-        assert!(!manager.is_port_in_use(4444));
+        assert!(!manager.is_port_in_use(CHROMEDRIVER_DEFAULT_PORT));
+        assert!(!manager.is_port_in_use(19515));
     }
 
     #[test]
@@ -564,18 +564,20 @@ mod tests {
     #[test]
     fn test_get_driver_info_not_found() {
         let manager = DriverManager::new();
-        let info = manager.get_driver_info(9515);
+        let info = manager.get_driver_info(CHROMEDRIVER_DEFAULT_PORT);
         assert!(info.is_none());
     }
 
     #[test]
     fn test_stop_driver_not_found() {
         let manager = DriverManager::new();
-        let result = manager.stop_driver(9515);
+        let result = manager.stop_driver(CHROMEDRIVER_DEFAULT_PORT);
         assert!(result.is_err());
 
         if let Err(TarziError::Driver(msg)) = result {
-            assert!(msg.contains("No driver running on port 9515"));
+            assert!(msg.contains(&format!(
+                "No driver running on port {CHROMEDRIVER_DEFAULT_PORT}"
+            )));
         } else {
             panic!("Expected Driver error");
         }

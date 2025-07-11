@@ -1,3 +1,11 @@
+use crate::constants::{
+    BAIDU_API_KEY_FIELD, BAIDU_API_PATTERN, BAIDU_QUERY_PATTERN, BING_QUERY_PATTERN,
+    BRAVE_API_KEY_FIELD, BRAVE_API_PATTERN, BRAVE_QUERY_PATTERN, DUCKDUCKGO_API_PATTERN,
+    DUCKDUCKGO_QUERY_PATTERN, EMPTY_PATTERN, EXA_API_KEY_FIELD, EXA_API_PATTERN, EXA_QUERY_PATTERN,
+    GOOGLE_QUERY_PATTERN, SEARCH_ENGINE_BAIDU, SEARCH_ENGINE_BING, SEARCH_ENGINE_BRAVE,
+    SEARCH_ENGINE_DUCKDUCKGO, SEARCH_ENGINE_EXA, SEARCH_ENGINE_GOOGLE, SEARCH_ENGINE_TRAVILY,
+    SEARCH_MODE_APIQUERY, SEARCH_MODE_WEBQUERY, TRAVILY_API_KEY_FIELD, TRAVILY_API_PATTERN,
+};
 use crate::error::TarziError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
@@ -24,13 +32,13 @@ impl FromStr for SearchEngineType {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "bing" => Ok(SearchEngineType::Bing),
-            "duckduckgo" => Ok(SearchEngineType::DuckDuckGo),
-            "google" => Ok(SearchEngineType::Google),
-            "brave" => Ok(SearchEngineType::BraveSearch),
-            "baidu" => Ok(SearchEngineType::Baidu),
-            "exa" => Ok(SearchEngineType::Exa),
-            "travily" => Ok(SearchEngineType::Travily),
+            SEARCH_ENGINE_BING => Ok(SearchEngineType::Bing),
+            SEARCH_ENGINE_DUCKDUCKGO => Ok(SearchEngineType::DuckDuckGo),
+            SEARCH_ENGINE_GOOGLE => Ok(SearchEngineType::Google),
+            SEARCH_ENGINE_BRAVE => Ok(SearchEngineType::BraveSearch),
+            SEARCH_ENGINE_BAIDU => Ok(SearchEngineType::Baidu),
+            SEARCH_ENGINE_EXA => Ok(SearchEngineType::Exa),
+            SEARCH_ENGINE_TRAVILY => Ok(SearchEngineType::Travily),
             _ => Err(TarziError::InvalidEngine(s.to_string())),
         }
     }
@@ -39,44 +47,28 @@ impl FromStr for SearchEngineType {
 impl SearchEngineType {
     pub fn get_query_pattern_for_mode(&self, mode: SearchMode) -> String {
         match (self, mode) {
-            (SearchEngineType::Bing, SearchMode::WebQuery) => {
-                "https://www.bing.com/search?q={query}".to_string()
-            }
-            (SearchEngineType::Bing, SearchMode::ApiQuery) => "".to_string(), // No API
+            (SearchEngineType::Bing, SearchMode::WebQuery) => BING_QUERY_PATTERN.to_string(),
+            (SearchEngineType::Bing, SearchMode::ApiQuery) => EMPTY_PATTERN.to_string(), // No API
             (SearchEngineType::DuckDuckGo, SearchMode::WebQuery) => {
-                "https://duckduckgo.com/?q={query}".to_string()
+                DUCKDUCKGO_QUERY_PATTERN.to_string()
             }
             (SearchEngineType::DuckDuckGo, SearchMode::ApiQuery) => {
-                "https://api.duckduckgo.com/?q={query}&format=json".to_string()
+                DUCKDUCKGO_API_PATTERN.to_string()
             }
-            (SearchEngineType::Google, SearchMode::WebQuery) => {
-                "https://www.google.com/search?q={query}".to_string()
-            }
+            (SearchEngineType::Google, SearchMode::WebQuery) => GOOGLE_QUERY_PATTERN.to_string(),
             (SearchEngineType::Google, SearchMode::ApiQuery) => {
-                "".to_string() // No API for Google (Serper support removed)
+                EMPTY_PATTERN.to_string() // No API for Google (Serper support removed)
             }
             (SearchEngineType::BraveSearch, SearchMode::WebQuery) => {
-                "https://search.brave.com/search?q={query}".to_string()
+                BRAVE_QUERY_PATTERN.to_string()
             }
-            (SearchEngineType::BraveSearch, SearchMode::ApiQuery) => {
-                "https://api.search.brave.com/res/v1/web/search".to_string()
-            }
-            (SearchEngineType::Baidu, SearchMode::WebQuery) => {
-                "https://www.baidu.com/s?wd={query}".to_string()
-            }
-            (SearchEngineType::Baidu, SearchMode::ApiQuery) => {
-                "https://api.baidu.com/search".to_string()
-            }
-            (SearchEngineType::Exa, SearchMode::WebQuery) => {
-                "https://exa.ai/search?q={query}".to_string()
-            }
-            (SearchEngineType::Exa, SearchMode::ApiQuery) => {
-                "https://api.exa.ai/search".to_string()
-            }
-            (SearchEngineType::Travily, SearchMode::WebQuery) => "".to_string(), // No webquery
-            (SearchEngineType::Travily, SearchMode::ApiQuery) => {
-                "https://api.tavily.com/search".to_string()
-            }
+            (SearchEngineType::BraveSearch, SearchMode::ApiQuery) => BRAVE_API_PATTERN.to_string(),
+            (SearchEngineType::Baidu, SearchMode::WebQuery) => BAIDU_QUERY_PATTERN.to_string(),
+            (SearchEngineType::Baidu, SearchMode::ApiQuery) => BAIDU_API_PATTERN.to_string(),
+            (SearchEngineType::Exa, SearchMode::WebQuery) => EXA_QUERY_PATTERN.to_string(),
+            (SearchEngineType::Exa, SearchMode::ApiQuery) => EXA_API_PATTERN.to_string(),
+            (SearchEngineType::Travily, SearchMode::WebQuery) => EMPTY_PATTERN.to_string(), // No webquery
+            (SearchEngineType::Travily, SearchMode::ApiQuery) => TRAVILY_API_PATTERN.to_string(),
         }
     }
 
@@ -129,10 +121,10 @@ impl SearchEngineType {
             SearchEngineType::Bing => None,
             SearchEngineType::DuckDuckGo => None,
             SearchEngineType::Google => None,
-            SearchEngineType::BraveSearch => Some("brave_api_key"),
-            SearchEngineType::Baidu => Some("baidu_api_key"),
-            SearchEngineType::Exa => Some("exa_api_key"),
-            SearchEngineType::Travily => Some("travily_api_key"),
+            SearchEngineType::BraveSearch => Some(BRAVE_API_KEY_FIELD),
+            SearchEngineType::Baidu => Some(BAIDU_API_KEY_FIELD),
+            SearchEngineType::Exa => Some(EXA_API_KEY_FIELD),
+            SearchEngineType::Travily => Some(TRAVILY_API_KEY_FIELD),
         }
     }
 
@@ -146,8 +138,8 @@ impl FromStr for SearchMode {
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "webquery" => Ok(SearchMode::WebQuery),
-            "apiquery" => Ok(SearchMode::ApiQuery),
+            SEARCH_MODE_WEBQUERY => Ok(SearchMode::WebQuery),
+            SEARCH_MODE_APIQUERY => Ok(SearchMode::ApiQuery),
             _ => Err(TarziError::InvalidMode(s.to_string())),
         }
     }

@@ -6,7 +6,7 @@ use crate::{
     error::TarziError,
 };
 use reqwest::Client;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 use url::Url;
 
 use super::{browser::BrowserManager, types::FetchMode};
@@ -67,11 +67,6 @@ impl WebFetcher {
 
     /// Fetch content from URL and convert to specified format
     pub async fn fetch(&mut self, url: &str, mode: FetchMode, format: Format) -> Result<String> {
-        info!(
-            "Fetching URL: {} with mode: {:?}, format: {:?}",
-            url, mode, format
-        );
-
         // First fetch the raw content
         let raw_content = match mode {
             FetchMode::PlainRequest => self.fetch_plain_request(url).await?,
@@ -80,36 +75,17 @@ impl WebFetcher {
         };
 
         // Then convert to the specified format
-        info!("Converting content to format: {:?}", format);
         let converted_content = self.converter.convert(&raw_content, format).await?;
 
-        info!(
-            "Successfully fetched and converted content ({} characters)",
-            converted_content.len()
-        );
         Ok(converted_content)
     }
 
     /// Fetch raw content using plain HTTP request (no JS rendering)
     async fn fetch_plain_request(&self, url: &str) -> Result<String> {
-        info!("Fetching URL with plain request: {}", url);
         let url = Url::parse(url)?;
-        debug!("Parsed URL: {:?}", url);
-
-        info!("Sending HTTP request...");
         let response = self.http_client.get(url).send().await?;
-        info!("Received HTTP response with status: {}", response.status());
-
         let response = response.error_for_status()?;
-        info!("HTTP request successful");
-
-        info!("Reading response body...");
         let content = response.text().await?;
-        info!(
-            "Successfully read response body ({} characters)",
-            content.len()
-        );
-
         Ok(content)
     }
 

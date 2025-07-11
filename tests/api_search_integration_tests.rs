@@ -143,10 +143,11 @@ async fn test_api_search_with_duckduckgo_provider() {
             }
         }
         Err(e) => {
-            // DuckDuckGo API might not be fully implemented, so errors are acceptable
+            // DuckDuckGo API is not implemented in simplified version
             println!("DuckDuckGo API test failed as expected: {e}");
             assert!(
-                e.to_string().contains("not fully implemented")
+                e.to_string()
+                    .contains("not implemented in simplified version")
                     || e.to_string().contains("Network")
                     || e.to_string().contains("DuckDuckGo"),
                 "Error should indicate DuckDuckGo limitation: {e}"
@@ -206,12 +207,14 @@ async fn test_api_search_without_api_key() {
             println!("API search without keys returned empty results as expected");
         }
         Err(error) => {
-            // Also acceptable - should indicate missing providers
+            // Also acceptable - should indicate missing providers or simplified implementation
             println!("API search without keys failed as expected: {error}");
             assert!(
                 error.to_string().contains("No provider registered")
                     || error.to_string().contains("All search providers failed")
-                    || error.to_string().contains("not fully implemented"),
+                    || error
+                        .to_string()
+                        .contains("not implemented in simplified version"),
                 "Error should indicate missing/limited provider: {error}"
             );
         }
