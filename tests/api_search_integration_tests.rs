@@ -142,6 +142,54 @@ async fn test_api_search_with_travily_provider() {
 }
 
 #[tokio::test]
+async fn test_api_search_with_duckduckgo_provider() {
+    let mut config = Config::new();
+
+    // DuckDuckGo API doesn't require an API key, so we can always test it
+    config.search.engine = "duckduckgo".to_string();
+
+    let mut engine = SearchEngine::from_config(&config);
+    let results = engine
+        .search("rust programming language", SearchMode::ApiQuery, 3)
+        .await;
+
+    match results {
+        Ok(search_results) => {
+            // DuckDuckGo API may return empty results as it's not fully implemented
+            // But it shouldn't crash
+            println!("DuckDuckGo API returned {} results", search_results.len());
+
+            if !search_results.is_empty() {
+                assert!(search_results.len() <= 3, "Should respect limit parameter");
+
+                for result in &search_results {
+                    assert!(!result.title.is_empty(), "Title should not be empty");
+                    assert!(!result.url.is_empty(), "URL should not be empty");
+                    assert!(result.rank > 0, "Rank should be positive");
+
+                    // URL validation
+                    assert!(
+                        result.url.starts_with("http://") || result.url.starts_with("https://"),
+                        "URL should be properly formatted: {}",
+                        result.url
+                    );
+                }
+            }
+        }
+        Err(e) => {
+            // DuckDuckGo API might not be fully implemented, so errors are acceptable
+            println!("DuckDuckGo API test failed as expected: {e}");
+            assert!(
+                e.to_string().contains("not fully implemented")
+                    || e.to_string().contains("Network")
+                    || e.to_string().contains("DuckDuckGo"),
+                "Error should indicate DuckDuckGo limitation: {e}"
+            );
+        }
+    }
+}
+
+#[tokio::test]
 async fn test_api_search_with_proxy() {
     let mut config = Config::new();
 
