@@ -5,6 +5,7 @@ Tests the new configuration without deprecated api_key field.
 """
 
 import pytest
+
 import tarzi
 
 

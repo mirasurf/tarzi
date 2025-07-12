@@ -35,19 +35,19 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          tarzi/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('tarzi/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
 
     - name: Check formatting
-      run: cargo fmt --all -- --check
+      run: cd tarzi && cargo fmt --all -- --check
 
     - name: Check code
-      run: cargo check --all-targets --all-features
+      run: cd tarzi && cargo check --all-targets --all-features
 
     - name: Run clippy
-      run: cargo clippy --all-targets --all-features -- -D warnings
+      run: cd tarzi && cargo clippy --all-targets --all-features -- -D warnings
 
   test:
     name: Test on ${{ matrix.os }}
@@ -80,17 +80,17 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          tarzi/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('tarzi/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
 
     - name: Run unit tests
-      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --lib --all-features
+      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --lib --all-features
 
     - name: Run integration tests
       if: env.ENABLE_INTEGRATION_TESTS == 'true'
-      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --test '*' --all-features
+      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --test '*' --all-features
       continue-on-error: true
 
     - name: Skip integration tests (disabled by default)
@@ -98,7 +98,7 @@ jobs:
       run: echo "⚠️  Integration tests are disabled by default. Set ENABLE_INTEGRATION_TESTS=true to enable them."
 
     - name: Run doctests
-      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --doc --all-features
+      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --doc --all-features
 
   build:
     name: Build Release on ${{ matrix.os }}
@@ -132,22 +132,22 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          tarzi/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('tarzi/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
 
     - name: Build release binary
-      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --all-features
+      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --all-features
 
     - name: Build with Python bindings
-      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --features pyo3
+      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --features pyo3
 
     - name: Test binary works
-      run: ./target/release/tarzi --version
+      run: cd tarzi && ./target/release/tarzi --version
 
     - name: Upload binary artifact
       uses: actions/upload-artifact@v4
       with:
         name: tarzi-binary-${{ runner.os }}
-        path: target/release/tarzi
+        path: tarzi/target/release/tarzi

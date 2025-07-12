@@ -8,7 +8,7 @@ PYTEST = pytest
 RUST_TARGET = target/release/tarzi
 PYTHON_PACKAGE = target/wheels/*.whl
 PYTHON_TEST_DIR = tests/python
-PYTHON_MODULES = examples tests/python
+PYTHON_MODULES = examples python
 
 # Integration test control (disabled by default)
 ENABLE_INTEGRATION_TESTS ?= false
@@ -301,8 +301,10 @@ build-and-publish-python-test: check-publish-prereqs build-python publish-python
 .PHONY: version
 version: ## Show current version
 	@echo "$(BLUE)Current version:$(RESET)"
-	@echo "Rust (Cargo.toml): $(shell grep '^version = ' Cargo.toml | cut -d'"' -f2)"
+	@echo "Workspace (Cargo.toml): $(shell grep '^version = ' Cargo.toml | cut -d'"' -f2)"
+	@echo "Tarzi Rust (tarzi/Cargo.toml): $(shell grep '^version = ' tarzi/Cargo.toml | cut -d'"' -f2)"
 	@echo "Python (pyproject.toml): $(shell grep '^version = ' pyproject.toml | cut -d'"' -f2)"
+	@echo "Tarzi Python (tarzi/pyproject.toml): $(shell grep '^version = ' tarzi/pyproject.toml | cut -d'"' -f2)"
 
 .PHONY: version-update
 version-update:
@@ -311,14 +313,22 @@ version-update:
 		exit 1; \
 	fi
 	@echo "$(BLUE)Updating version to $(VERSION)...$(RESET)"
-	@# Update Cargo.toml
+	@# Update workspace Cargo.toml
 	@sed -i.bak 's/^version = ".*"/version = "$(VERSION)"/' Cargo.toml
 	@rm -f Cargo.toml.bak
-	@echo "$(GREEN)✅ Updated Cargo.toml$(RESET)"
+	@echo "$(GREEN)✅ Updated workspace Cargo.toml$(RESET)"
+	@# Update tarzi Cargo.toml
+	@sed -i.bak 's/^version = ".*"/version = "$(VERSION)"/' tarzi/Cargo.toml
+	@rm -f tarzi/Cargo.toml.bak
+	@echo "$(GREEN)✅ Updated tarzi/Cargo.toml$(RESET)"
 	@# Update pyproject.toml
 	@sed -i.bak 's/^version = ".*"/version = "$(VERSION)"/' pyproject.toml
 	@rm -f pyproject.toml.bak
 	@echo "$(GREEN)✅ Updated pyproject.toml$(RESET)"
+	@# Update tarzi pyproject.toml
+	@sed -i.bak 's/^version = ".*"/version = "$(VERSION)"/' tarzi/pyproject.toml
+	@rm -f tarzi/pyproject.toml.bak
+	@echo "$(GREEN)✅ Updated tarzi/pyproject.toml$(RESET)"
 	@# Update Cargo.lock
 	@$(CARGO) update
 	@echo "$(GREEN)✅ Updated Cargo.lock$(RESET)"
@@ -342,11 +352,11 @@ setup-docs: ## Setup documentation development environment
 
 .PHONY: dev
 dev: ## Run in development mode (debug build)
-	$(CARGO) run
+	$(CARGO) run -p tarzi
 
 .PHONY: dev-release
 dev-release: ## Run in development mode (release build)
-	$(CARGO) run --release
+	$(CARGO) run --release -p tarzi
 
 .PHONY: dev-check
 dev-check: check test-unit ## Quick development check (check + unit tests)

@@ -1,6 +1,6 @@
 [package]
 name = "tarzi"
-version = "0.0.14"
+version = "0.0.15"
 edition = "2024"
 authors = ["xmingc <chenxm35@gmail.com>"]
 description = "Rust-native lite search for AI applications"
@@ -61,4 +61,4 @@ tempfile = "3.20"
 which = "6.0"
 
 [dev-dependencies]
-tokio-test = "0.4"
+tokio-test = "0.4" 

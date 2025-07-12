@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="https://github.com/mirasurf/tarzi.rs/blob/4e751f8d389c0ac7f2061afa9286d2d7fa551aaf/static/tarzi-320.png" alt="Tarzi Logo" width="200" height="200">
+  <img src="https://github.com/mirasurf/tarzi/blob/4e751f8d389c0ac7f2061afa9286d2d7fa551aaf/static/tarzi-320.png" alt="Tarzi Logo" width="200" height="200">
 </div>
-<h1 align="center">tarzi.rs</h1>  
+<h1 align="center">tarzi</h1>  
 <p align="center">
   <a href="https://crates.io/crates/tarzi">
     <img src="https://img.shields.io/crates/v/tarzi.svg?style=flat-square" alt="Crate Version" />
@@ -10,11 +10,11 @@
     <img src="https://img.shields.io/pypi/v/tarzi.svg?style=flat-square" alt="PyPI Version" />
   </a>
   <!-- CI and Docs -->
-  <a href="https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml">
-    <img src="https://github.com/mirasurf/tarzi.rs/actions/workflows/rust-ci.yml/badge.svg" alt="Rust CI" />
+  <a href="https://github.com/mirasurf/tarzi/actions/workflows/rust-ci.yml">
+    <img src="https://github.com/mirasurf/tarzi/actions/workflows/rust-ci.yml/badge.svg" alt="Rust CI" />
   </a>
-  <a href="https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml">
-    <img src="https://github.com/mirasurf/tarzi.rs/actions/workflows/python-ci.yml/badge.svg" alt="Python CI" />
+  <a href="https://github.com/mirasurf/tarzi/actions/workflows/python-ci.yml">
+    <img src="https://github.com/mirasurf/tarzi/actions/workflows/python-ci.yml/badge.svg" alt="Python CI" />
   </a>
   <a href="https://tarzirs.readthedocs.io/en/latest/">
     <img src="https://app.readthedocs.org/projects/tarzirs/badge/?version=latest&style=flat" alt="Docs" />
@@ -72,7 +72,7 @@ Both CLIs support the same commands and configuration precedence.
 
 ## Usage Examples
 
-* Examples in Python and Rust: [examples](/examples/)
+* Examples in Python and Rust: [examples](/tarzi/examples/)
 
 ## Alternatives
 
@@ -82,4 +82,4 @@ Both CLIs support the same commands and configuration precedence.
 
 Thank you ❤ all human and non-human contributors.
 
-[![tarzi contributors](https://contrib.rocks/image?repo=mirasurf/tarzi.rs "tarzi contributors")](https://github.com/mirasurf/tarzi.rs/graphs/contributors)
+[![tarzi contributors](https://contrib.rocks/image?repo=mirasurf/tarzi "tarzi contributors")](https://github.com/mirasurf/tarzi/graphs/contributors)

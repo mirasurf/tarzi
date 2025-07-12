@@ -13,7 +13,8 @@ This directory contains the documentation for the tarzi project, built with Sphi
 
 2. Ensure you have the tarzi package available (either installed or in development mode):
    ```bash
-   # From project root
+   # From tarzi subfolder
+   cd ../tarzi
    pip install -e .
    # or
    maturin develop --release
@@ -51,7 +52,7 @@ After building, open `_build/html/index.html` in your web browser.
 - `user_guide/` - Detailed usage documentation
 - `python_api/` - Python API reference
 - `rust_api/` - Rust API reference
-- `examples/` - Code examples
+- `examples/` - Code examples (located in tarzi/examples/)
 - `configuration.rst` - Configuration options
 - `development.rst` - Development guide
 
@@ -79,20 +80,11 @@ When updating documentation:
 
 If you encounter import errors when building:
 
-1. Ensure tarzi is installed in development mode
+1. Ensure tarzi is installed in development mode (from the tarzi/ subfolder)
 2. Check that the Python path is correctly set in `conf.py`
 3. Verify that all dependencies are installed
 
 ### Build Errors
 
 1. Clean the build directory: `make clean`
-2. Reinstall dependencies: `pip install -r requirements.txt`
-3. Rebuild: `make html`
-
-### Theme Issues
-
-The documentation uses the Furo theme. If you see styling issues:
-
-1. Check that `furo` is installed: `pip install furo`
-2. Verify static files are in `_static/` directory
-3. Clear browser cache and rebuild 
+2. Reinstall dependencies: `pip install -r requirements.txt` 

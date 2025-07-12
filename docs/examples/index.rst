@@ -10,8 +10,8 @@ All examples are available in the `examples/` directory of the repository:
 
 .. code-block:: bash
 
-   git clone https://github.com/mirasurf/tarzi.rs.git
-   cd tarzi.rs/examples
+   git clone https://github.com/mirasurf/tarzi.git
+   cd tarzi/examples
 
    # Python examples
    python basic_usage.py
