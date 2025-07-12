@@ -6,6 +6,7 @@ Unit tests for proxy configuration in tarzi.
 import os
 
 import pytest
+
 import tarzi
 
 

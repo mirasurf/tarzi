@@ -4,6 +4,7 @@ Unit tests for HTML processing pipeline in tarzi.
 """
 
 import pytest
+
 import tarzi
 
 

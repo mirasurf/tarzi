@@ -72,7 +72,7 @@ Both CLIs support the same commands and configuration precedence.
 
 ## Usage Examples
 
-* Examples in Python and Rust: [examples](/examples/)
+* Examples in Python and Rust: [examples](/tarzi/examples/)
 
 ## Alternatives
 

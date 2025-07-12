@@ -55,8 +55,8 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          target
-        key: ${{ matrix.runner }}-${{ matrix.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          tarzi/target
+        key: ${{ matrix.runner }}-${{ matrix.arch }}-cargo-${{ hashFiles('tarzi/Cargo.lock') }}
         restore-keys: |
           ${{ matrix.runner }}-${{ matrix.arch }}-cargo-
     
@@ -64,13 +64,13 @@ jobs:
       run: pip install maturin[patchelf]
     
     - name: Build wheels
-      run: maturin build --release --out dist --interpreter python${{ matrix.python-version }}
+      run: cd tarzi && maturin build --release --out dist --interpreter python${{ matrix.python-version }}
     
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
         name: wheels-${{ matrix.os }}-${{ matrix.arch }}-py${{ matrix.python-version }}
-        path: dist
+        path: tarzi/dist
 
   build-linux-wheels:
     name: Build manylinux wheels for Python ${{ matrix.python-version }}-${{ matrix.arch }}
@@ -94,7 +94,7 @@ jobs:
       run: python -m pip install cibuildwheel==2.21.2
 
     - name: Build wheels
-      run: python -m cibuildwheel --output-dir wheelhouse
+      run: cd tarzi && python -m cibuildwheel --output-dir wheelhouse
       env:
         CIBW_BUILD: cp${{ matrix.python-version == '3.10' && '310' || matrix.python-version == '3.11' && '311' || '312' }}-manylinux_${{ matrix.arch }}
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
@@ -134,7 +134,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: manylinux-wheels-${{ matrix.arch }}-py${{ matrix.python-version }}
-        path: wheelhouse/*.whl
+        path: tarzi/wheelhouse/*.whl
 
   publish-python:
     name: Publish Python Package
@@ -188,7 +188,7 @@ jobs:
     - name: Publish to crates.io
       env:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      run: cargo publish
+      run: cd tarzi && cargo publish
 
   dry-run-summary:
     name: Dry Run Summary

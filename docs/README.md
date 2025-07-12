@@ -52,7 +52,7 @@ After building, open `_build/html/index.html` in your web browser.
 - `user_guide/` - Detailed usage documentation
 - `python_api/` - Python API reference
 - `rust_api/` - Rust API reference
-- `examples/` - Code examples
+- `examples/` - Code examples (located in tarzi/examples/)
 - `configuration.rst` - Configuration options
 - `development.rst` - Development guide
 

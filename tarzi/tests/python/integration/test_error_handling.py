@@ -5,6 +5,7 @@ These tests ensure robust error handling across all components.
 """
 
 import pytest
+
 import tarzi
 
 

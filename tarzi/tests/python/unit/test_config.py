@@ -4,6 +4,7 @@ Unit tests for the Config class in tarzi.
 """
 
 import pytest
+
 import tarzi
 
 

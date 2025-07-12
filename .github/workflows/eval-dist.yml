@@ -46,8 +46,8 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          target
-        key: ${{ runner.os }}-${{ matrix.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          tarzi/target
+        key: ${{ runner.os }}-${{ matrix.arch }}-cargo-${{ hashFiles('tarzi/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-${{ matrix.arch }}-cargo-
 
@@ -55,14 +55,14 @@ jobs:
       run: pip install maturin[patchelf]
 
     - name: Build Python wheels
-      run: maturin build --release --out dist
+      run: cd tarzi && maturin build --release --out dist
 
     - name: Test wheel installation
       shell: bash
       run: |
         python -m venv test_env
         source test_env/bin/activate
-        wheel_file=$(ls dist/*.whl | head -1)
+        wheel_file=$(ls tarzi/dist/*.whl | head -1)
         echo "Installing wheel: $wheel_file"
         pip install "$wheel_file"
         python -c "import tarzi; print('✅ Wheel installed successfully')"
@@ -99,7 +99,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: wheels-${{ matrix.os }}-${{ matrix.python-version }}-${{ matrix.arch }}
-        path: dist/
+        path: tarzi/dist/
         retention-days: 7
 
     - name: Test installation in clean environment
