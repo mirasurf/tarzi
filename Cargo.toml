@@ -11,10 +11,11 @@ categories = ["web-programming", "api-bindings", "text-processing"]
 
 [[bin]]
 name = "tarzi"
-path = "src/main.rs"
+path = "tarzi/rust/src/main.rs"
 
 [lib]
 name = "tarzi"
+path = "tarzi/rust/src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [features]

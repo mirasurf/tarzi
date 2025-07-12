@@ -8,7 +8,7 @@ PYTEST = pytest
 RUST_TARGET = target/release/tarzi
 PYTHON_PACKAGE = target/wheels/*.whl
 PYTHON_TEST_DIR = tests/python
-PYTHON_MODULES = examples tests/python
+PYTHON_MODULES = examples tests/python tarzi/python
 
 # Integration test control (disabled by default)
 ENABLE_INTEGRATION_TESTS ?= false
