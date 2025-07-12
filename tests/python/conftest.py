@@ -3,6 +3,7 @@
 Shared pytest fixtures and configuration for tarzi tests.
 """
 
+import os
 import sys
 
 import pytest
@@ -249,6 +250,9 @@ def complex_html():
 
 def pytest_collection_modifyitems(config, items):
     """Automatically mark tests based on their location."""
+    # Check if integration tests are enabled
+    enable_integration_tests = os.environ.get("ENABLE_INTEGRATION_TESTS", "false").lower() == "true"
+
     for item in items:
         # Mark unit tests
         if "unit" in str(item.fspath):
@@ -260,6 +264,35 @@ def pytest_collection_modifyitems(config, items):
         # Skip integration tests if tarzi is not available
         if not TARZI_AVAILABLE and item.get_closest_marker("integration"):
             item.add_marker(pytest.mark.skip(reason="tarzi module not available"))
+
+        # Skip integration tests if they're disabled (default behavior)
+        if not enable_integration_tests and item.get_closest_marker("integration"):
+            item.add_marker(
+                pytest.mark.skip(
+                    reason="integration tests disabled by default - set ENABLE_INTEGRATION_TESTS=true to enable"
+                )
+            )
+
+
+def pytest_addoption(parser):
+    """Add command-line options for test execution."""
+    parser.addoption(
+        "--enable-integration",
+        action="store_true",
+        default=False,
+        help="Enable integration tests (disabled by default)",
+    )
+
+
+def pytest_configure(config):
+    """Configure pytest with custom settings."""
+    # Register custom markers
+    config.addinivalue_line("markers", "integration: mark test as integration test")
+    config.addinivalue_line("markers", "unit: mark test as unit test")
+
+    # Override environment variable if --enable-integration is provided
+    if config.getoption("--enable-integration"):
+        os.environ["ENABLE_INTEGRATION_TESTS"] = "true"
 
 
 # Custom pytest hooks are simplified since we use markers for test selection

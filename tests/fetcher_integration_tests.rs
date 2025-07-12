@@ -1,3 +1,4 @@
+use std::time::Duration;
 use tarzi::converter::Format;
 use tarzi::error::TarziError;
 use tarzi::fetcher::{FetchMode, WebFetcher};
@@ -8,24 +9,30 @@ use tarzi::utils::is_webdriver_available;
 
 #[tokio::test]
 async fn test_fetch_plain_request_httpbin() {
-    let mut fetcher = WebFetcher::new();
+    let test_timeout = Duration::from_secs(60);
 
-    // Test fetching from httpbin.org (a reliable test endpoint)
-    let result = fetcher
-        .fetch(
-            "https://httpbin.org/html",
-            FetchMode::PlainRequest,
-            Format::Html,
-        )
-        .await;
+    tokio::time::timeout(test_timeout, async {
+        let mut fetcher = WebFetcher::new();
 
-    if let Err(e) = &result {
-        eprintln!("fetch_plain_request_httpbin error: {e:?}");
-    }
-    assert!(result.is_ok());
-    let content = result.unwrap();
-    assert!(!content.is_empty());
-    assert!(content.contains("<html>") || content.contains("<!DOCTYPE html>"));
+        // Test fetching from httpbin.org (a reliable test endpoint)
+        let result = fetcher
+            .fetch(
+                "https://httpbin.org/html",
+                FetchMode::PlainRequest,
+                Format::Html,
+            )
+            .await;
+
+        if let Err(e) = &result {
+            eprintln!("fetch_plain_request_httpbin error: {e:?}");
+        }
+        assert!(result.is_ok());
+        let content = result.unwrap();
+        assert!(!content.is_empty());
+        assert!(content.contains("<html>") || content.contains("<!DOCTYPE html>"));
+    })
+    .await
+    .expect("Test timed out after 60 seconds");
 }
 
 #[tokio::test]

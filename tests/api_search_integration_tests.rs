@@ -1,42 +1,49 @@
 use std::env;
+use std::time::Duration;
 use tarzi::config::Config;
 use tarzi::search::{SearchEngine, SearchMode};
 
 #[tokio::test]
 async fn test_api_search_with_brave_provider() {
-    let mut config = Config::new();
+    let test_timeout = Duration::from_secs(60);
 
-    // Skip test if no API key is available
-    if let Ok(api_key) = env::var("BRAVE_API_KEY") {
-        config.search.brave_api_key = Some(api_key);
-        config.search.engine = "brave".to_string();
+    tokio::time::timeout(test_timeout, async {
+        let mut config = Config::new();
 
-        let mut engine = SearchEngine::from_config(&config);
-        let results = engine
-            .search("rust programming", SearchMode::ApiQuery, 3)
-            .await;
+        // Skip test if no API key is available
+        if let Ok(api_key) = env::var("BRAVE_API_KEY") {
+            config.search.brave_api_key = Some(api_key);
+            config.search.engine = "brave".to_string();
 
-        match results {
-            Ok(search_results) => {
-                assert!(!search_results.is_empty(), "Should return search results");
-                assert!(search_results.len() <= 3, "Should respect limit parameter");
+            let mut engine = SearchEngine::from_config(&config);
+            let results = engine
+                .search("rust programming", SearchMode::ApiQuery, 3)
+                .await;
 
-                for result in &search_results {
-                    assert!(!result.title.is_empty(), "Title should not be empty");
-                    assert!(!result.url.is_empty(), "URL should not be empty");
-                    assert!(!result.snippet.is_empty(), "Snippet should not be empty");
-                    assert!(result.rank > 0, "Rank should be positive");
+            match results {
+                Ok(search_results) => {
+                    assert!(!search_results.is_empty(), "Should return search results");
+                    assert!(search_results.len() <= 3, "Should respect limit parameter");
+
+                    for result in &search_results {
+                        assert!(!result.title.is_empty(), "Title should not be empty");
+                        assert!(!result.url.is_empty(), "URL should not be empty");
+                        assert!(!result.snippet.is_empty(), "Snippet should not be empty");
+                        assert!(result.rank > 0, "Rank should be positive");
+                    }
+                }
+                Err(_) => {
+                    // If the test fails due to network issues, we still want to pass
+                    // This is an integration test that depends on external services
+                    println!("API call failed - this may be due to network issues or API limits");
                 }
             }
-            Err(_) => {
-                // If the test fails due to network issues, we still want to pass
-                // This is an integration test that depends on external services
-                println!("API call failed - this may be due to network issues or API limits");
-            }
+        } else {
+            println!("Skipping Brave API test - BRAVE_API_KEY not set");
         }
-    } else {
-        println!("Skipping Brave API test - BRAVE_API_KEY not set");
-    }
+    })
+    .await
+    .expect("Test timed out after 60 seconds");
 }
 
 #[tokio::test]

@@ -8,6 +8,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  # Integration tests are disabled by default
+  # Set ENABLE_INTEGRATION_TESTS=true to enable them
+  ENABLE_INTEGRATION_TESTS: ${{ vars.ENABLE_INTEGRATION_TESTS || 'false' }}
 
 jobs:
   check:
@@ -86,8 +89,13 @@ jobs:
       run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --lib --all-features
 
     - name: Run integration tests
+      if: env.ENABLE_INTEGRATION_TESTS == 'true'
       run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --test '*' --all-features
       continue-on-error: true
+
+    - name: Skip integration tests (disabled by default)
+      if: env.ENABLE_INTEGRATION_TESTS != 'true'
+      run: echo "⚠️  Integration tests are disabled by default. Set ENABLE_INTEGRATION_TESTS=true to enable them."
 
     - name: Run doctests
       run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --doc --all-features
