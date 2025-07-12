@@ -1,6 +1,6 @@
 [project]
 name = "tarzi"
-version = "0.0.14"
+version = "0.0.15"
 requires-python = ">=3.10"
 keywords = ["web-scraping", "search-engine", "ai-tools", "rust", "browser-automation"]
 description = "Rust-native lite search for AI applications"
@@ -28,10 +28,10 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mirasurf/tarzi.rs"
+Homepage = "https://github.com/mirasurf/tarzi"
 Documentation = "https://tarzi.readthedocs.io/"
-Repository = "https://github.com/mirasurf/tarzi.rs"
-"Bug Tracker" = "https://github.com/mirasurf/tarzi.rs/issues"
+Repository = "https://github.com/mirasurf/tarzi"
+"Bug Tracker" = "https://github.com/mirasurf/tarzi/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -83,7 +83,6 @@ markers = [
     "api: Tests that require API access",
 ]
 filterwarnings = ["ignore::DeprecationWarning"]
-asyncio_mode = "auto"
 
 [tool.coverage.run]
 source = ["tarzi"]

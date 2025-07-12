@@ -1,5 +1,5 @@
 Development Guide
-=================
+==================
 
 This guide covers development setup, building from source, and contributing to tarzi.
 
@@ -40,14 +40,15 @@ Clone and Setup
 .. code-block:: bash
 
    # Clone the repository
-   git clone https://github.com/mirasurf/tarzi.rs.git
-   cd tarzi.rs
+   git clone https://github.com/mirasurf/tarzi.git
+   cd tarzi
+   cd tarzi
 
    # Install Rust dependencies
    cargo build
 
    # Install Python development dependencies
-   pip install -e ".[dev]"
+   pip install -e .[dev]
 
    # Install maturin for Python bindings
    pip install maturin
@@ -123,13 +124,13 @@ Python Tests
 .. code-block:: bash
 
    # Run Python tests
-   pytest tests/python/
+   pytest tarzi/tests/python/
 
    # Run with coverage
-   pytest tests/python/ --cov=tarzi
+   pytest tarzi/tests/python/ --cov=tarzi
 
    # Run specific test file
-   pytest tests/python/unit/test_converter.py
+   pytest tarzi/tests/python/unit/test_converter.py
 
 Documentation
 -------------
@@ -140,10 +141,10 @@ Building Docs
 .. code-block:: bash
 
    # Install documentation dependencies
-   pip install -r docs/requirements.txt
+   pip install -r ../docs/requirements.txt
 
    # Build documentation
-   cd docs
+   cd ../docs
    make html
 
    # View documentation
@@ -163,7 +164,7 @@ Development Workflow
 
       # Make changes and test
       cargo test
-      pytest tests/python/
+      pytest tarzi/tests/python/
 
       # Build and test Python bindings
       maturin develop --release
@@ -172,7 +173,7 @@ Development Workflow
    .. code-block:: bash
 
       # Update documentation
-      cd docs
+      cd ../docs
       make html
       # Check generated docs
 
@@ -181,7 +182,7 @@ Development Workflow
 
       # Run full test suite
       cargo test
-      pytest tests/python/
+      pytest tarzi/tests/python/
       cargo clippy
       cargo fmt --check
 
@@ -251,7 +252,7 @@ Release Process
       cargo build --release
       maturin build --release
       cargo test
-      pytest tests/python/
+      pytest tarzi/tests/python/
 
 4. **Create release**
    - Tag the release

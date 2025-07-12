@@ -33,13 +33,13 @@ jobs:
         pip install black ruff isort autoflake
 
     - name: Check Python formatting with black
-      run: black --check examples tests/python
+      run: black --check examples tarzi/tests/python tarzi/python
 
     - name: Check import sorting with isort
-      run: isort --check-only examples tests/python
+      run: isort --check-only examples tarzi/tests/python tarzi/python
 
     - name: Lint with ruff
-      run: ruff check examples tests/python
+      run: ruff check examples tarzi/tests/python tarzi/python
 
   test:
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
@@ -76,7 +76,7 @@ jobs:
     - name: Create virtual environment
       run: python -m venv .venv
 
-    - name: Activate virtual environment and install dependencies
+    - name: Install test dependencies
       shell: bash
       run: |
         source .venv/bin/activate
@@ -87,13 +87,14 @@ jobs:
       shell: bash
       run: |
         source .venv/bin/activate
+        cd tarzi
         maturin develop --release
 
     - name: Run Python unit tests
       shell: bash
       run: |
         source .venv/bin/activate
-        cd tests/python
+        cd tarzi/tests/python
         pytest unit/ -v --cov=tarzi --cov-report=xml --cov-report=term
       continue-on-error: true
 
@@ -102,7 +103,7 @@ jobs:
       shell: bash
       run: |
         source .venv/bin/activate
-        cd tests/python
+        cd tarzi/tests/python
         pytest integration/ -v -m "not slow"
       continue-on-error: true
 
@@ -114,7 +115,7 @@ jobs:
       if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
       uses: codecov/codecov-action@v3
       with:
-        file: tests/python/coverage.xml
+        file: tarzi/tests/python/coverage.xml
         flags: python
         name: python-coverage
 
@@ -140,14 +141,14 @@ jobs:
       run: pip install maturin[patchelf]
 
     - name: Build wheels
-      run: maturin build --release --out dist
+      run: cd tarzi && maturin build --release --out dist
 
     - name: Test wheel installation
       shell: bash
       run: |
         python -m venv test_env
         source test_env/bin/activate
-        wheel_file=$(ls dist/*.whl | head -1)
+        wheel_file=$(ls tarzi/dist/*.whl | head -1)
         pip install "$wheel_file"
         python -c "import tarzi; print('Wheel installed successfully')"
 
@@ -155,7 +156,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: wheels-${{ matrix.os }}
-        path: dist/
+        path: tarzi/dist/
 
   docs:
     name: Build Documentation
@@ -184,6 +185,7 @@ jobs:
       shell: bash
       run: |
         source .venv/bin/activate
+        cd tarzi
         maturin develop --release
 
     - name: Build documentation

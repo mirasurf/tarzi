@@ -70,7 +70,7 @@ html_theme_options = {
     "sidebar_hide_name": False,
     "light_logo": "tarzi-logo-light.png",
     "dark_logo": "tarzi-logo-dark.png",
-    "source_repository": "https://github.com/mirasurf/tarzi.rs/",
+    "source_repository": "https://github.com/mirasurf/tarzi/",
     "source_branch": "main",
     "source_directory": "docs/",
 }

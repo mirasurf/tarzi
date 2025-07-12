@@ -29,8 +29,9 @@ If you need to build from source or want the latest development version:
 .. code-block:: bash
 
    # Clone the repository
-   git clone https://github.com/mirasurf/tarzi.rs.git
-   cd tarzi.rs
+   git clone https://github.com/mirasurf/tarzi.git
+   cd tarzi
+   cd tarzi
 
    # Install Rust if not already installed
    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -81,7 +82,7 @@ Rust Installation
 As a Rust Crate
 ~~~~~~~~~~~~~~~~
 
-Add tarzi to your `Cargo.toml`:
+Add tarzi to your `tarzi/Cargo.toml`:
 
 .. code-block:: toml
 
@@ -94,6 +95,17 @@ Or add it using cargo:
 .. code-block:: bash
 
    cargo add tarzi
+
+CLI Installation
+~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+   # Build CLI
+   cargo build --release --bin tarzi
+
+   # Install CLI locally
+   cargo install --path .
 
 CLI Installation
 ~~~~~~~~~~~~~~~~
@@ -112,8 +124,8 @@ From Source
 .. code-block:: bash
 
    # Clone the repository
-   git clone https://github.com/mirasurf/tarzi.rs.git
-   cd tarzi.rs
+   git clone https://github.com/mirasurf/tarzi.git
+   cd tarzi
 
    # Build the project
    cargo build --release
@@ -232,7 +244,7 @@ Getting Help
 
 If you encounter issues:
 
-1. Search existing `GitHub issues <https://github.com/mirasurf/tarzi.rs/issues>`_
+1. Search existing `GitHub issues <https://github.com/mirasurf/tarzi/issues>`_
 2. Create a new issue with detailed error information
 3. Join our community discussions
 
