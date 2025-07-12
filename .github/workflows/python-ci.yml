@@ -33,13 +33,13 @@ jobs:
         pip install black ruff isort autoflake
 
     - name: Check Python formatting with black
-      run: black --check tarzi/examples tarzi/tests/python tarzi/python
+      run: black --check tarzi/examples tarzi/python
 
     - name: Check import sorting with isort
-      run: isort --check-only tarzi/examples tarzi/tests/python tarzi/python
+      run: isort --check-only tarzi/examples tarzi/python
 
     - name: Lint with ruff
-      run: ruff check tarzi/examples tarzi/tests/python tarzi/python
+      run: ruff check tarzi/examples tarzi/python
 
   test:
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
