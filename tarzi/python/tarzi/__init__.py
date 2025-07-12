@@ -1,5 +1,5 @@
 # Re-export everything from the Rust module
-from ._tarzi import (
+from .tarzi import (
     Config,
     Converter,
     SearchEngine,
