@@ -72,7 +72,7 @@ COPY pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
     mcp>=1.10.0 \
-    tarzi>=0.0.15 \
+    tarzi>=0.0.16 \
     uvicorn>=0.30.0 \
     fastapi>=0.115.0 \
     pydantic>=2.0.0 \
