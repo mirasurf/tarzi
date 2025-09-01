@@ -8,9 +8,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  # Integration tests are disabled by default
-  # Set ENABLE_INTEGRATION_TESTS=true to enable them
-  ENABLE_INTEGRATION_TESTS: ${{ vars.ENABLE_INTEGRATION_TESTS || 'false' }}
 
 jobs:
   lint:
@@ -90,26 +87,21 @@ jobs:
         cd tarzi
         maturin develop --release
 
-    - name: Run Python unit tests
+    - name: Run Python unit tests only
       shell: bash
       run: |
         source .venv/bin/activate
-        cd tarzi/tests/python
-        pytest unit/ -v --cov=tarzi --cov-report=xml --cov-report=term
+        cd tarzi
+        make test-unit
       continue-on-error: true
 
-    - name: Run Python integration tests
-      if: env.ENABLE_INTEGRATION_TESTS == 'true'
+    - name: Run all Python tests (unit + integration)
       shell: bash
       run: |
         source .venv/bin/activate
-        cd tarzi/tests/python
-        pytest integration/ -v -m "not slow"
+        cd tarzi
+        make test
       continue-on-error: true
-
-    - name: Skip Python integration tests (disabled by default)
-      if: env.ENABLE_INTEGRATION_TESTS != 'true'
-      run: echo "⚠️  Python integration tests are disabled by default. Set ENABLE_INTEGRATION_TESTS=true to enable them."
 
     - name: Upload coverage to Codecov
       if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'

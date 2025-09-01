@@ -48,8 +48,7 @@ class ConversionResult(BaseModel):
 @mcp.tool()
 def search_web(
     query: str, 
-    limit: int = 10, 
-    mode: str = "webquery"
+    limit: int = 10
 ) -> List[SearchResult]:
     """
     Search the web using Tarzi search engines.
@@ -57,18 +56,13 @@ def search_web(
     Args:
         query: Search query string
         limit: Maximum number of results to return (default: 10)
-        mode: Search mode - 'webquery' for browser-based search, 'apiquery' for API-based search
         
     Returns:
         List of search results with title, URL, snippet, and rank
     """
     try:
-        # Validate mode
-        if mode not in ["webquery", "apiquery"]:
-            raise ValueError("Mode must be 'webquery' or 'apiquery'")
-            
         # Perform search using tarzi
-        results = tarzi.search_web(query, mode, limit)
+        results = tarzi.search_web(query, limit)
         
         # Convert to structured results
         structured_results = []
@@ -154,10 +148,9 @@ def convert_html(html_content: str, output_format: str = "markdown") -> Conversi
 
 
 @mcp.tool()
-def search_and_fetch(
+def search_with_content(
     query: str,
     limit: int = 5,
-    search_mode: str = "webquery",
     fetch_mode: str = "plain_request",
     content_format: str = "markdown"
 ) -> List[Dict[str, Any]]:
@@ -167,7 +160,6 @@ def search_and_fetch(
     Args:
         query: Search query string
         limit: Maximum number of results to process (default: 5)
-        search_mode: Search mode - 'webquery' for browser-based search, 'apiquery' for API-based search
         fetch_mode: Fetch mode - 'plain_request' for simple HTTP, 'browser_headless' for headless browser, 'browser_headed' for browser with head
         content_format: Content format - 'html', 'markdown', 'json', or 'yaml'
         
@@ -176,31 +168,27 @@ def search_and_fetch(
     """
     try:
         # Validate parameters
-        if search_mode not in ["webquery", "apiquery"]:
-            raise ValueError("Search mode must be 'webquery' or 'apiquery'")
         if fetch_mode not in ["plain_request", "browser_headless", "browser_headed"]:
             raise ValueError("Fetch mode must be 'plain_request', 'browser_headless', or 'browser_headed'")
+            
         if content_format not in ["html", "markdown", "json", "yaml"]:
             raise ValueError("Content format must be 'html', 'markdown', 'json', or 'yaml'")
             
-        # Perform search and fetch using tarzi
-        results_with_content = tarzi.search_and_fetch(
-            query, search_mode, limit, fetch_mode, content_format
+        # Perform search and fetch
+        results_with_content = tarzi.search_with_content(
+            query, limit, fetch_mode, content_format
         )
         
-        # Convert to structured format
+        # Convert to structured results
         structured_results = []
-        for search_result, content in results_with_content:
+        for result, content in results_with_content:
             structured_results.append({
-                "search_result": {
-                    "title": search_result.title,
-                    "url": search_result.url,
-                    "snippet": search_result.snippet,
-                    "rank": search_result.rank
-                },
+                "title": result.title,
+                "url": result.url,
+                "snippet": result.snippet,
+                "rank": result.rank,
                 "content": content,
-                "content_format": content_format,
-                "fetch_mode_used": fetch_mode
+                "content_length": len(content)
             })
             
         logger.info(f"Search and fetch completed: {len(structured_results)} results for query '{query}'")

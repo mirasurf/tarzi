@@ -62,8 +62,7 @@ class TarziMCPClient:
                     # Call search tool
                     result = await session.call_tool("search_web", {
                         "query": query,
-                        "limit": 3,
-                        "mode": "webquery"
+                        "limit": 3
                     })
                     
                     logger.info(f"Search results: {json.dumps(result.content, indent=2)}")

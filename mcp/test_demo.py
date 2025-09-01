@@ -63,7 +63,7 @@ class SearchResult(BaseModel):
 def demo_search_web(query: str, limit: int = 10) -> List[SearchResult]:
     """Demo search web tool."""
     try:
-        mock_results = MockTarzi.search_web(query, "webquery", limit)
+        mock_results = MockTarzi.search_web(query, limit)
         structured_results = []
         for result in mock_results:
             structured_results.append(SearchResult(
