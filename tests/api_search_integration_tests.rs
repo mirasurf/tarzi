@@ -1,364 +1,436 @@
-use std::env;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tarzi::config::Config;
-use tarzi::search::{SearchEngine, SearchEngineType};
+use tarzi::search::SearchEngine;
+use tarzi::search::parser::ParserFactory;
+use tarzi::search::types::SearchEngineType;
+
+const TEST_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[tokio::test]
-async fn test_api_search_with_brave_provider() {
-    let test_timeout = Duration::from_secs(60);
+async fn test_parser_functionality() {
+    println!("=== Testing Parser Functionality ===");
 
-    tokio::time::timeout(test_timeout, async {
-        let mut config = Config::new();
+    let factory = ParserFactory::new();
 
-        // Skip test if no API key is available
-        if let Ok(api_key) = env::var("BRAVE_API_KEY") {
-            config.search.brave_api_key = Some(api_key);
-            config.search.engine = "brave".to_string();
+    let engine_types = vec![
+        SearchEngineType::Bing,
+        SearchEngineType::DuckDuckGo,
+        SearchEngineType::Google,
+        SearchEngineType::BraveSearch,
+        SearchEngineType::Baidu,
+    ];
 
-            let mut engine = SearchEngine::from_config(&config);
-            let results = engine.search("rust programming", 3).await?;
+    for engine_type in engine_types {
+        println!("Testing parser for {:?}", engine_type);
 
-            match results {
-                Ok(search_results) => {
-                    assert!(!search_results.is_empty(), "Should return search results");
-                    assert!(search_results.len() <= 3, "Should respect limit parameter");
+        let parser = factory.get_parser(&engine_type);
+        assert!(!parser.name().is_empty(), "Parser should have a name");
+        assert!(
+            parser.supports(&engine_type),
+            "Parser should support its own engine type"
+        );
 
-                    for result in &search_results {
-                        assert!(!result.title.is_empty(), "Title should not be empty");
-                        assert!(!result.url.is_empty(), "URL should not be empty");
-                        assert!(!result.snippet.is_empty(), "Snippet should not be empty");
-                        assert!(result.rank > 0, "Rank should be positive");
-                    }
-                }
-                Err(_) => {
-                    // If the test fails due to network issues, we still want to pass
-                    // This is an integration test that depends on external services
-                    println!("API call failed - this may be due to network issues or API limits");
-                }
-            }
-        } else {
-            println!("Skipping Brave API test - BRAVE_API_KEY not set");
-        }
-    })
-    .await
-    .expect("Test timed out after 60 seconds");
-}
+        // Test with sample HTML content
+        let sample_html = r#"
+            <html><body>
+                <h2><a href="https://example1.com">Test Result 1</a></h2>
+                <p>Test snippet 1</p>
+                <h2><a href="https://example2.com">Test Result 2</a></h2>
+                <p>Test snippet 2</p>
+            </body></html>
+        "#;
 
-#[tokio::test]
-async fn test_api_search_with_exa_provider() {
-    let mut config = Config::new();
-
-    // Skip test if no API key is available
-    if let Ok(api_key) = env::var("EXA_API_KEY") {
-        config.search.exa_api_key = Some(api_key);
-        config.search.engine = "exa".to_string();
-
-        let mut engine = SearchEngine::from_config(&config);
-        let results = engine.search("artificial intelligence", 2).await?;
-
+        let results = parser.parse(sample_html, 5);
         match results {
-            Ok(search_results) => {
-                assert!(!search_results.is_empty(), "Should return search results");
-                assert!(search_results.len() <= 2, "Should respect limit parameter");
-
-                for result in &search_results {
-                    assert!(!result.title.is_empty(), "Title should not be empty");
-                    assert!(!result.url.is_empty(), "URL should not be empty");
-                    assert!(result.rank > 0, "Rank should be positive");
-                }
-            }
-            Err(_) => {
-                println!("API call failed - this may be due to network issues or API limits");
-            }
-        }
-    } else {
-        println!("Skipping Exa API test - EXA_API_KEY not set");
-    }
-}
-
-#[tokio::test]
-async fn test_api_search_with_travily_provider() {
-    let mut config = Config::new();
-
-    // Skip test if no API key is available
-    if let Ok(api_key) = env::var("TRAVILY_API_KEY") {
-        config.search.travily_api_key = Some(api_key);
-        config.search.engine = "travily".to_string();
-
-        let mut engine = SearchEngine::from_config(&config);
-        let results = engine.search("climate change", 4).await?;
-
-        match results {
-            Ok(search_results) => {
-                assert!(!search_results.is_empty(), "Should return search results");
-                assert!(search_results.len() <= 4, "Should respect limit parameter");
-
-                for result in &search_results {
-                    assert!(!result.title.is_empty(), "Title should not be empty");
-                    assert!(!result.url.is_empty(), "URL should not be empty");
-                    assert!(result.rank > 0, "Rank should be positive");
-                }
-            }
-            Err(_) => {
-                println!("API call failed - this may be due to network issues or API limits");
-            }
-        }
-    } else {
-        println!("Skipping Travily API test - TRAVILY_API_KEY not set");
-    }
-}
-
-#[tokio::test]
-async fn test_api_search_with_duckduckgo_provider() {
-    let mut config = Config::new();
-
-    // DuckDuckGo API doesn't require an API key, so we can always test it
-    config.search.engine = "duckduckgo".to_string();
-
-    let mut engine = SearchEngine::from_config(&config);
-    let results = engine.search("rust programming language", 3).await?;
-
-    match results {
-        Ok(search_results) => {
-            // DuckDuckGo API may return empty results as it's not fully implemented
-            // But it shouldn't crash
-            println!("DuckDuckGo API returned {} results", search_results.len());
-
-            if !search_results.is_empty() {
-                assert!(search_results.len() <= 3, "Should respect limit parameter");
-
-                for result in &search_results {
-                    assert!(!result.title.is_empty(), "Title should not be empty");
-                    assert!(!result.url.is_empty(), "URL should not be empty");
-                    assert!(result.rank > 0, "Rank should be positive");
-
-                    // URL validation
+            Ok(results) => {
+                println!("  Parsed {} results", results.len());
+                for result in results {
                     assert!(
-                        result.url.starts_with("http://") || result.url.starts_with("https://"),
-                        "URL should be properly formatted: {}",
-                        result.url
+                        !result.title.is_empty() || !result.url.is_empty(),
+                        "Result should have title or URL"
                     );
                 }
             }
-        }
-        Err(e) => {
-            // DuckDuckGo API is not implemented in simplified version
-            println!("DuckDuckGo API test failed as expected: {e}");
-            assert!(
-                e.to_string()
-                    .contains("not implemented in simplified version")
-                    || e.to_string().contains("Network")
-                    || e.to_string().contains("DuckDuckGo"),
-                "Error should indicate DuckDuckGo limitation: {e}"
-            );
+            Err(e) => {
+                println!("  Parse error: {}", e);
+            }
         }
     }
 }
 
 #[tokio::test]
-async fn test_api_search_with_proxy() {
-    let mut config = Config::new();
+async fn test_parser_edge_cases() {
+    println!("=== Testing Parser Edge Cases ===");
 
-    // Test with a mock proxy (will fail but test the proxy setup)
-    config.fetcher.proxy = Some("http://127.0.0.1:8888".to_string());
+    let factory = ParserFactory::new();
+    let parser = factory.get_parser(&SearchEngineType::DuckDuckGo);
 
-    // Only test if we have at least one API key
-    if env::var("BRAVE_API_KEY").is_ok() {
-        config.search.brave_api_key = env::var("BRAVE_API_KEY").ok();
-        config.search.engine = "brave".to_string();
+    let edge_cases = vec![
+        ("", "empty string"),
+        ("<html><body></body></html>", "empty HTML"),
+        ("<html><malformed>", "malformed HTML"),
+        ("Not HTML at all", "plain text"),
+        ("🎉🎊🎈", "emoji only"),
+    ];
 
-        let mut engine = SearchEngine::from_config(&config);
-        let results = engine.search("test query", 1).await;
+    for (input, description) in edge_cases {
+        println!("Testing edge case: {}", description);
 
-        // We expect this to fail due to the mock proxy, but it should fail gracefully
+        let results = parser.parse(input, 5);
         match results {
-            Ok(_) => {
-                // If it succeeds, the proxy worked (unlikely with mock proxy)
-                println!("Proxy test succeeded unexpectedly");
+            Ok(results) => {
+                println!("  Handled gracefully: {} results", results.len());
+                // Edge cases should return empty results or handle gracefully
+                assert!(results.len() <= 5, "Should respect limit");
             }
             Err(e) => {
-                // Expected to fail with proxy connection error
-                println!("Proxy test failed as expected: {e}");
-                assert!(e.to_string().contains("proxy") || e.to_string().contains("Network"));
+                println!("  Rejected with error: {}", e);
+                // Error is also acceptable for edge cases
             }
         }
-    } else {
-        println!("Skipping proxy test - no API keys available");
     }
 }
 
 #[tokio::test]
-async fn test_api_search_without_api_key() {
-    let config = Config::new(); // No API keys configured
+async fn test_parser_limits() {
+    println!("=== Testing Parser Limits ===");
+
+    let factory = ParserFactory::new();
+    let parser = factory.get_parser(&SearchEngineType::DuckDuckGo);
+
+    let sample_html = r#"
+        <html><body>
+            <h2><a href="https://example1.com">Result 1</a></h2>
+            <h2><a href="https://example2.com">Result 2</a></h2>
+            <h2><a href="https://example3.com">Result 3</a></h2>
+            <h2><a href="https://example4.com">Result 4</a></h2>
+            <h2><a href="https://example5.com">Result 5</a></h2>
+        </body></html>
+    "#;
+
+    let limits = vec![0, 1, 3, 5, 10];
+
+    for limit in limits {
+        println!("Testing with limit: {}", limit);
+
+        let results = parser.parse(sample_html, limit);
+        match results {
+            Ok(results) => {
+                println!("  Returned {} results", results.len());
+                if limit > 0 {
+                    assert!(results.len() <= limit, "Should respect limit");
+                } else {
+                    assert_eq!(results.len(), 0, "Limit 0 should return empty results");
+                }
+            }
+            Err(e) => {
+                println!("  Parse error: {}", e);
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_all_engines_parser_factory() {
+    println!("=== Testing Parser Factory for All Engines ===");
+
+    let factory = ParserFactory::new();
+
+    let engine_types = vec![
+        SearchEngineType::Bing,
+        SearchEngineType::DuckDuckGo,
+        SearchEngineType::Google,
+        SearchEngineType::BraveSearch,
+        SearchEngineType::Baidu,
+    ];
+
+    for engine_type in engine_types {
+        let parser = factory.get_parser(&engine_type);
+        println!("Testing parser for {:?}: {}", engine_type, parser.name());
+
+        // Test that parser supports its own engine type
+        assert!(
+            parser.supports(&engine_type),
+            "Parser {} should support {:?}",
+            parser.name(),
+            engine_type
+        );
+    }
+}
+
+#[tokio::test]
+async fn test_search_engine_error_handling() {
+    println!("=== Testing Search Engine Error Handling ===");
+
+    let mut config = Config::new();
+    config.search.engine = "duckduckgo".to_string();
 
     let mut engine = SearchEngine::from_config(&config);
-    let results = engine.search("test query", 1).await;
 
-    // DuckDuckGo provider is always registered but returns empty results
-    // So we expect either an error OR empty results
+    // Test with empty query
+    let results = engine.search("", 5).await;
     match results {
-        Ok(search_results) => {
-            // DuckDuckGo provider returns empty results
-            assert!(
-                search_results.is_empty(),
-                "Should return empty results when no real API providers are available"
-            );
-            println!("API search without keys returned empty results as expected");
-        }
-        Err(error) => {
-            // Also acceptable - should indicate missing providers or simplified implementation
-            println!("API search without keys failed as expected: {error}");
-            assert!(
-                error.to_string().contains("No provider registered")
-                    || error.to_string().contains("All search providers failed")
-                    || error
-                        .to_string()
-                        .contains("not implemented in simplified version"),
-                "Error should indicate missing/limited provider: {error}"
-            );
+        Ok(results) => println!("Empty query returned {} results", results.len()),
+        Err(e) => println!("Empty query returned error: {}", e),
+    }
+
+    // Test with very long query
+    let long_query = "a".repeat(1000);
+    let results = engine.search(&long_query, 5).await;
+    match results {
+        Ok(results) => println!("Long query returned {} results", results.len()),
+        Err(e) => println!("Long query returned error: {}", e),
+    }
+}
+
+#[tokio::test]
+async fn test_search_query_edge_cases() {
+    println!("=== Testing Search Query Edge Cases ===");
+
+    let mut config = Config::new();
+    config.search.engine = "duckduckgo".to_string();
+
+    let mut engine = SearchEngine::from_config(&config);
+
+    let medium_query = "a".repeat(100);
+    let long_query = "a".repeat(1000);
+
+    let edge_queries = vec![
+        "",                 // Empty query
+        "a",                // Single character
+        &medium_query,      // Medium length
+        &long_query,        // Very long
+        "!@#$%^&*()",       // Special characters
+        "rust programming", // Normal query
+    ];
+
+    for query in edge_queries {
+        let results = engine.search(query, 3).await;
+        match results {
+            Ok(results) => println!("Query '{}': {} results", query, results.len()),
+            Err(e) => println!("Query '{}': error - {}", query, e),
         }
     }
 }
 
 #[tokio::test]
-async fn test_api_search_invalid_query() {
+async fn test_search_limit_edge_cases_self_managed() {
+    println!("=== Testing Search Limit Edge Cases (Self-Managed) ===");
+
     let mut config = Config::new();
+    config.search.engine = "duckduckgo".to_string();
 
-    // Use any available API key for this test
-    if let Ok(api_key) = env::var("BRAVE_API_KEY") {
-        config.search.brave_api_key = Some(api_key);
-        config.search.engine = "brave".to_string();
+    let mut engine = SearchEngine::from_config(&config);
 
-        let mut engine = SearchEngine::from_config(&config);
+    let limits = vec![0, 1, 5, 10];
 
-        // Test with empty query
-        let results = engine.search("", 1).await;
-
+    for limit in limits {
+        let results = engine.search("test query", limit).await;
         match results {
-            Ok(search_results) => {
-                // Some APIs might handle empty queries gracefully
+            Ok(results) => {
+                println!("Limit {}: returned {} results", limit, results.len());
+                if limit > 0 {
+                    assert!(results.len() <= limit, "Should respect limit");
+                }
+            }
+            Err(e) => println!("Limit {}: error - {}", limit, e),
+        }
+    }
+}
+
+#[tokio::test]
+async fn test_concurrent_searches() {
+    println!("=== Testing Concurrent Searches ===");
+
+    let mut config = Config::new();
+    config.search.engine = "duckduckgo".to_string();
+
+    let queries = vec!["rust programming", "python tutorial", "machine learning"];
+
+    let mut handles = Vec::new();
+
+    for query in &queries {
+        let config_clone = config.clone();
+        let query_string = query.to_string();
+        let handle = tokio::spawn(async move {
+            let mut engine = SearchEngine::from_config(&config_clone);
+            engine.search(&query_string, 2).await
+        });
+        handles.push(handle);
+    }
+
+    let mut successful_searches = 0;
+    for handle in handles {
+        match handle.await {
+            Ok(Ok(results)) => {
+                println!("Concurrent search successful: {} results", results.len());
+                successful_searches += 1;
+            }
+            Ok(Err(e)) => println!("Concurrent search failed: {}", e),
+            Err(e) => println!("Task join failed: {}", e),
+        }
+    }
+
+    println!(
+        "Concurrent searches: {}/{} successful",
+        successful_searches,
+        queries.len()
+    );
+}
+
+#[tokio::test]
+async fn test_parser_performance() {
+    println!("=== Testing Parser Performance ===");
+
+    let factory = ParserFactory::new();
+
+    let test_cases = vec![
+        ("Bing", SearchEngineType::Bing),
+        ("DuckDuckGo", SearchEngineType::DuckDuckGo),
+        ("Google", SearchEngineType::Google),
+        ("Brave", SearchEngineType::BraveSearch),
+        ("Baidu", SearchEngineType::Baidu),
+    ];
+
+    for (name, engine_type) in test_cases {
+        println!("\nTesting {name} parser performance...");
+
+        let parser = factory.get_parser(&engine_type);
+        let test_html = format!(
+            r#"<html><body>
+                <h2><a href="https://example1.com">Test Result 1</a></h2>
+                <p>Test snippet 1</p>
+                <h2><a href="https://example2.com">Test Result 2</a></h2>
+                <p>Test snippet 2</p>
+                <h2><a href="https://example3.com">Test Result 3</a></h2>
+                <p>Test snippet 3</p>
+            </body></html>"#
+        );
+
+        let iterations = 100;
+        let mut total_time = Duration::new(0, 0);
+
+        for _ in 0..iterations {
+            let start = Instant::now();
+            let _results = parser.parse(&test_html, 5);
+            let duration = start.elapsed();
+            total_time += duration;
+        }
+
+        let avg_time = total_time / iterations;
+        println!("  Average parse time: {:?}", avg_time);
+        println!(
+            "  Total time for {} iterations: {:?}",
+            iterations, total_time
+        );
+    }
+}
+
+#[tokio::test]
+async fn test_search_throughput() {
+    println!("=== Testing Search Throughput ===");
+
+    let mut config = Config::new();
+    config.search.engine = "duckduckgo".to_string();
+
+    let mut engine = SearchEngine::from_config(&config);
+
+    let test_queries = vec![
+        "rust programming",
+        "python tutorial",
+        "machine learning",
+        "web development",
+        "data science",
+    ];
+
+    let mut total_time = Duration::new(0, 0);
+    let mut successful_queries = 0;
+
+    for query in &test_queries {
+        let start = Instant::now();
+        let result = engine.search(query, 3).await;
+        let duration = start.elapsed();
+
+        match result {
+            Ok(results) => {
+                successful_queries += 1;
+                total_time += duration;
                 println!(
-                    "Empty query handled gracefully, returned {} results",
-                    search_results.len()
-                );
-            }
-            Err(_) => {
-                // Expected behavior for empty query
-                println!("Empty query rejected as expected");
-            }
-        }
-
-        // Test with very long query
-        let long_query = "a".repeat(10000);
-        let results = engine.search(&long_query, 1).await;
-
-        match results {
-            Ok(_) => {
-                println!("Long query handled gracefully");
-            }
-            Err(_) => {
-                println!("Long query rejected or failed");
-            }
-        }
-    } else {
-        println!("Skipping invalid query test - no API keys available");
-    }
-}
-
-#[tokio::test]
-async fn test_api_search_limit_boundaries() {
-    let mut config = Config::new();
-
-    if let Ok(api_key) = env::var("BRAVE_API_KEY") {
-        config.search.brave_api_key = Some(api_key);
-        config.search.engine = "brave".to_string();
-
-        let mut engine = SearchEngine::from_config(&config);
-
-        // Test with limit 0
-        let results = engine.search("test", 0).await;
-        match results {
-            Ok(search_results) => {
-                // Should return empty results or handle gracefully
-                println!("Limit 0 returned {} results", search_results.len());
-            }
-            Err(_) => {
-                println!("Limit 0 rejected");
-            }
-        }
-
-        // Test with limit 1
-        let results = engine.search("test", 1).await;
-        match results {
-            Ok(search_results) => {
-                assert!(search_results.len() <= 1, "Should respect limit of 1");
-            }
-            Err(_) => {
-                println!("API call failed");
-            }
-        }
-
-        // Test with large limit
-        let results = engine.search("test", 100).await;
-        match results {
-            Ok(search_results) => {
-                // Most APIs have their own limits
-                println!("Large limit returned {} results", search_results.len());
-            }
-            Err(_) => {
-                println!("Large limit rejected or failed");
-            }
-        }
-    } else {
-        println!("Skipping limit boundary test - no API keys available");
-    }
-}
-
-#[tokio::test]
-async fn test_multiple_api_providers_registered() {
-    let mut config = Config::new();
-
-    // Register multiple providers if keys are available
-    let mut providers_count = 0;
-
-    if let Ok(api_key) = env::var("BRAVE_API_KEY") {
-        config.search.brave_api_key = Some(api_key);
-        providers_count += 1;
-    }
-
-    if let Ok(api_key) = env::var("EXA_API_KEY") {
-        config.search.exa_api_key = Some(api_key);
-        providers_count += 1;
-    }
-
-    if let Ok(api_key) = env::var("TRAVILY_API_KEY") {
-        config.search.travily_api_key = Some(api_key);
-        providers_count += 1;
-    }
-
-    if providers_count > 0 {
-        config.search.engine = "brave".to_string(); // Use brave as primary
-        config.search.autoswitch = "smart".to_string(); // Enable smart fallback
-
-        let mut engine = SearchEngine::from_config(&config);
-        let results = engine.search("technology news", 3).await?;
-
-        match results {
-            Ok(search_results) => {
-                assert!(
-                    !search_results.is_empty(),
-                    "Should return results from available providers"
-                );
-                println!(
-                    "Multi-provider test returned {} results",
-                    search_results.len()
+                    "  Query '{}': {} results in {:?}",
+                    query,
+                    results.len(),
+                    duration
                 );
             }
             Err(e) => {
-                println!("Multi-provider test failed: {e}");
+                println!("  Query '{}': Failed in {:?} - {}", query, duration, e);
             }
         }
+    }
+
+    if successful_queries > 0 {
+        let avg_time = total_time / successful_queries;
+        println!(
+            "\n  Summary: {}/{} queries successful",
+            successful_queries,
+            test_queries.len()
+        );
+        println!("  Average response time: {:?}", avg_time);
+        println!("  Total time: {:?}", total_time);
     } else {
-        println!("Skipping multi-provider test - no API keys available");
+        println!("  No successful queries");
+    }
+}
+
+#[tokio::test]
+async fn test_search_latency_percentiles() {
+    println!("=== Testing Search Latency Percentiles ===");
+
+    let mut config = Config::new();
+    config.search.engine = "duckduckgo".to_string();
+
+    let mut engine = SearchEngine::from_config(&config);
+    let num_requests = 5; // Small number for integration test
+    let mut latencies = Vec::new();
+
+    println!(
+        "Performing {} search requests to measure latency distribution...",
+        num_requests
+    );
+
+    for i in 0..num_requests {
+        let query = format!("test query {}", i);
+        let start = Instant::now();
+        let result = engine.search(&query, 2).await;
+        let duration = start.elapsed();
+
+        match result {
+            Ok(results) => {
+                latencies.push(duration);
+                println!(
+                    "Request {}: {} results in {:?}",
+                    i + 1,
+                    results.len(),
+                    duration
+                );
+            }
+            Err(e) => {
+                println!("Request {}: failed in {:?} - {}", i + 1, duration, e);
+            }
+        }
+    }
+
+    if !latencies.is_empty() {
+        latencies.sort();
+        let p50 = latencies[latencies.len() / 2];
+        let p90 = latencies[(latencies.len() * 9) / 10];
+        let p95 = latencies[(latencies.len() * 19) / 20];
+
+        println!("\nLatency percentiles:");
+        println!("  P50 (median): {:?}", p50);
+        println!("  P90: {:?}", p90);
+        println!("  P95: {:?}", p95);
+        println!("  Min: {:?}", latencies[0]);
+        println!("  Max: {:?}", latencies[latencies.len() - 1]);
     }
 }

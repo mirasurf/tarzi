@@ -13,73 +13,40 @@ async fn main() -> tarzi::Result<()> {
 
     let engines = vec![
         (SearchEngineType::Bing, "Bing"),
-        (SearchEngineType::Google, "Google"),
         (SearchEngineType::DuckDuckGo, "DuckDuckGo"),
+        (SearchEngineType::Google, "Google"),
         (SearchEngineType::BraveSearch, "Brave Search"),
         (SearchEngineType::Baidu, "Baidu"),
     ];
 
-    for (engine_type, engine_name) in engines {
-        println!("  Testing {engine_name} parser:");
-        let parser = factory.get_parser(&engine_type);
-        let mock_html = format!("<html><body>Mock HTML for {engine_name}</body></html>");
-        let results = parser.parse(&mock_html, 3)?;
-
-        for result in results {
-            println!("    - {}", result.title);
-            println!("      URL: {}", result.url);
-            println!("      Rank: {}\n", result.rank);
-        }
+    println!("Testing parsers for different search engines:");
+    for (engine_type, name) in &engines {
+        println!("- {}: {}", name, engine_type.get_query_pattern());
     }
 
-    // 2. Testing API parsers
-    println!("2. Testing API parsers:");
-    let api_engines = vec![
-        (SearchEngineType::DuckDuckGo, "DuckDuckGo API"),
-        (SearchEngineType::Google, "Google API"),
-        (SearchEngineType::BraveSearch, "Brave API"),
-        (SearchEngineType::Baidu, "Baidu API"),
-        (SearchEngineType::Exa, "Exa API"),
-        (SearchEngineType::Travily, "Travily API"),
-    ];
+    // Test with mock JSON content (simulating API response)
+    println!("\n=== Testing API Parser with Mock JSON ===");
+    let mock_json = r#"{"results": [{"title": "Test Result", "url": "https://example.com", "text": "Test snippet"}]}"#;
 
-    for (engine_type, engine_name) in api_engines {
-        println!("  Testing {engine_name} parser:");
-        let parser = factory.get_parser(&engine_type);
-        let mock_json = r#"{"results": [{"title": "Test Result", "url": "https://example.com", "text": "Test snippet"}]}"#;
-        let results = parser.parse(mock_json, 3)?;
+    // Test each engine type with the mock JSON
+    for (engine_type, name) in &engines {
+        println!("\nTesting {} parser:", name);
+        let parser = factory.get_parser(engine_type);
+        println!("  Parser name: {}", parser.name());
+        println!("  Supports {}: {}", name, parser.supports(engine_type));
 
-        for result in results {
-            println!("    - {}", result.title);
-            println!("      URL: {}", result.url);
-            println!("      Rank: {}\n", result.rank);
+        // Parse the mock JSON
+        match parser.parse(mock_json, 5) {
+            Ok(results) => {
+                println!("  Parsed {} results", results.len());
+                for (i, result) in results.iter().enumerate() {
+                    println!("    {}. {} - {}", i + 1, result.title, result.url);
+                }
+            }
+            Err(e) => {
+                println!("  Parse error: {}", e);
+            }
         }
-    }
-
-    // 3. Using SearchEngine
-    println!("3. Using SearchEngine:");
-    println!("  SearchEngine created successfully!");
-
-    // 4. Parser capabilities demonstration
-    println!("\n4. Parser capabilities demonstration:");
-    let test_engines = vec![
-        SearchEngineType::Bing,
-        SearchEngineType::Google,
-        SearchEngineType::DuckDuckGo,
-        SearchEngineType::BraveSearch,
-        SearchEngineType::Baidu,
-        SearchEngineType::Exa,
-        SearchEngineType::Travily,
-    ];
-
-    for engine_type in test_engines {
-        let parser = factory.get_parser(&engine_type);
-        println!(
-            "  Parser: {} supports {:?}: {}",
-            parser.name(),
-            engine_type,
-            parser.supports(&engine_type)
-        );
     }
 
     println!("\n=== Parser Examples Complete ===");

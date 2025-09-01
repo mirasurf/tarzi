@@ -1,27 +1,28 @@
-use crate::Result;
-use crate::search::types::{SearchEngineType, SearchResult};
+//! Parser module for extracting search results from different content types
+//!
+//! This module provides parsers for extracting search results from HTML content
+//! and other formats returned by search engines.
 
 pub mod baidu;
 pub mod base;
 pub mod bing;
 pub mod brave;
 pub mod duckduckgo;
-pub mod exa;
 pub mod google;
-pub mod travily;
+
+use crate::Result;
+use crate::search::types::{SearchEngineType, SearchResult};
+
+// Re-export parser types
+pub use baidu::BaiduParser;
+pub use base::{ApiSearchParser, BaseApiParser, BaseSearchParser, WebSearchParser};
+pub use bing::BingParser;
+pub use brave::BraveParser;
+pub use duckduckgo::DuckDuckGoParser;
+pub use google::GoogleParser;
 
 #[cfg(test)]
 mod tests;
-
-pub use baidu::{BaiduApiParser, BaiduParser};
-pub use bing::BingParser;
-pub use brave::{BraveApiParser, BraveParser};
-pub use duckduckgo::{DuckDuckGoApiParser, DuckDuckGoParser};
-pub use exa::ExaApiParser;
-pub use google::GoogleParser;
-pub use travily::TravilyApiParser;
-
-use base::{ApiSearchParser, BaseSearchParser, WebSearchParser};
 
 /// Unified parser that can handle both web and API queries
 pub struct UnifiedParser {
@@ -155,7 +156,6 @@ impl ParserFactory {
             SearchEngineType::Google => Box::new(GoogleParser::new()),
             SearchEngineType::BraveSearch => Box::new(BraveParser::new()),
             SearchEngineType::Baidu => Box::new(BaiduParser::new()),
-            SearchEngineType::Exa => Box::new(ExaParser::new()),
         }
     }
 }

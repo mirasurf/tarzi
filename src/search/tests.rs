@@ -25,10 +25,6 @@ fn test_search_engine_type_parsing() {
         SearchEngineType::from_str(SEARCH_ENGINE_BAIDU).unwrap(),
         SearchEngineType::Baidu
     );
-    assert_eq!(
-        SearchEngineType::from_str(SEARCH_ENGINE_EXA).unwrap(),
-        SearchEngineType::Exa
-    );
 
     // Test invalid engine types
     assert!(SearchEngineType::from_str("invalid").is_err());
@@ -92,25 +88,22 @@ fn test_query_patterns() {
         SearchEngineType::Baidu.get_query_pattern(),
         BAIDU_QUERY_PATTERN
     );
-    assert_eq!(SearchEngineType::Exa.get_query_pattern(), EXA_QUERY_PATTERN);
 }
 
 #[test]
-fn test_search_engine_creation() {
-    // Test that SearchEngine can be created
+fn test_search_engine_default() {
     let engine = SearchEngine::new();
-    assert_eq!(engine.engine_type, SearchEngineType::DuckDuckGo);
-    assert_eq!(engine.query_pattern, DEFAULT_QUERY_PATTERN);
+    assert_eq!(engine.engine_type(), &SearchEngineType::DuckDuckGo);
+    assert_eq!(engine.query_pattern(), DEFAULT_QUERY_PATTERN);
 }
 
 #[test]
 fn test_search_engine_from_config() {
-    // Test creating SearchEngine from config
     let mut config = crate::config::Config::new();
     config.search.engine = SEARCH_ENGINE_GOOGLE.to_string();
     config.search.query_pattern = "custom pattern".to_string();
 
     let engine = SearchEngine::from_config(&config);
-    assert_eq!(engine.engine_type, SearchEngineType::Google);
-    assert_eq!(engine.query_pattern, "custom pattern");
+    assert_eq!(engine.engine_type(), &SearchEngineType::Google);
+    assert_eq!(engine.query_pattern(), "custom pattern");
 }

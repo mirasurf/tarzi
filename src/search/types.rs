@@ -1,20 +1,19 @@
 use crate::constants::{
     BAIDU_QUERY_PATTERN, BING_QUERY_PATTERN, BRAVE_QUERY_PATTERN, DUCKDUCKGO_QUERY_PATTERN,
-    EXA_QUERY_PATTERN, GOOGLE_QUERY_PATTERN, SEARCH_ENGINE_BAIDU, SEARCH_ENGINE_BING,
-    SEARCH_ENGINE_BRAVE, SEARCH_ENGINE_DUCKDUCKGO, SEARCH_ENGINE_EXA, SEARCH_ENGINE_GOOGLE,
+    GOOGLE_QUERY_PATTERN, SEARCH_ENGINE_BAIDU, SEARCH_ENGINE_BING, SEARCH_ENGINE_BRAVE,
+    SEARCH_ENGINE_DUCKDUCKGO, SEARCH_ENGINE_GOOGLE,
 };
 use crate::error::TarziError;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SearchEngineType {
     Bing,
     DuckDuckGo,
     Google,
     BraveSearch,
     Baidu,
-    Exa,
 }
 
 impl FromStr for SearchEngineType {
@@ -27,7 +26,6 @@ impl FromStr for SearchEngineType {
             SEARCH_ENGINE_GOOGLE => Ok(SearchEngineType::Google),
             SEARCH_ENGINE_BRAVE => Ok(SearchEngineType::BraveSearch),
             SEARCH_ENGINE_BAIDU => Ok(SearchEngineType::Baidu),
-            SEARCH_ENGINE_EXA => Ok(SearchEngineType::Exa),
             _ => Err(TarziError::InvalidEngine(s.to_string())),
         }
     }
@@ -41,7 +39,6 @@ impl SearchEngineType {
             SearchEngineType::Google => GOOGLE_QUERY_PATTERN.to_string(),
             SearchEngineType::BraveSearch => BRAVE_QUERY_PATTERN.to_string(),
             SearchEngineType::Baidu => BAIDU_QUERY_PATTERN.to_string(),
-            SearchEngineType::Exa => EXA_QUERY_PATTERN.to_string(),
         }
     }
 }

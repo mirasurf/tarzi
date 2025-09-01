@@ -6,7 +6,6 @@ use crate::{
     error::TarziError,
     fetcher::{FetchMode, WebFetcher},
 };
-use reqwest::Client;
 use std::str::FromStr;
 
 use crate::constants::DEFAULT_QUERY_PATTERN;
@@ -202,8 +201,9 @@ impl SearchEngine {
         info!("Starting search with proxy: {}", proxy);
 
         // Use environment variables for proxy with fallback to provided proxy
-        let effective_proxy = crate::config::get_proxy_from_env_or_config(&Some(proxy.to_string()))
-            .unwrap_or_else(|| proxy.to_string());
+        let _effective_proxy =
+            crate::config::get_proxy_from_env_or_config(&Some(proxy.to_string()))
+                .unwrap_or_else(|| proxy.to_string());
 
         warn!("Proxy support for browser mode is simplified");
         // For browser mode with proxy, we would need to configure the browser with proxy settings

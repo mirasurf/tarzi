@@ -1,6 +1,7 @@
 use super::types::{SearchEngineType, SearchResult};
 use crate::Result;
 use crate::fetcher::WebFetcher;
+use crate::search::parser::ParserFactory;
 use async_trait::async_trait;
 
 /// Provider configuration for web search only
@@ -16,7 +17,9 @@ pub trait SearchProvider: Send + Sync {
     type Config;
 
     /// Create a new provider instance with the given configuration
-    fn new(config: Self::Config) -> Self;
+    fn new(config: Self::Config) -> Self
+    where
+        Self: Sized;
 
     /// Perform a search using the provider
     async fn search(&mut self, query: &str, limit: usize) -> Result<Vec<SearchResult>>;
@@ -43,7 +46,7 @@ macro_rules! impl_search_provider {
         }
 
         #[async_trait]
-        impl super::SearchProvider for $provider_name {
+        impl SearchProvider for $provider_name {
             type Config = crate::fetcher::WebFetcher;
 
             fn new(config: Self::Config) -> Self {
@@ -61,7 +64,7 @@ macro_rules! impl_search_provider {
                     .await?;
 
                 // Use the parser to extract results
-                let parser = super::super::parser::ParserFactory::new().get_parser(&$engine_type);
+                let parser = ParserFactory::new().get_parser(&$engine_type);
                 parser.parse(&search_page_content, limit)
             }
 
@@ -82,7 +85,6 @@ impl_search_provider!(BingSearchProvider, SearchEngineType::Bing);
 impl_search_provider!(DuckDuckGoProvider, SearchEngineType::DuckDuckGo);
 impl_search_provider!(BraveSearchProvider, SearchEngineType::BraveSearch);
 impl_search_provider!(BaiduSearchProvider, SearchEngineType::Baidu);
-impl_search_provider!(ExaSearchProvider, SearchEngineType::Exa);
 
 /// Provider variant enum for different search engines
 #[derive(Debug)]
@@ -92,7 +94,6 @@ pub enum ProviderVariant {
     DuckDuckGo(DuckDuckGoProvider),
     BraveSearch(BraveSearchProvider),
     Baidu(BaiduSearchProvider),
-    Exa(ExaSearchProvider),
 }
 
 impl ProviderVariant {
@@ -114,9 +115,6 @@ impl ProviderVariant {
             SearchEngineType::Baidu => Ok(ProviderVariant::Baidu(BaiduSearchProvider::new_web(
                 *config.fetcher,
             ))),
-            SearchEngineType::Exa => Ok(ProviderVariant::Exa(ExaSearchProvider::new_web(
-                *config.fetcher,
-            ))),
         }
     }
 
@@ -128,23 +126,6 @@ impl ProviderVariant {
             ProviderVariant::DuckDuckGo(_) => SearchEngineType::DuckDuckGo,
             ProviderVariant::BraveSearch(_) => SearchEngineType::BraveSearch,
             ProviderVariant::Baidu(_) => SearchEngineType::Baidu,
-            ProviderVariant::Exa(_) => SearchEngineType::Exa,
-        }
-    }
-
-    /// Get the search provider as a mutable reference
-    pub fn as_mut(&mut self) -> &mut dyn SearchProvider {
-        match self {
-            ProviderVariant::Google(provider) => provider,
-            ProviderVariant::Bing(provider) => provider,
-            ProviderVariant::DuckDuckGo(provider) => provider,
-            ProviderVariant::BraveSearch(provider) => provider,
-            ProviderVariant::Baidu(provider) => provider,
-            ProviderVariant::Exa(provider) => provider,
         }
     }
 }
-
-// Re-export the traits and types
-pub use super::types::SearchEngineType;
-pub use super::types::SearchResult;

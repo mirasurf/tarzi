@@ -49,9 +49,6 @@ pub struct SearchConfig {
     pub query_pattern: String,
     #[serde(default = "default_result_limit")]
     pub limit: usize,
-    pub brave_api_key: Option<String>,
-    pub exa_api_key: Option<String>,
-    pub baidu_api_key: Option<String>,
 }
 
 /// CLI configuration parameters that can override config file values
@@ -148,20 +145,11 @@ impl Config {
         if other.search.engine != default_search_engine() {
             self.search.engine = other.search.engine.clone();
         }
-        if other.search.query_pattern != default_query_pattern() {
-            self.search.query_pattern = other.search.query_pattern.clone();
-        }
         if other.search.limit != default_result_limit() {
             self.search.limit = other.search.limit;
         }
-        if other.search.brave_api_key.is_some() {
-            self.search.brave_api_key = other.search.brave_api_key.clone();
-        }
-        if other.search.exa_api_key.is_some() {
-            self.search.exa_api_key = other.search.exa_api_key.clone();
-        }
-        if other.search.baidu_api_key.is_some() {
-            self.search.baidu_api_key = other.search.baidu_api_key.clone();
+        if other.search.query_pattern != default_query_pattern() {
+            self.search.query_pattern = other.search.query_pattern.clone();
         }
     }
 
@@ -298,9 +286,6 @@ impl Default for SearchConfig {
             engine: default_search_engine(),
             query_pattern: default_query_pattern(),
             limit: default_result_limit(),
-            brave_api_key: None,
-            exa_api_key: None,
-            baidu_api_key: None,
         }
     }
 }
@@ -399,17 +384,12 @@ mod tests {
     #[test]
     fn test_config_serialization() {
         let mut config = Config::new();
-        config.search.brave_api_key = Some("test_key".to_string());
         config.search.limit = DEFAULT_SEARCH_LIMIT;
         config.fetcher.mode = FETCHER_MODE_HEAD.to_string();
 
         let toml_str = toml::to_string_pretty(&config).unwrap();
         let parsed_config: Config = toml::from_str(&toml_str).unwrap();
 
-        assert_eq!(
-            parsed_config.search.brave_api_key,
-            Some("test_key".to_string())
-        );
         assert_eq!(parsed_config.search.limit, DEFAULT_SEARCH_LIMIT);
         assert_eq!(parsed_config.fetcher.mode, FETCHER_MODE_HEAD);
     }
@@ -421,7 +401,6 @@ mod tests {
 
         // Create a test config
         let mut config = Config::new();
-        config.search.brave_api_key = Some("test_brave_key".to_string());
         config.search.limit = DEFAULT_SEARCH_LIMIT;
         config.general.log_level = LOG_LEVEL_DEBUG.to_string();
 
@@ -433,10 +412,6 @@ mod tests {
         let content = fs::read_to_string(&config_path).unwrap();
         let loaded_config: Config = toml::from_str(&content).unwrap();
 
-        assert_eq!(
-            loaded_config.search.brave_api_key,
-            Some("test_brave_key".to_string())
-        );
         assert_eq!(loaded_config.search.limit, DEFAULT_SEARCH_LIMIT);
         assert_eq!(loaded_config.general.log_level, LOG_LEVEL_DEBUG);
     }
@@ -467,9 +442,6 @@ web_driver_url = "http://example.com/driver"
 engine = "google.com"
 query_pattern = ".*"
 limit = 5
-brave_api_key = "brave_key_456"
-exa_api_key = "exa_key_012"
-baidu_api_key = "baidu_key_789"
 "#;
 
         let config: Config = toml::from_str(config_str).unwrap();
@@ -492,15 +464,6 @@ baidu_api_key = "baidu_key_789"
         assert_eq!(config.search.engine, "google.com");
         assert_eq!(config.search.query_pattern, ".*");
         assert_eq!(config.search.limit, 5);
-        assert_eq!(
-            config.search.brave_api_key,
-            Some("brave_key_456".to_string())
-        );
-        assert_eq!(config.search.exa_api_key, Some("exa_key_012".to_string()));
-        assert_eq!(
-            config.search.baidu_api_key,
-            Some("baidu_key_789".to_string())
-        );
     }
 
     #[test]
@@ -545,11 +508,6 @@ web_driver_url = "http://localhost:9999"
         assert_eq!(config.search.engine, SEARCH_ENGINE_DUCKDUCKGO);
         assert_eq!(config.search.query_pattern, DEFAULT_QUERY_PATTERN);
         assert_eq!(config.search.limit, DEFAULT_SEARCH_LIMIT);
-        assert_eq!(config.search.autoswitch, AUTOSWITCH_STRATEGY_SMART);
-        // API keys should be None by default (commented out in tarzi.toml)
-        assert_eq!(config.search.brave_api_key, None);
-        assert_eq!(config.search.exa_api_key, None);
-        assert_eq!(config.search.travily_api_key, None);
     }
 
     #[test]
@@ -722,9 +680,6 @@ timeout = 60
 [search]
 engine = "google"
 limit = 5
-brave_api_key = "user_brave_key"
-exa_api_key = "user_exa_key"
-baidu_api_key = "user_baidu_key"
 "#;
         fs::write(&user_config_path, user_config_str).unwrap();
 
@@ -745,15 +700,6 @@ baidu_api_key = "user_baidu_key"
         assert_eq!(config.fetcher.timeout, 60); // from user config
         assert_eq!(config.search.engine, SEARCH_ENGINE_GOOGLE); // from user config
         assert_eq!(config.search.limit, 5); // from user config
-        assert_eq!(
-            config.search.brave_api_key,
-            Some("user_brave_key".to_string())
-        ); // from user config
-        assert_eq!(config.search.exa_api_key, Some("user_exa_key".to_string()));
-        assert_eq!(
-            config.search.baidu_api_key,
-            Some("user_baidu_key".to_string())
-        );
 
         // Restore original HOME
         if let Some(home) = original_home {
@@ -820,9 +766,6 @@ baidu_api_key = "user_baidu_key"
                 engine: SEARCH_ENGINE_GOOGLE.to_string(),
                 query_pattern: "custom pattern".to_string(),
                 limit: DEFAULT_SEARCH_LIMIT,
-                brave_api_key: Some("test_key".to_string()),
-                exa_api_key: Some("override_exa_key".to_string()),
-                baidu_api_key: None,
             },
         };
 
@@ -848,14 +791,5 @@ baidu_api_key = "user_baidu_key"
         assert_eq!(base_config.search.engine, SEARCH_ENGINE_GOOGLE);
         assert_eq!(base_config.search.query_pattern, "custom pattern");
         assert_eq!(base_config.search.limit, DEFAULT_SEARCH_LIMIT);
-        assert_eq!(
-            base_config.search.brave_api_key,
-            Some("test_key".to_string())
-        );
-        assert_eq!(
-            base_config.search.exa_api_key,
-            Some("override_exa_key".to_string())
-        );
-        assert_eq!(base_config.search.baidu_api_key, None);
     }
 }
