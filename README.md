@@ -46,7 +46,7 @@
 - 🛡️ **Proxy Support**: Bypass network bans using proxy support to access global SEPs
 - 🚀 **End-to-End Workflow**: Full pipeline from search to content extraction for AI and automation use cases
 
-## 🧪 Advanced Features (Supports required)
+## 🧪 Advanced Features (Under dev.)
 
 - 🖥️ **Custom Browser Controls**: Set screen size, viewport, and locale for realistic behavior  
 - 🕵️‍♂️ **Anti-Bot Evasion**: Use fingerprint spoofing, proxy rotation, and human-like actions to avoid detection  
