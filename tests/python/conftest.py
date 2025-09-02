@@ -120,7 +120,7 @@ except ImportError as e:
                 raise ValueError("Invalid search mode: invalid_mode")
             return [MockSearchResult() for _ in range(min(limit, 2))]
 
-        def search_and_fetch(self, query, search_mode, limit, fetch_mode, format_type):
+        def search_with_content(self, query, search_mode, limit, fetch_mode, format_type):
             if search_mode == "invalid_mode":
                 raise ValueError("Invalid search mode: invalid_mode")
             if fetch_mode == "invalid_fetch_mode":
@@ -185,7 +185,7 @@ except ImportError as e:
             return [MockSearchResult() for _ in range(min(limit, 2))]
 
         @staticmethod
-        def search_and_fetch(query, search_mode, limit, fetch_mode, format_type):
+        def search_with_content(query, search_mode, limit, fetch_mode, format_type):
             if search_mode == "invalid_mode":
                 raise ValueError("Invalid search mode: invalid_mode")
             if fetch_mode == "invalid_fetch_mode":
@@ -262,10 +262,10 @@ def pytest_collection_modifyitems(config, items):
     """Automatically mark tests based on their location."""
     print(f"🔍 pytest_collection_modifyitems called with TARZI_AVAILABLE={TARZI_AVAILABLE}")
     print(f"   Total items collected: {len(items)}")
-    
+
     integration_count = 0
     skipped_count = 0
-    
+
     for item in items:
         # Mark unit tests
         if "unit" in str(item.fspath):
@@ -279,10 +279,10 @@ def pytest_collection_modifyitems(config, items):
         if not TARZI_AVAILABLE and item.get_closest_marker("integration"):
             item.add_marker(pytest.mark.skip(reason="tarzi module not available"))
             skipped_count += 1
-    
+
     print(f"   Integration tests found: {integration_count}")
     print(f"   Tests skipped due to missing tarzi: {skipped_count}")
-    
+
     if TARZI_AVAILABLE:
         print("✅ Tarzi is available - integration tests will run")
     else:

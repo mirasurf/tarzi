@@ -74,7 +74,7 @@ def main():
     # 5. Search and fetch functionality
     print("5. Search and fetch functionality:")
     try:
-        results_with_content = tarzi.search_and_fetch("web scraping", "webquery", 2, "plain_request", "markdown")
+        results_with_content = tarzi.search_with_content("web scraping", "webquery", 2, "plain_request", "markdown")
         print(f"Found {len(results_with_content)} results with content:")
         for i, (result, content) in enumerate(results_with_content):
             print(f"  {i+1}. {result.title} ({result.url})")

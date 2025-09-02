@@ -92,7 +92,7 @@ def test_search_web_basic_functionality(test_query):
 @pytest.mark.network
 @pytest.mark.slow
 def test_search_with_content_function(test_query):
-    """Test the search_and_fetch function."""
+    """Test the search_with_content function."""
     try:
         results = tarzi.search_with_content(test_query, 1, "plain_request", "markdown")
         assert len(results) > 0, "Should return at least one result with content"
@@ -102,13 +102,13 @@ def test_search_with_content_function(test_query):
 
 @pytest.mark.integration
 def test_search_with_content_invalid_fetch_mode(test_query):
-    """Test search_and_fetch with invalid fetch mode."""
+    """Test search_with_content with invalid fetch mode."""
     with pytest.raises(Exception):
         tarzi.search_with_content(test_query, 1, "invalid_fetch_mode", "html")
 
 
 @pytest.mark.integration
 def test_search_with_content_invalid_format(test_query):
-    """Test search_and_fetch with invalid format."""
+    """Test search_with_content with invalid format."""
     with pytest.raises(Exception):
         tarzi.search_with_content(test_query, 1, "plain_request", "invalid_format")

@@ -166,7 +166,7 @@ limit = 10
         fetch_mode: str,
     ) -> List[SearchWithContentResult]:
         """
-        Use tarzi's native search_and_fetch function.
+        Use tarzi's native search_with_content function.
 
         Args:
             query: Search query
@@ -177,13 +177,13 @@ limit = 10
         Returns:
             List of SearchWithContentResult objects
         """
-        from .tarzi import search_and_fetch
+        from .tarzi import search_with_content
 
         # Map our content modes to tarzi formats
         tarzi_format = "html" if content_mode == ContentMode.RAW_HTML else "markdown"
 
-        # Use tarzi's search_and_fetch
-        results_with_content = search_and_fetch(query, self.search_mode, max_results, fetch_mode, tarzi_format)
+        # Use tarzi's search_with_content
+        results_with_content = search_with_content(query, self.search_mode, max_results, fetch_mode, tarzi_format)
 
         # Convert to our format
         search_results = []
