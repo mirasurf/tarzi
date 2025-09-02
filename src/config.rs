@@ -345,10 +345,10 @@ pub fn get_proxy_from_env_or_config(config_proxy: &Option<String>) -> Option<Str
     let env_vars = ["HTTPS_PROXY", "HTTP_PROXY", "https_proxy", "http_proxy"];
 
     for env_var in &env_vars {
-        if let Ok(proxy) = std::env::var(env_var) {
-            if !proxy.is_empty() {
-                return Some(proxy);
-            }
+        if let Ok(proxy) = std::env::var(env_var)
+            && !proxy.is_empty()
+        {
+            return Some(proxy);
         }
     }
 
