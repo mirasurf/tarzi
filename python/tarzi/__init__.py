@@ -10,7 +10,7 @@ from .tarzi import (
     WebFetcher,
     convert_html,
     fetch_url,
-    search_and_fetch,
+    search_with_content,
     search_web,
 )
 
@@ -49,7 +49,7 @@ __all__ = [
     "convert_html",
     "fetch_url",
     "search_web",
-    "search_and_fetch",
+    "search_with_content",
     "TarziFetcher",
     "TarziSearcher",
     "ContentMode",
