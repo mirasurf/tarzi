@@ -32,8 +32,8 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          tarzi/target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('tarzi/Cargo.lock') }}
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
 
@@ -77,8 +77,8 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          tarzi/target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('tarzi/Cargo.lock') }}
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
 
@@ -124,8 +124,8 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          tarzi/target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('tarzi/Cargo.lock') }}
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
 
@@ -142,4 +142,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: tarzi-binary-${{ runner.os }}
-        path: tarzi/target/release/tarzi
+        path: target/release/tarzi

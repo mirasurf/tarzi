@@ -30,13 +30,13 @@ jobs:
         pip install black ruff isort autoflake
 
     - name: Check Python formatting with black
-      run: black --check tarzi/examples tarzi/python
+      run: black --check examples python
 
     - name: Check import sorting with isort
-      run: isort --check-only tarzi/examples tarzi/python
+      run: isort --check-only examples python
 
     - name: Lint with ruff
-      run: ruff check tarzi/examples tarzi/python
+      run: ruff check examples python
 
   test:
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
@@ -62,8 +62,8 @@ jobs:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
-          tarzi/target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('tarzi/Cargo.lock') }}
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
 
@@ -84,14 +84,12 @@ jobs:
       shell: bash
       run: |
         source .venv/bin/activate
-        cd tarzi
         maturin develop --release
 
     - name: Run Python unit tests only
       shell: bash
       run: |
         source .venv/bin/activate
-        cd tarzi
         make test-unit
       continue-on-error: true
 
@@ -99,7 +97,6 @@ jobs:
       shell: bash
       run: |
         source .venv/bin/activate
-        cd tarzi
         make test
       continue-on-error: true
 
@@ -107,7 +104,7 @@ jobs:
       if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
       uses: codecov/codecov-action@v3
       with:
-        file: tarzi/tests/python/coverage.xml
+        file: tests/python/coverage.xml
         flags: python
         name: python-coverage
 
@@ -140,7 +137,7 @@ jobs:
       run: |
         python -m venv test_env
         source test_env/bin/activate
-        wheel_file=$(ls tarzi/dist/*.whl | head -1)
+        wheel_file=$(ls dist/*.whl | head -1)
         pip install "$wheel_file"
         python -c "import tarzi; print('Wheel installed successfully')"
 
@@ -148,7 +145,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: wheels-${{ matrix.os }}
-        path: tarzi/dist/
+        path: dist/
 
   docs:
     name: Build Documentation
@@ -177,7 +174,6 @@ jobs:
       shell: bash
       run: |
         source .venv/bin/activate
-        cd tarzi
         maturin develop --release
 
     - name: Build documentation
