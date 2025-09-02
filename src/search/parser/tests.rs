@@ -267,8 +267,7 @@ fn test_parser_support() {
                 || parser.supports(&SearchEngineType::Google)
                 || parser.supports(&SearchEngineType::BraveSearch)
                 || parser.supports(&SearchEngineType::Baidu),
-            "Parser {} should support at least one engine type",
-            name
+            "Parser {name} should support at least one engine type"
         );
     }
 }

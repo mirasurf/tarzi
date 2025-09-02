@@ -38,13 +38,13 @@ jobs:
           ${{ runner.os }}-cargo-
 
     - name: Check formatting
-      run: cd tarzi && cargo fmt --all -- --check
+      run: cargo fmt --all -- --check
 
     - name: Check code
-      run: cd tarzi && cargo check --all-targets --all-features
+      run: cargo check --all-targets --all-features
 
     - name: Run clippy
-      run: cd tarzi && cargo clippy --all-targets --all-features -- -D warnings
+      run: cargo clippy --all-targets --all-features -- -D warnings
 
   test:
     name: Test on ${{ matrix.os }}
@@ -83,14 +83,14 @@ jobs:
           ${{ runner.os }}-cargo-
 
     - name: Run unit tests
-      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --lib --all-features
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --lib --all-features
 
     - name: Run integration tests
-      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --test '*' --all-features
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --test '*' --all-features
       continue-on-error: true
 
     - name: Run doctests
-      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --doc --all-features
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo test --doc --all-features
 
   build:
     name: Build Release on ${{ matrix.os }}
@@ -130,13 +130,13 @@ jobs:
           ${{ runner.os }}-cargo-
 
     - name: Build release binary
-      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --all-features
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --all-features
 
     - name: Build with Python bindings
-      run: cd tarzi && RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --features pyo3
+      run: RUSTFLAGS="-L$PYTHON_LIBDIR -lpython${{ matrix.python-version }}" cargo build --release --features pyo3
 
     - name: Test binary works
-      run: cd tarzi && ./target/release/tarzi --version
+      run: ./target/release/tarzi --version
 
     - name: Upload binary artifact
       uses: actions/upload-artifact@v4

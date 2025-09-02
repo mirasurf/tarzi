@@ -11,9 +11,6 @@ pub mod parser;
 pub mod providers;
 pub mod types;
 
-#[cfg(test)]
-mod tests;
-
 // Re-export main types and functions
 pub use api::AutoSwitchStrategy;
 pub use engine::SearchEngine;

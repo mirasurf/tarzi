@@ -209,7 +209,7 @@ impl PyWebFetcher {
     /// Raises:
     ///     ValueError: If mode is invalid
     ///     RuntimeError: If fetching fails
-    fn fetch_raw(&mut self, url: &str, mode: &str) -> PyResult<String> {
+    fn fetch_url(&mut self, url: &str, mode: &str) -> PyResult<String> {
         let mode = FetchMode::from_str(mode).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Invalid fetch mode '{mode}': {e}"
@@ -222,7 +222,7 @@ impl PyWebFetcher {
             ))
         })?;
 
-        rt.block_on(async { self.inner.fetch_raw(url, mode).await })
+        rt.block_on(async { self.inner.fetch_url(url, mode).await })
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
                     "Failed to fetch raw content from '{url}': {e}"
@@ -300,8 +300,13 @@ impl PySearchEngine {
     ///     SearchEngine: A new search engine instance
     #[new]
     fn new() -> Self {
+        // Use configuration loading with precedence to ensure proper defaults
+        let config = match crate::config::Config::load_with_precedence() {
+            Ok(config) => config,
+            Err(_) => crate::config::Config::new(), // Fallback to defaults
+        };
         Self {
-            inner: SearchEngine::new(),
+            inner: SearchEngine::from_config(&config),
         }
     }
 

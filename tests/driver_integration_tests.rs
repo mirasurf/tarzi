@@ -10,6 +10,142 @@ use tarzi::fetcher::driver::{DriverConfig, DriverManager, DriverStatus, DriverTy
 #[cfg(not(feature = "test-helpers"))]
 use tarzi::fetcher::driver::{DriverManager, DriverType};
 
+/// Helper function to test driver lifecycle with proper cleanup
+#[cfg(feature = "test-helpers")]
+fn test_driver_lifecycle(
+    driver_type: DriverType,
+    expected_binary_name: &str,
+) -> Result<(), String> {
+    if !test_helpers::is_driver_available(&driver_type) {
+        return Err(format!(
+            "{} driver not available - skipping test",
+            expected_binary_name
+        ));
+    }
+
+    let manager = DriverManager::new();
+    let port = test_helpers::find_available_port();
+
+    let args = match driver_type {
+        DriverType::Chrome => vec![
+            "--disable-gpu".to_string(),
+            "--no-sandbox".to_string(),
+            "--disable-dev-shm-usage".to_string(),
+        ],
+        DriverType::Firefox => {
+            let mut args = vec![
+                "--host=127.0.0.1".to_string(),
+                "--marionette-port=2828".to_string(),
+                "--log=info".to_string(),
+            ];
+
+            // Add Firefox binary path for macOS if it exists
+            let firefox_paths = vec![
+                "/Applications/Firefox.app/Contents/MacOS/firefox",
+                "/Applications/Firefox.app/Contents/MacOS/firefox-bin",
+                "/opt/homebrew/bin/firefox",
+                "/usr/local/bin/firefox",
+            ];
+
+            for path in firefox_paths {
+                if std::path::Path::new(path).exists() {
+                    args.push("--binary".to_string());
+                    args.push(path.to_string());
+                    println!("Using Firefox binary: {}", path);
+                    break;
+                }
+            }
+
+            args
+        }
+        _ => vec![],
+    };
+
+    let timeout = match driver_type {
+        DriverType::Firefox => Duration::from_secs(30), // Firefox takes longer to start
+        _ => Duration::from_secs(15),
+    };
+
+    let config = DriverConfig {
+        driver_type: driver_type.clone(),
+        port,
+        args,
+        timeout,
+        verbose: false,
+    };
+
+    match manager.start_driver_with_config(config.clone()) {
+        Ok(info) => {
+            // Verify driver info
+            if info.config.driver_type != driver_type {
+                return Err(format!(
+                    "Expected driver type {:?}, got {:?}",
+                    driver_type, info.config.driver_type
+                ));
+            }
+            if info.config.port != port {
+                return Err(format!("Expected port {}, got {}", port, info.config.port));
+            }
+            if info.status != DriverStatus::Running {
+                return Err(format!("Expected status Running, got {:?}", info.status));
+            }
+            if info.pid.is_none() {
+                return Err("Expected PID to be Some, got None".to_string());
+            }
+            if info.endpoint != format!("http://127.0.0.1:{port}") {
+                return Err(format!(
+                    "Expected endpoint http://127.0.0.1:{}, got {}",
+                    port, info.endpoint
+                ));
+            }
+
+            // Verify the driver is listed
+            let drivers = manager.list_drivers();
+            if drivers.len() != 1 {
+                return Err(format!("Expected 1 driver in list, got {}", drivers.len()));
+            }
+            if drivers[0].config.port != port {
+                return Err(format!(
+                    "Expected listed driver port {}, got {}",
+                    port, drivers[0].config.port
+                ));
+            }
+
+            // Verify we can get driver info
+            let retrieved_info = manager.get_driver_info(port);
+            if retrieved_info.is_none() {
+                return Err("Expected driver info to be Some, got None".to_string());
+            }
+
+            // Stop the driver
+            if let Err(e) = manager.stop_driver(port) {
+                return Err(format!("Failed to stop driver: {}", e));
+            }
+
+            // Verify the driver is no longer listed
+            let drivers_after_stop = manager.list_drivers();
+            if !drivers_after_stop.is_empty() {
+                return Err(format!(
+                    "Expected no drivers after stop, got {}",
+                    drivers_after_stop.len()
+                ));
+            }
+
+            Ok(())
+        }
+        Err(e) => {
+            let error_msg = format!("{e}");
+            if error_msg.contains(expected_binary_name)
+                || error_msg.contains(&driver_type.to_string())
+            {
+                Err(format!("Driver startup failed (expected): {}", error_msg))
+            } else {
+                Err(format!("Unexpected error: {}", error_msg))
+            }
+        }
+    }
+}
+
 /// Test that we can create a driver manager
 #[test]
 fn test_create_driver_manager() {
@@ -52,62 +188,34 @@ fn test_driver_binary_detection() {
 #[test]
 #[cfg(feature = "test-helpers")]
 fn test_chrome_driver_lifecycle() {
-    if !test_helpers::is_driver_available(&DriverType::Chrome) {
-        println!("Skipping Chrome driver test - chromedriver not available");
-        return;
-    }
-
-    let manager = DriverManager::new();
-    let port = test_helpers::find_available_port();
-
-    // Create config for Chrome driver
-    let config = DriverConfig {
-        driver_type: DriverType::Chrome,
-        port,
-        args: vec![
-            "--disable-gpu".to_string(),
-            "--no-sandbox".to_string(),
-            "--disable-dev-shm-usage".to_string(),
-        ],
-        timeout: Duration::from_secs(15),
-        verbose: false,
-    };
-
-    // Start the driver
-    let driver_info = manager.start_driver_with_config(config.clone());
-
-    match driver_info {
-        Ok(info) => {
-            // Verify driver info
-            assert_eq!(info.config.driver_type, DriverType::Chrome);
-            assert_eq!(info.config.port, port);
-            assert_eq!(info.status, DriverStatus::Running);
-            assert!(info.pid.is_some());
-            assert_eq!(info.endpoint, format!("http://127.0.0.1:{port}"));
-
-            // Verify the driver is listed
-            let drivers = manager.list_drivers();
-            assert_eq!(drivers.len(), 1);
-            assert_eq!(drivers[0].config.port, port);
-
-            // Verify we can get driver info
-            let retrieved_info = manager.get_driver_info(port);
-            assert!(retrieved_info.is_some());
-
-            // Stop the driver
-            let stop_result = manager.stop_driver(port);
-            assert!(stop_result.is_ok());
-
-            // Verify the driver is no longer listed
-            let drivers_after_stop = manager.list_drivers();
-            assert_eq!(drivers_after_stop.len(), 0);
-
-            println!("Chrome driver test completed successfully");
+    match test_driver_lifecycle(DriverType::Chrome, "chromedriver") {
+        Ok(()) => {
+            println!("✓ Chrome driver test completed successfully");
         }
-        Err(e) => {
-            println!("Failed to start Chrome driver: {e}");
-            // The test is still successful if we got a meaningful error
-            assert!(format!("{e}").contains("chromedriver") || format!("{e}").contains("Chrome"));
+        Err(msg) => {
+            if msg.contains("not available - skipping test") {
+                println!("✓ Chrome driver test skipped: {}", msg);
+            } else {
+                panic!("Chrome driver test failed unexpectedly: {}", msg);
+            }
+        }
+    }
+}
+
+/// Test starting and stopping a Firefox driver (if available)
+#[test]
+#[cfg(feature = "test-helpers")]
+fn test_firefox_driver_lifecycle() {
+    match test_driver_lifecycle(DriverType::Firefox, "geckodriver") {
+        Ok(()) => {
+            println!("✓ Firefox driver test completed successfully");
+        }
+        Err(msg) => {
+            if msg.contains("not available - skipping test") {
+                println!("✓ Firefox driver test skipped: {}", msg);
+            } else {
+                panic!("Firefox driver test failed unexpectedly: {}", msg);
+            }
         }
     }
 }
@@ -117,21 +225,39 @@ fn test_chrome_driver_lifecycle() {
 #[cfg(feature = "test-helpers")]
 fn test_nonexistent_driver() {
     let manager = DriverManager::new();
+    let port = test_helpers::find_available_port();
 
     let config = DriverConfig {
         driver_type: DriverType::Generic("nonexistent-driver".to_string()),
-        port: test_helpers::find_available_port(),
+        port,
         args: vec![],
         timeout: Duration::from_secs(5),
         verbose: false,
     };
 
     let result = manager.start_driver_with_config(config);
-    assert!(result.is_err());
 
-    if let Err(e) = result {
-        let error_msg = format!("{e}");
-        assert!(error_msg.contains("not found") || error_msg.contains("nonexistent-driver"));
-        println!("Non-existent driver error handling works correctly: {error_msg}");
+    match result {
+        Ok(_) => {
+            panic!("Expected error for non-existent driver, but got success");
+        }
+        Err(e) => {
+            let error_msg = format!("{e}");
+            if error_msg.contains("not found") || error_msg.contains("nonexistent-driver") {
+                println!(
+                    "✓ Non-existent driver error handling works correctly: {}",
+                    error_msg
+                );
+            } else {
+                panic!(
+                    "Unexpected error message for non-existent driver: {}",
+                    error_msg
+                );
+            }
+        }
     }
+
+    // Verify no driver is listed after failure
+    let drivers = manager.list_drivers();
+    assert_eq!(drivers.len(), 0, "Expected no drivers after failed start");
 }

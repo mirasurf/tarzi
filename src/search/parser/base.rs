@@ -58,7 +58,7 @@ impl BaseSearchParser for BaseWebParser {
     }
 
     fn engine_type(&self) -> SearchEngineType {
-        self.engine_type.clone()
+        self.engine_type
     }
 }
 
@@ -80,7 +80,7 @@ impl BaseSearchParser for BaseApiParser {
     }
 
     fn engine_type(&self) -> SearchEngineType {
-        self.engine_type.clone()
+        self.engine_type
     }
 }
 

@@ -5,16 +5,27 @@ Shared pytest fixtures and configuration for tarzi tests.
 
 import os
 import sys
+from pathlib import Path
 
 import pytest
+
+# Add the project's python directory to sys.path to ensure tarzi can be imported
+project_root = Path(__file__).parent.parent.parent
+python_dir = project_root / "python"
+if python_dir.exists() and str(python_dir) not in sys.path:
+    sys.path.insert(0, str(python_dir))
 
 # Try to import tarzi, but handle gracefully if not available
 try:
     import tarzi
 
     TARZI_AVAILABLE = True
-except ImportError:
+    print(f"✅ Tarzi module successfully imported from {python_dir}")
+except ImportError as e:
     TARZI_AVAILABLE = False
+    print(f"⚠️  Tarzi module not available: {e}")
+    print(f"   Searched in: {python_dir}")
+    print(f"   Python path: {sys.path[:3]}...")  # Show first 3 entries
 
     # Create mock classes for demonstration when tarzi is not available
     class MockConfig:
@@ -83,7 +94,7 @@ except ImportError:
                 raise ValueError("Invalid format: invalid_format")
             return f"<html><body>Mock content from {url}</body></html>"
 
-        def fetch_raw(self, url, mode):
+        def fetch_url(self, url, mode):
             if mode == "invalid_mode":
                 raise ValueError("Invalid fetch mode: invalid_mode")
             return f"Raw mock content from {url}"
@@ -202,7 +213,6 @@ def sample_config_str():
     return """
 [fetcher]
 timeout = 30
-user_agent = "Tarzi Test/1.0"
 format = "html"
 proxy = ""
 
@@ -250,6 +260,12 @@ def complex_html():
 
 def pytest_collection_modifyitems(config, items):
     """Automatically mark tests based on their location."""
+    print(f"🔍 pytest_collection_modifyitems called with TARZI_AVAILABLE={TARZI_AVAILABLE}")
+    print(f"   Total items collected: {len(items)}")
+    
+    integration_count = 0
+    skipped_count = 0
+    
     for item in items:
         # Mark unit tests
         if "unit" in str(item.fspath):
@@ -257,10 +273,20 @@ def pytest_collection_modifyitems(config, items):
         # Mark integration tests
         elif "integration" in str(item.fspath):
             item.add_marker(pytest.mark.integration)
+            integration_count += 1
 
         # Skip integration tests if tarzi is not available
         if not TARZI_AVAILABLE and item.get_closest_marker("integration"):
             item.add_marker(pytest.mark.skip(reason="tarzi module not available"))
+            skipped_count += 1
+    
+    print(f"   Integration tests found: {integration_count}")
+    print(f"   Tests skipped due to missing tarzi: {skipped_count}")
+    
+    if TARZI_AVAILABLE:
+        print("✅ Tarzi is available - integration tests will run")
+    else:
+        print("❌ Tarzi is not available - integration tests will be skipped")
 
 
 def pytest_addoption(parser):

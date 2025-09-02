@@ -115,7 +115,7 @@ mod tests {
     async fn test_fetch_raw_plain_request_invalid_url() {
         let mut fetcher = WebFetcher::new();
         let result = fetcher
-            .fetch_raw("invalid-url", FetchMode::PlainRequest)
+            .fetch_url("invalid-url", FetchMode::PlainRequest)
             .await;
         assert!(result.is_err());
         match result.unwrap_err() {

@@ -11,6 +11,10 @@ from .tarzi import (
     search_web,
 )
 
+# High-level Python API imports
+from .fetcher import ContentMode, TarziFetcher
+from .searcher import SearchWithContentResult, TarziSearcher
+
 # Get version dynamically
 try:
     from importlib.metadata import version
@@ -47,4 +51,8 @@ __all__ = [
     "fetch_url",
     "search_web",
     "search_and_fetch",
+    "TarziFetcher",
+    "TarziSearcher",
+    "ContentMode",
+    "SearchWithContentResult",
 ]

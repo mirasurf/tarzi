@@ -52,10 +52,10 @@ class TestWebFetcher:
             pytest.skip(f"Network request failed: {e}")
 
     @pytest.mark.network
-    def test_fetch_raw(self, fetcher, test_url):
+    def test_fetch_url(self, fetcher, test_url):
         """Test raw fetching."""
         try:
-            result = fetcher.fetch_raw(test_url, "plain_request")
+            result = fetcher.fetch_url(test_url, "plain_request")
             assert isinstance(result, str)
             assert len(result) > 0
         except Exception as e:

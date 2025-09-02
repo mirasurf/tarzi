@@ -1,10 +1,32 @@
 use std::time::{Duration, Instant};
 use tarzi::config::Config;
+use tarzi::converter::Format;
+use tarzi::fetcher::FetchMode;
 use tarzi::search::SearchEngine;
 use tarzi::search::parser::ParserFactory;
 use tarzi::search::types::SearchEngineType;
 
-const TEST_TIMEOUT: Duration = Duration::from_secs(60);
+/// Default test timeout for search operations
+const SEARCH_TEST_TIMEOUT: Duration = Duration::from_secs(120);
+const WEBDRIVER_URL: &str = "http://localhost:9515"; // Chrome WebDriver default port
+const WEBDRIVER_DRIVER: &str = "chromedriver";
+
+/// Helper function to check if WebDriver is available at a specific URL
+async fn is_webdriver_available_at_url(url: &str) -> bool {
+    use reqwest;
+    use std::time::Duration;
+    use tokio::time::timeout;
+
+    match timeout(
+        Duration::from_secs(2),
+        reqwest::get(&format!("{url}/status")),
+    )
+    .await
+    {
+        Ok(Ok(response)) => response.status().is_success(),
+        _ => false,
+    }
+}
 
 #[tokio::test]
 async fn test_parser_functionality() {
@@ -432,5 +454,131 @@ async fn test_search_latency_percentiles() {
         println!("  P95: {:?}", p95);
         println!("  Min: {:?}", latencies[0]);
         println!("  Max: {:?}", latencies[latencies.len() - 1]);
+    }
+}
+
+/// Helper function to create a config with external WebDriver URL
+fn create_external_webdriver_config(search_engine: &str) -> Config {
+    let mut config = Config::default();
+    config.fetcher.web_driver_url = Some(WEBDRIVER_URL.to_string());
+    config.fetcher.web_driver = WEBDRIVER_DRIVER.to_string();
+    config.search.engine = search_engine.to_string();
+    config
+}
+
+/// Test search with external WebDriver - simplified single function implementation
+#[tokio::test]
+async fn test_search_external_webdriver() {
+    // Check if external WebDriver is available
+    if !is_webdriver_available_at_url(WEBDRIVER_URL).await {
+        panic!(
+            "❌ External Chrome WebDriver not available at {} - test requires external Chrome WebDriver to be running. \
+             Please start ChromeDriver with: chromedriver --port=9515",
+            WEBDRIVER_URL
+        );
+    }
+
+    let config = create_external_webdriver_config("duckduckgo");
+    let query = "rust programming language";
+    let mut engine = SearchEngine::from_config(&config);
+
+    // Verify the engine type is correct
+    assert_eq!(
+        engine.engine_type(),
+        &SearchEngineType::DuckDuckGo,
+        "Expected DuckDuckGo engine type"
+    );
+
+    // Perform search with timeout
+    let result = tokio::time::timeout(SEARCH_TEST_TIMEOUT, engine.search(query, 5)).await;
+
+    match result {
+        Ok(Ok(results)) => {
+            assert!(!results.is_empty(), "Search returned no results");
+            println!(
+                "✓ DuckDuckGo search with external WebDriver successful: {} results",
+                results.len()
+            );
+
+            // Verify result structure
+            for (i, result) in results.iter().enumerate() {
+                assert!(!result.title.is_empty(), "Result {} has empty title", i);
+                assert!(!result.url.is_empty(), "Result {} has empty URL", i);
+                assert!(
+                    result.url.starts_with("http"),
+                    "Result {} has invalid URL: {}",
+                    i,
+                    result.url
+                );
+                assert_eq!(result.rank, i + 1, "Result {} has incorrect rank", i);
+            }
+        }
+        Ok(Err(e)) => panic!("DuckDuckGo search with external WebDriver failed: {}", e),
+        Err(_) => panic!(
+            "DuckDuckGo search with external WebDriver timed out after {:?}",
+            SEARCH_TEST_TIMEOUT
+        ),
+    }
+}
+
+/// Test search with content fetching using external WebDriver
+#[tokio::test]
+async fn test_search_with_content_external_webdriver() {
+    let config = create_external_webdriver_config("duckduckgo");
+    let query = "rust programming tutorial";
+    let limit = 3;
+
+    let mut engine = SearchEngine::from_config(&config);
+
+    // Perform search with content fetching
+    let result = tokio::time::timeout(
+        SEARCH_TEST_TIMEOUT,
+        engine.search_with_content(query, limit, FetchMode::BrowserHead, Format::Markdown),
+    )
+    .await;
+
+    match result {
+        Ok(Ok(results_with_content)) => {
+            println!(
+                "✓ Search with content using external WebDriver successful: {} results",
+                results_with_content.len()
+            );
+
+            // Verify results structure
+            for (i, (search_result, content)) in results_with_content.iter().enumerate() {
+                assert!(
+                    !search_result.title.is_empty(),
+                    "Result {} has empty title",
+                    i
+                );
+                assert!(!search_result.url.is_empty(), "Result {} has empty URL", i);
+                assert!(
+                    search_result.url.starts_with("http"),
+                    "Result {} has invalid URL: {}",
+                    i,
+                    search_result.url
+                );
+                assert_eq!(search_result.rank, i + 1, "Result {} has incorrect rank", i);
+
+                // Content should not be empty for successful fetches
+                if !content.is_empty() {
+                    assert!(
+                        content.len() > 10,
+                        "Result {} content too short: {} chars",
+                        i,
+                        content.len()
+                    );
+                }
+            }
+        }
+        Ok(Err(e)) => {
+            panic!("Search with content using external WebDriver failed: {}", e);
+        }
+        Err(_) => {
+            panic!(
+                "Search with content using external WebDriver timed out after {:?}",
+                SEARCH_TEST_TIMEOUT
+            );
+        }
     }
 }

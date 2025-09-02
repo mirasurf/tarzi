@@ -43,8 +43,8 @@
 # -----------------------------------------------------------------------------
 [search]
 # Search engine to use
-# Options: "google", "bing", "duckduckgo", "brave", "baidu", "exa"
-# engine = "duckduckgo"
+# Options: "google", "bing", "duckduckgo", "brave", "baidu"
+# engine = "bing"
 
 # URL pattern for search queries when engine is "custom"
 # Use {query} as placeholder for the search term
@@ -52,12 +52,3 @@
 
 # Maximum number of search results to return
 # limit = 5
-
-# Auto-switching strategy for multiple API providers
-# Options: "smart" (automatically switch using internal policies), "none" (only use search.engine)
-# autoswitch = "smart"
-
-# API keys for supported providers
-# brave_api_key = "your-brave-api-key"
-# exa_api_key = "your-exa-api-key"
-# baidu_api_key = "your-baidu-api-key"

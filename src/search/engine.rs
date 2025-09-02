@@ -24,8 +24,8 @@ impl SearchEngine {
         // Initialize SearchEngine with default configuration
         Self {
             fetcher: WebFetcher::new(),
-            engine_type: SearchEngineType::DuckDuckGo,
-            query_pattern: SearchEngineType::DuckDuckGo.get_query_pattern(),
+            engine_type: SearchEngineType::Bing,
+            query_pattern: SearchEngineType::Bing.get_query_pattern(),
             user_agent: crate::constants::DEFAULT_USER_AGENT.to_string(),
             parser_factory: ParserFactory::new(),
         }
@@ -50,8 +50,8 @@ impl SearchEngine {
         let fetcher = crate::fetcher::WebFetcher::from_config(config);
 
         // Parse the search engine type from config
-        let engine_type = SearchEngineType::from_str(&config.search.engine)
-            .unwrap_or(SearchEngineType::DuckDuckGo);
+        let engine_type =
+            SearchEngineType::from_str(&config.search.engine).unwrap_or(SearchEngineType::Bing);
 
         // Use custom query pattern if provided, otherwise use the default for the engine type
         let query_pattern = if config.search.query_pattern != DEFAULT_QUERY_PATTERN {
@@ -105,7 +105,7 @@ impl SearchEngine {
         const RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
 
         for attempt in 1..=MAX_RETRIES {
-            match self.fetcher.fetch_raw(url, fetch_mode).await {
+            match self.fetcher.fetch_url(url, fetch_mode).await {
                 Ok(content) => {
                     if attempt > 1 {
                         info!("Successfully fetched content on attempt {}", attempt);
@@ -235,5 +235,69 @@ impl Drop for SearchEngine {
     fn drop(&mut self) {
         info!("SearchEngine dropping - cleanup will be handled by WebFetcher");
         // The fetcher will handle its own cleanup
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::constants::*;
+
+    #[test]
+    fn test_search_engine_default() {
+        let engine = SearchEngine::new();
+        assert_eq!(engine.engine_type(), &SearchEngineType::Bing);
+        assert_eq!(
+            engine.query_pattern(),
+            SearchEngineType::Bing.get_query_pattern()
+        );
+    }
+
+    #[test]
+    fn test_search_engine_from_config() {
+        let mut config = crate::config::Config::new();
+        config.search.engine = SEARCH_ENGINE_GOOGLE.to_string();
+        config.search.query_pattern = "custom pattern".to_string();
+
+        let engine = SearchEngine::from_config(&config);
+        assert_eq!(engine.engine_type(), &SearchEngineType::Google);
+        assert_eq!(engine.query_pattern(), "custom pattern");
+    }
+
+    #[test]
+    fn test_search_engine_getters() {
+        let engine = SearchEngine::new();
+
+        // Test getter methods
+        assert_eq!(engine.engine_type(), &SearchEngineType::Bing);
+        assert!(!engine.query_pattern().is_empty());
+        assert!(!engine.user_agent().is_empty());
+
+        // Test default user agent
+        assert_eq!(engine.user_agent(), crate::constants::DEFAULT_USER_AGENT);
+    }
+
+    #[test]
+    fn test_search_engine_config_with_default_pattern() {
+        let mut config = crate::config::Config::new();
+        config.search.engine = SEARCH_ENGINE_BING.to_string();
+        // Don't set custom query pattern, should use default for Bing
+
+        let engine = SearchEngine::from_config(&config);
+        assert_eq!(engine.engine_type(), &SearchEngineType::Bing);
+        assert_eq!(
+            engine.query_pattern(),
+            SearchEngineType::Bing.get_query_pattern()
+        );
+    }
+
+    #[test]
+    fn test_search_engine_fallback_to_bing() {
+        let mut config = crate::config::Config::new();
+        config.search.engine = "invalid_engine".to_string();
+
+        let engine = SearchEngine::from_config(&config);
+        // Should fallback to Bing for invalid engine
+        assert_eq!(engine.engine_type(), &SearchEngineType::Bing);
     }
 }

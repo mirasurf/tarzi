@@ -36,7 +36,7 @@ def main():
     search_parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
 
     # Search and fetch subcommand
-    search_fetch_parser = subparsers.add_parser("search-and-fetch", help="Search and fetch content for each result")
+    search_fetch_parser = subparsers.add_parser("search-with-content", help="Search and fetch content for each result")
     search_fetch_parser.add_argument("-q", "--query", required=True, help="Search query")
     search_fetch_parser.add_argument("-l", "--limit", type=int, default=5, help="Number of results to return")
     search_fetch_parser.add_argument(
@@ -160,7 +160,7 @@ def main():
             else:
                 print(result)
 
-        elif args.command == "search-and-fetch":
+        elif args.command == "search-with-content":
             if config:
                 engine = tarzi.SearchEngine.from_config(config)
             else:

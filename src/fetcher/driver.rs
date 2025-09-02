@@ -14,6 +14,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
+use tracing::warn;
 
 /// Supported web driver types
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -166,23 +167,7 @@ impl DriverManager {
         cmd.arg(format!("--port={}", config.port));
 
         // Add driver-specific arguments
-        match config.driver_type {
-            DriverType::Chrome => {
-                cmd.arg("--whitelisted-ips=");
-                if config.verbose {
-                    cmd.arg("--verbose");
-                }
-            }
-            DriverType::Firefox => {
-                cmd.arg("--host=127.0.0.1");
-                if config.verbose {
-                    cmd.args(["--log", "debug"]);
-                }
-            }
-            DriverType::Generic(_) => {
-                // Generic drivers may not support standard arguments
-            }
-        }
+        self.add_driver_specific_args(&mut cmd, &config);
 
         // Add custom arguments
         for arg in &config.args {
@@ -202,32 +187,7 @@ impl DriverManager {
             ))
         })?;
 
-        let pid = child.id();
-        let started_at = Instant::now();
-
-        // Store the driver process
-        let driver_process = DriverProcess {
-            child,
-            config: config.clone(),
-            started_at,
-        };
-
-        {
-            let mut drivers = self.drivers.lock().unwrap();
-            drivers.insert(config.port, driver_process);
-        }
-
-        // Wait for driver to be ready
-        let endpoint = format!("http://127.0.0.1:{}", config.port);
-        self.wait_for_driver_ready(&endpoint, config.timeout)?;
-
-        Ok(DriverInfo {
-            config,
-            status: DriverStatus::Running,
-            pid: Some(pid),
-            started_at,
-            endpoint,
-        })
+        self.create_and_store_driver_process(child, config)
     }
 
     /// Stop a driver by port
@@ -329,25 +289,9 @@ impl DriverManager {
                 log::debug!("Found {binary_name} at {path:?}");
                 Ok(())
             }
-            Err(_) => {
-                let install_message = match driver_type {
-                    DriverType::Chrome => {
-                        "Please install ChromeDriver: https://chromedriver.chromium.org/"
-                    }
-                    DriverType::Firefox => {
-                        "Please install GeckoDriver: https://github.com/mozilla/geckodriver/releases"
-                    }
-                    DriverType::Generic(name) => {
-                        return Err(TarziError::DriverNotFound(format!(
-                            "Driver '{name}' not found in PATH. Please ensure it's installed and available."
-                        )));
-                    }
-                };
-
-                Err(TarziError::DriverNotFound(format!(
-                    "{binary_name} not found in PATH. {install_message}"
-                )))
-            }
+            Err(_) => Err(TarziError::DriverNotFound(
+                self.create_driver_not_found_message(driver_type, &binary_name),
+            )),
         }
     }
 
@@ -362,14 +306,19 @@ impl DriverManager {
         // Use a simple TCP connection check instead of HTTP to avoid blocking runtime issues
         use std::net::TcpStream;
 
-        if let Ok(stream) = TcpStream::connect_timeout(
-            &endpoint.replace("http://", "").parse().unwrap(),
-            Duration::from_secs(2),
-        ) {
-            stream.shutdown(std::net::Shutdown::Both).ok();
-            true
-        } else {
-            false
+        let addr_str = endpoint.replace("http://", "");
+        match addr_str.parse::<std::net::SocketAddr>() {
+            Ok(addr) => match TcpStream::connect_timeout(&addr, Duration::from_secs(3)) {
+                Ok(stream) => {
+                    let _ = stream.shutdown(std::net::Shutdown::Both);
+                    true
+                }
+                Err(_) => false,
+            },
+            Err(_) => {
+                warn!("Failed to parse endpoint address: {}", addr_str);
+                false
+            }
         }
     }
 
@@ -388,6 +337,89 @@ impl DriverManager {
         Err(TarziError::Driver(format!(
             "Driver failed to become ready within {timeout:?}"
         )))
+    }
+
+    /// Create and store driver process, then wait for it to be ready
+    fn create_and_store_driver_process(
+        &self,
+        child: Child,
+        config: DriverConfig,
+    ) -> Result<DriverInfo> {
+        let pid = child.id();
+        let started_at = Instant::now();
+        let endpoint = format!("http://127.0.0.1:{}", config.port);
+
+        // Store the driver process
+        let driver_process = DriverProcess {
+            child,
+            config: config.clone(),
+            started_at,
+        };
+
+        {
+            let mut drivers = self.drivers.lock().unwrap();
+            drivers.insert(config.port, driver_process);
+        }
+
+        // Wait for driver to be ready
+        self.wait_for_driver_ready(&endpoint, config.timeout)?;
+
+        Ok(DriverInfo {
+            config,
+            status: DriverStatus::Running,
+            pid: Some(pid),
+            started_at,
+            endpoint,
+        })
+    }
+
+    /// Add driver-specific command line arguments
+    fn add_driver_specific_args(&self, cmd: &mut Command, config: &DriverConfig) {
+        match config.driver_type {
+            DriverType::Chrome => {
+                cmd.arg("--whitelisted-ips=");
+                if config.verbose {
+                    cmd.arg("--verbose");
+                }
+            }
+            DriverType::Firefox => {
+                cmd.arg("--host=127.0.0.1");
+                if config.verbose {
+                    cmd.args(["--log", "debug"]);
+                }
+            }
+            DriverType::Generic(_) => {
+                // Generic drivers may not support standard arguments
+            }
+        }
+    }
+
+    /// Create a driver not found error message
+    fn create_driver_not_found_message(
+        &self,
+        driver_type: &DriverType,
+        binary_name: &str,
+    ) -> String {
+        let install_message = self.get_install_message(driver_type);
+        match install_message {
+            Some(msg) => format!("{binary_name} not found in PATH. {msg}"),
+            None => format!(
+                "Driver '{binary_name}' not found in PATH. Please ensure it's installed and available."
+            ),
+        }
+    }
+
+    /// Get installation message for a driver type
+    fn get_install_message(&self, driver_type: &DriverType) -> Option<&'static str> {
+        match driver_type {
+            DriverType::Chrome => {
+                Some("Please install ChromeDriver: https://chromedriver.chromium.org/")
+            }
+            DriverType::Firefox => {
+                Some("Please install GeckoDriver: https://github.com/mozilla/geckodriver/releases")
+            }
+            DriverType::Generic(_) => None,
+        }
     }
 
     /// Get the binary name for a driver type

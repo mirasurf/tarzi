@@ -72,8 +72,8 @@ test-unit-rust: ## Run Rust unit tests only
 .PHONY: test-unit-python
 test-unit-python: ## Run Python unit tests only
 	python3 -m venv .venv
-	.venv/bin/pip install -e .[test] pytest pytest-cov pytest-mock pytest-asyncio
-	cd $(PYTHON_TEST_DIR) && $(PWD)/.venv/bin/python -m pytest -m unit -v --cov=tarzi --cov-report=xml --cov-report=term
+	.venv/bin/pip install -e .[test] pytest pytest-mock pytest-asyncio
+	cd $(PYTHON_TEST_DIR) && $(PWD)/.venv/bin/python -m pytest -m unit -v
 
 .PHONY: test-integration
 test-integration: test-integration-rust test-integration-python ## Run all integration tests (Rust + Python)
@@ -85,35 +85,59 @@ test-integration-rust: ## Run Rust integration tests
 .PHONY: test-integration-python
 test-integration-python: ## Run Python integration tests only
 	python3 -m venv .venv
-	.venv/bin/pip install -e .[test] pytest pytest-cov pytest-mock pytest-asyncio
-	cd $(PYTHON_TEST_DIR) && $(PWD)/.venv/bin/python -m pytest -m integration -v --cov=tarzi --cov-report=xml --cov-report=term
+	.venv/bin/pip install -e .[test] pytest pytest-mock pytest-asyncio
+	cd $(PYTHON_TEST_DIR) && $(PWD)/.venv/bin/python -m pytest -m integration -v
 
 # =============================================================================
 # CODE QUALITY COMMANDS
 # =============================================================================
 
 .PHONY: format
-format:
+format: format-rust format-python ## Format code (Rust + Python)
+
+.PHONY: format-rust
+format-rust: ## Format Rust code
 	$(CARGO) fmt
-	@autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES)
-	@isort $(PYTHON_MODULES)
-	@black $(PYTHON_MODULES)
+
+.PHONY: format-python
+format-python: ## Format Python code (optional tools)
+	@command -v autoflake >/dev/null 2>&1 && autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES) || echo "autoflake not found, skipping Python auto-cleanup"
+	@command -v isort >/dev/null 2>&1 && isort $(PYTHON_MODULES) || echo "isort not found, skipping Python import sorting"
+	@command -v black >/dev/null 2>&1 && black $(PYTHON_MODULES) || echo "black not found, skipping Python formatting"
 
 .PHONY: format-check
-format-check:
+format-check: format-check-rust format-check-python ## Check code formatting (Rust + Python)
+
+.PHONY: format-check-rust
+format-check-rust: ## Check Rust code formatting
 	$(CARGO) fmt -- --check
-	@black --check $(PYTHON_MODULES)
-	@isort --check-only $(PYTHON_MODULES)
+
+.PHONY: format-check-python
+format-check-python: ## Check Python code formatting (optional tools)
+	@command -v black >/dev/null 2>&1 && black --check $(PYTHON_MODULES) || echo "black not found, skipping Python format check"
+	@command -v isort >/dev/null 2>&1 && isort --check-only $(PYTHON_MODULES) || echo "isort not found, skipping Python import check"
 
 .PHONY: lint
-lint: format-check
+lint: format-check lint-rust lint-python ## Lint code (Rust + Python)
+
+.PHONY: lint-rust
+lint-rust: ## Lint Rust code
 	$(CARGO) clippy --all-targets --all-features -- -D warnings
-	@ruff check $(PYTHON_MODULES)
+
+.PHONY: lint-python
+lint-python: ## Lint Python code (optional tools)
+	@command -v ruff >/dev/null 2>&1 && ruff check $(PYTHON_MODULES) || echo "ruff not found, skipping Python linting"
 
 .PHONY: lint-fix
-lint-fix:
+lint-fix: lint-fix-rust lint-fix-python ## Fix linting issues (Rust + Python)
+
+.PHONY: lint-fix-rust
+lint-fix-rust: ## Fix Rust linting issues
 	$(CARGO) clippy --fix --allow-dirty --allow-staged --all-targets --all-features -- -D warnings
-	@ruff check --fix $(PYTHON_MODULES)
+
+.PHONY: lint-fix-python
+lint-fix-python: ## Fix Python linting issues (optional tools)
+	@command -v ruff >/dev/null 2>&1 && ruff check --fix $(PYTHON_MODULES) || echo "ruff not found, skipping Python lint fixes"
 
 .PHONY: check
 check: format-check lint

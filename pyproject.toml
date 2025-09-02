@@ -1,6 +1,6 @@
 [project]
 name = "tarzi"
-version = "0.1.1"
+version = "0.0.20"
 requires-python = ">=3.10"
 keywords = ["web-scraping", "search-engine", "ai-tools", "rust", "browser-automation"]
 description = "Rust-native lite search for AI applications"
@@ -31,13 +31,11 @@ classifiers = [
 Homepage = "https://github.com/mirasurf/tarzi"
 Documentation = "https://tarzi.readthedocs.io/"
 Repository = "https://github.com/mirasurf/tarzi"
-"Bug Tracker" = "https://github.com/mirasurf/tarzi/issues"
 
 [project.optional-dependencies]
 dev = [
     "maturin>=1.0,<2.0",
     "pytest>=6.0",
-    "pytest-cov>=4.0",
     "pytest-asyncio>=0.20.0",
     "patchelf>=0.15.0",
     "black>=22.0",
@@ -77,21 +75,10 @@ addopts = ["-v", "--tb=short"]
 markers = [
     "unit: Unit tests that don't require external dependencies",
     "integration: Integration tests that require external services",
-    "browser: Tests that require browser automation tools",
     "slow: Tests that are slow to run",
     "network: Tests that require network access",
-    "api: Tests that require API access",
 ]
 filterwarnings = ["ignore::DeprecationWarning"]
-
-[tool.coverage.run]
-source = ["tarzi"]
-omit = ["*/tests/*"]
-branch = true
-
-[tool.coverage.report]
-exclude_lines = ["pragma: no cover", "def __repr__", "raise NotImplementedError"]
-show_missing = true
 
 [tool.black]
 line-length = 120

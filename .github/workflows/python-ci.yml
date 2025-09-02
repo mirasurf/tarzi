@@ -133,7 +133,7 @@ jobs:
       run: pip install maturin[patchelf]
 
     - name: Build wheels
-      run: cd tarzi && maturin build --release --out dist
+      run: maturin build --release --out dist
 
     - name: Test wheel installation
       shell: bash

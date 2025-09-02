@@ -119,7 +119,7 @@ pub const DEFAULT_FETCH_MODE: &str = "browser_headless";
 pub const DEFAULT_FORMAT: &str = "markdown";
 
 /// Default search engine
-pub const DEFAULT_SEARCH_ENGINE: &str = "duckduckgo";
+pub const DEFAULT_SEARCH_ENGINE: &str = "bing";
 
 // Default log levels
 pub const LOG_LEVEL_INFO: &str = "info";
@@ -159,5 +159,5 @@ pub const BAIDU_QUERY_PATTERN: &str = "https://www.baidu.com/s?wd={query}";
 // Default Values
 // ============================================================================
 
-/// Default query pattern (DuckDuckGo)
-pub const DEFAULT_QUERY_PATTERN: &str = DUCKDUCKGO_QUERY_PATTERN;
+/// Default query pattern (Bing)
+pub const DEFAULT_QUERY_PATTERN: &str = BING_QUERY_PATTERN;

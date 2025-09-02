@@ -1,7 +1,7 @@
 [package]
 name = "tarzi"
-version = "0.1.1"
-edition = "2024"
+version = "0.0.20"
+edition = "2025"
 authors = ["xmingc <chenxm35@gmail.com>"]
 description = "Rust-native lite search for AI applications"
 license = "Apache-2.0"

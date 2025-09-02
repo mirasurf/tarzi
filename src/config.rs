@@ -1,6 +1,6 @@
 use crate::constants::{
     DEFAULT_QUERY_PATTERN, DEFAULT_SEARCH_LIMIT, DEFAULT_TIMEOUT_SECS,
-    FETCHER_MODE_BROWSER_HEADLESS, FORMAT_MARKDOWN, LOG_LEVEL_INFO, SEARCH_ENGINE_DUCKDUCKGO,
+    FETCHER_MODE_BROWSER_HEADLESS, FORMAT_MARKDOWN, LOG_LEVEL_INFO, SEARCH_ENGINE_BING,
 };
 use crate::{Result, error::TarziError};
 use serde::{Deserialize, Serialize};
@@ -322,7 +322,7 @@ fn default_fetch_timeout() -> u64 {
 }
 
 fn default_search_engine() -> String {
-    SEARCH_ENGINE_DUCKDUCKGO.to_string()
+    SEARCH_ENGINE_BING.to_string()
 }
 
 fn default_query_pattern() -> String {
@@ -334,7 +334,7 @@ fn default_result_limit() -> usize {
 }
 
 fn default_web_driver() -> String {
-    "geckodriver".to_string()
+    "chromedriver".to_string()
 }
 
 /// Get proxy configuration with environment variable override
@@ -376,7 +376,7 @@ mod tests {
             crate::constants::DEFAULT_USER_AGENT
         );
         assert_eq!(config.fetcher.timeout, 30);
-        assert_eq!(config.search.engine, SEARCH_ENGINE_DUCKDUCKGO);
+        assert_eq!(config.search.engine, SEARCH_ENGINE_BING);
         assert_eq!(config.search.query_pattern, DEFAULT_QUERY_PATTERN);
         assert_eq!(config.search.limit, DEFAULT_SEARCH_LIMIT);
     }
@@ -474,7 +474,7 @@ web_driver_url = "http://localhost:9999"
 "#;
         let config: Config = toml::from_str(config_str).unwrap();
         // Should use default for web_driver
-        assert_eq!(config.fetcher.web_driver, GECKODRIVER);
+        assert_eq!(config.fetcher.web_driver, CHROMEDRIVER);
         assert_eq!(
             config.fetcher.web_driver_url,
             Some("http://localhost:9999".to_string())
@@ -505,7 +505,7 @@ web_driver_url = "http://localhost:9999"
         assert_eq!(config.fetcher.timeout, 30);
         // Proxy should be None by default (commented out in tarzi.toml)
         assert_eq!(config.fetcher.proxy, None);
-        assert_eq!(config.search.engine, SEARCH_ENGINE_DUCKDUCKGO);
+        assert_eq!(config.search.engine, SEARCH_ENGINE_BING);
         assert_eq!(config.search.query_pattern, DEFAULT_QUERY_PATTERN);
         assert_eq!(config.search.limit, DEFAULT_SEARCH_LIMIT);
     }
@@ -610,7 +610,13 @@ web_driver_url = "http://localhost:9999"
         }
 
         // Test with empty environment variable (should fall back to config)
+        // Clear all proxy environment variables first
         unsafe {
+            std::env::remove_var("HTTP_PROXY");
+            std::env::remove_var("HTTPS_PROXY");
+            std::env::remove_var("http_proxy");
+            std::env::remove_var("https_proxy");
+            // Set one to empty to test empty value handling
             std::env::set_var("HTTP_PROXY", "");
         }
         let config_proxy = Some("http://config-proxy:8080".to_string());
