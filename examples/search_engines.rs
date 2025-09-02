@@ -1,7 +1,4 @@
-use tarzi::{
-    config::Config,
-    search::{SearchEngine, SearchEngineType},
-};
+use tarzi::{config::Config, search::SearchEngine};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

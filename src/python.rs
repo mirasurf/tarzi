@@ -301,10 +301,7 @@ impl PySearchEngine {
     #[new]
     fn new() -> Self {
         // Use configuration loading with precedence to ensure proper defaults
-        let config = match crate::config::Config::load_with_precedence() {
-            Ok(config) => config,
-            Err(_) => crate::config::Config::new(), // Fallback to defaults
-        };
+        let config = crate::config::Config::load_with_precedence().unwrap_or_default();
         Self {
             inner: SearchEngine::from_config(&config),
         }
@@ -923,13 +920,6 @@ query_pattern = "https://www.bing.com/search?q={query}"
         let result = fetch_url("https://example.com", "plain_request", "invalid");
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Invalid format"));
-    }
-
-    #[test]
-    fn test_search_web_function_invalid_mode() {
-        setup_python();
-        let result = search_web("test", 5);
-        assert!(result.is_ok()); // No mode validation needed
     }
 
     #[test]

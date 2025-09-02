@@ -43,7 +43,7 @@ async fn test_parser_functionality() {
     ];
 
     for engine_type in engine_types {
-        println!("Testing parser for {:?}", engine_type);
+        println!("Testing parser for {engine_type:?}");
 
         let parser = factory.get_parser(&engine_type);
         assert!(!parser.name().is_empty(), "Parser should have a name");
@@ -74,7 +74,7 @@ async fn test_parser_functionality() {
                 }
             }
             Err(e) => {
-                println!("  Parse error: {}", e);
+                println!("  Parse error: {e}");
             }
         }
     }
@@ -96,7 +96,7 @@ async fn test_parser_edge_cases() {
     ];
 
     for (input, description) in edge_cases {
-        println!("Testing edge case: {}", description);
+        println!("Testing edge case: {description}");
 
         let results = parser.parse(input, 5);
         match results {
@@ -106,7 +106,7 @@ async fn test_parser_edge_cases() {
                 assert!(results.len() <= 5, "Should respect limit");
             }
             Err(e) => {
-                println!("  Rejected with error: {}", e);
+                println!("  Rejected with error: {e}");
                 // Error is also acceptable for edge cases
             }
         }
@@ -133,7 +133,7 @@ async fn test_parser_limits() {
     let limits = vec![0, 1, 3, 5, 10];
 
     for limit in limits {
-        println!("Testing with limit: {}", limit);
+        println!("Testing with limit: {limit}");
 
         let results = parser.parse(sample_html, limit);
         match results {
@@ -146,7 +146,7 @@ async fn test_parser_limits() {
                 }
             }
             Err(e) => {
-                println!("  Parse error: {}", e);
+                println!("  Parse error: {e}");
             }
         }
     }
@@ -193,7 +193,7 @@ async fn test_search_engine_error_handling() {
     let results = engine.search("", 5).await;
     match results {
         Ok(results) => println!("Empty query returned {} results", results.len()),
-        Err(e) => println!("Empty query returned error: {}", e),
+        Err(e) => println!("Empty query returned error: {e}"),
     }
 
     // Test with very long query
@@ -201,7 +201,7 @@ async fn test_search_engine_error_handling() {
     let results = engine.search(&long_query, 5).await;
     match results {
         Ok(results) => println!("Long query returned {} results", results.len()),
-        Err(e) => println!("Long query returned error: {}", e),
+        Err(e) => println!("Long query returned error: {e}"),
     }
 }
 
@@ -230,7 +230,7 @@ async fn test_search_query_edge_cases() {
         let results = engine.search(query, 3).await;
         match results {
             Ok(results) => println!("Query '{}': {} results", query, results.len()),
-            Err(e) => println!("Query '{}': error - {}", query, e),
+            Err(e) => println!("Query '{query}': error - {e}"),
         }
     }
 }
@@ -255,7 +255,7 @@ async fn test_search_limit_edge_cases_self_managed() {
                     assert!(results.len() <= limit, "Should respect limit");
                 }
             }
-            Err(e) => println!("Limit {}: error - {}", limit, e),
+            Err(e) => println!("Limit {limit}: error - {e}"),
         }
     }
 }
@@ -288,8 +288,8 @@ async fn test_concurrent_searches() {
                 println!("Concurrent search successful: {} results", results.len());
                 successful_searches += 1;
             }
-            Ok(Err(e)) => println!("Concurrent search failed: {}", e),
-            Err(e) => println!("Task join failed: {}", e),
+            Ok(Err(e)) => println!("Concurrent search failed: {e}"),
+            Err(e) => println!("Task join failed: {e}"),
         }
     }
 
@@ -318,8 +318,7 @@ async fn test_parser_performance() {
         println!("\nTesting {name} parser performance...");
 
         let parser = factory.get_parser(&engine_type);
-        let test_html = format!(
-            r#"<html><body>
+        let test_html = r#"<html><body>
                 <h2><a href="https://example1.com">Test Result 1</a></h2>
                 <p>Test snippet 1</p>
                 <h2><a href="https://example2.com">Test Result 2</a></h2>
@@ -327,7 +326,7 @@ async fn test_parser_performance() {
                 <h2><a href="https://example3.com">Test Result 3</a></h2>
                 <p>Test snippet 3</p>
             </body></html>"#
-        );
+            .to_string();
 
         let iterations = 100;
         let mut total_time = Duration::new(0, 0);
@@ -340,11 +339,8 @@ async fn test_parser_performance() {
         }
 
         let avg_time = total_time / iterations;
-        println!("  Average parse time: {:?}", avg_time);
-        println!(
-            "  Total time for {} iterations: {:?}",
-            iterations, total_time
-        );
+        println!("  Average parse time: {avg_time:?}");
+        println!("  Total time for {iterations} iterations: {total_time:?}");
     }
 }
 
@@ -385,7 +381,7 @@ async fn test_search_throughput() {
                 );
             }
             Err(e) => {
-                println!("  Query '{}': Failed in {:?} - {}", query, duration, e);
+                println!("  Query '{query}': Failed in {duration:?} - {e}");
             }
         }
     }
@@ -397,8 +393,8 @@ async fn test_search_throughput() {
             successful_queries,
             test_queries.len()
         );
-        println!("  Average response time: {:?}", avg_time);
-        println!("  Total time: {:?}", total_time);
+        println!("  Average response time: {avg_time:?}");
+        println!("  Total time: {total_time:?}");
     } else {
         println!("  No successful queries");
     }
@@ -415,13 +411,10 @@ async fn test_search_latency_percentiles() {
     let num_requests = 5; // Small number for integration test
     let mut latencies = Vec::new();
 
-    println!(
-        "Performing {} search requests to measure latency distribution...",
-        num_requests
-    );
+    println!("Performing {num_requests} search requests to measure latency distribution...");
 
     for i in 0..num_requests {
-        let query = format!("test query {}", i);
+        let query = format!("test query {i}");
         let start = Instant::now();
         let result = engine.search(&query, 2).await;
         let duration = start.elapsed();
@@ -449,9 +442,9 @@ async fn test_search_latency_percentiles() {
         let p95 = latencies[(latencies.len() * 19) / 20];
 
         println!("\nLatency percentiles:");
-        println!("  P50 (median): {:?}", p50);
-        println!("  P90: {:?}", p90);
-        println!("  P95: {:?}", p95);
+        println!("  P50 (median): {p50:?}");
+        println!("  P90: {p90:?}");
+        println!("  P95: {p95:?}");
         println!("  Min: {:?}", latencies[0]);
         println!("  Max: {:?}", latencies[latencies.len() - 1]);
     }
@@ -472,9 +465,8 @@ async fn test_search_external_webdriver() {
     // Check if external WebDriver is available
     if !is_webdriver_available_at_url(WEBDRIVER_URL).await {
         panic!(
-            "❌ External Chrome WebDriver not available at {} - test requires external Chrome WebDriver to be running. \
-             Please start ChromeDriver with: chromedriver --port=9515",
-            WEBDRIVER_URL
+            "❌ External Chrome WebDriver not available at {WEBDRIVER_URL} - test requires external Chrome WebDriver to be running. \
+             Please start ChromeDriver with: chromedriver --port=9515"
         );
     }
 
@@ -502,21 +494,20 @@ async fn test_search_external_webdriver() {
 
             // Verify result structure
             for (i, result) in results.iter().enumerate() {
-                assert!(!result.title.is_empty(), "Result {} has empty title", i);
-                assert!(!result.url.is_empty(), "Result {} has empty URL", i);
+                assert!(!result.title.is_empty(), "Result {i} has empty title");
+                assert!(!result.url.is_empty(), "Result {i} has empty URL");
                 assert!(
                     result.url.starts_with("http"),
                     "Result {} has invalid URL: {}",
                     i,
                     result.url
                 );
-                assert_eq!(result.rank, i + 1, "Result {} has incorrect rank", i);
+                assert_eq!(result.rank, i + 1, "Result {i} has incorrect rank");
             }
         }
-        Ok(Err(e)) => panic!("DuckDuckGo search with external WebDriver failed: {}", e),
+        Ok(Err(e)) => panic!("DuckDuckGo search with external WebDriver failed: {e}"),
         Err(_) => panic!(
-            "DuckDuckGo search with external WebDriver timed out after {:?}",
-            SEARCH_TEST_TIMEOUT
+            "DuckDuckGo search with external WebDriver timed out after {SEARCH_TEST_TIMEOUT:?}"
         ),
     }
 }
@@ -548,17 +539,16 @@ async fn test_search_with_content_external_webdriver() {
             for (i, (search_result, content)) in results_with_content.iter().enumerate() {
                 assert!(
                     !search_result.title.is_empty(),
-                    "Result {} has empty title",
-                    i
+                    "Result {i} has empty title"
                 );
-                assert!(!search_result.url.is_empty(), "Result {} has empty URL", i);
+                assert!(!search_result.url.is_empty(), "Result {i} has empty URL");
                 assert!(
                     search_result.url.starts_with("http"),
                     "Result {} has invalid URL: {}",
                     i,
                     search_result.url
                 );
-                assert_eq!(search_result.rank, i + 1, "Result {} has incorrect rank", i);
+                assert_eq!(search_result.rank, i + 1, "Result {i} has incorrect rank");
 
                 // Content should not be empty for successful fetches
                 if !content.is_empty() {
@@ -572,12 +562,11 @@ async fn test_search_with_content_external_webdriver() {
             }
         }
         Ok(Err(e)) => {
-            panic!("Search with content using external WebDriver failed: {}", e);
+            panic!("Search with content using external WebDriver failed: {e}");
         }
         Err(_) => {
             panic!(
-                "Search with content using external WebDriver timed out after {:?}",
-                SEARCH_TEST_TIMEOUT
+                "Search with content using external WebDriver timed out after {SEARCH_TEST_TIMEOUT:?}"
             );
         }
     }

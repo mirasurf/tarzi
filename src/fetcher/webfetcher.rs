@@ -634,7 +634,7 @@ mod tests {
                 // Note: Some browsers might have been created before the failure,
                 // so we just verify the method doesn't panic and handles errors gracefully
                 let browser_count = fetcher.get_browser_ids().len();
-                println!("Browser count after failed creation: {}", browser_count);
+                println!("Browser count after failed creation: {browser_count}");
                 // The test passes as long as the method doesn't panic and handles errors
             }
         }

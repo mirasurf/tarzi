@@ -46,6 +46,7 @@ tarzi/
 - **Lock Rust Version and Toolchain**: For example, pin the Rust toolchain, document toolchain installation, consider vendoring the toolchain with `cargo vendor`, and regularly update vendored dependencies
 - **Write Robust, Portable Code**: Write code that avoids platform-specific assumptions, avoids external system dependencies. For platform-specific code, use `#[cfg(...)]` to handle differences gracefully.
 - Always use `cargo fmt` and `cargo clippy` to format and lint code.
+- Always run `make check` before submitting commit.
 
 ## Implementation Considerations for Python
 

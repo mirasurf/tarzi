@@ -284,8 +284,7 @@ mod tests {
             let variant = ProviderVariant::from_engine_type(engine_type, config);
             assert!(
                 variant.is_ok(),
-                "Engine type {:?} should be supported",
-                engine_type
+                "Engine type {engine_type:?} should be supported"
             );
 
             if let Ok(provider) = variant {

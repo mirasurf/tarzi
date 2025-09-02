@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
             }
         }
         Err(e) => {
-            eprintln!("Search failed: {}", e);
+            eprintln!("Search failed: {e}");
         }
     }
 
@@ -62,6 +62,13 @@ async fn main() -> Result<()> {
     let results = search_engine
         .search_with_content(query, 3, FetchMode::BrowserHeadless, Format::Markdown)
         .await?;
+
+    println!("Found {} results with content:", results.len());
+    for (i, (result, content)) in results.iter().enumerate() {
+        println!("{}. {}", i + 1, result.title);
+        println!("   URL: {}", result.url);
+        println!("   Content length: {} characters", content.len());
+    }
 
     println!();
     println!("=== Example completed ===");

@@ -52,8 +52,7 @@ async fn test_browser_creation_with_timeout(
                 let has_managed = browser_manager.has_managed_driver();
                 if has_managed != should_have_managed {
                     return Err(format!(
-                        "{}: Expected managed driver: {}, got: {}",
-                        test_name, should_have_managed, has_managed
+                        "{test_name}: Expected managed driver: {should_have_managed}, got: {has_managed}"
                     ));
                 }
             }
@@ -90,7 +89,7 @@ async fn test_external_driver_type_with_valid_url() {
                     "✓ External driver type test passed - Correct error for unavailable external URL"
                 );
             } else {
-                panic!("Unexpected error message: {}", error_msg);
+                panic!("Unexpected error message: {error_msg}");
             }
         }
     }
@@ -110,7 +109,7 @@ async fn test_external_driver_type_with_invalid_url() {
             {
                 println!("✓ External driver type with invalid URL test passed");
             } else {
-                panic!("Unexpected error message: {}", error_msg);
+                panic!("Unexpected error message: {error_msg}");
             }
         }
     }
@@ -127,14 +126,10 @@ async fn test_self_managed_driver_type_firefox() {
         Err(error_msg) => {
             // Should be a self-managed driver error, not external
             if error_msg.contains("External WebDriver") {
-                panic!(
-                    "Got external WebDriver error in self-managed test: {}",
-                    error_msg
-                );
+                panic!("Got external WebDriver error in self-managed test: {error_msg}");
             } else {
                 println!(
-                    "✓ Self-managed Firefox driver test passed - Error (expected in CI): {}",
-                    error_msg
+                    "✓ Self-managed Firefox driver test passed - Error (expected in CI): {error_msg}"
                 );
             }
         }
@@ -152,14 +147,10 @@ async fn test_self_managed_driver_type_chrome() {
         Err(error_msg) => {
             // Should be a self-managed driver error, not external
             if error_msg.contains("External WebDriver") {
-                panic!(
-                    "Got external WebDriver error in self-managed test: {}",
-                    error_msg
-                );
+                panic!("Got external WebDriver error in self-managed test: {error_msg}");
             } else {
                 println!(
-                    "✓ Self-managed Chrome driver test passed - Error (expected in CI): {}",
-                    error_msg
+                    "✓ Self-managed Chrome driver test passed - Error (expected in CI): {error_msg}"
                 );
             }
         }
@@ -177,11 +168,10 @@ async fn test_empty_external_url_uses_self_managed() {
         Err(error_msg) => {
             // Should be a self-managed driver error, not external
             if error_msg.contains("External WebDriver") {
-                panic!("Got external WebDriver error for empty URL: {}", error_msg);
+                panic!("Got external WebDriver error for empty URL: {error_msg}");
             } else {
                 println!(
-                    "✓ Empty external URL test passed - Correct self-managed error: {}",
-                    error_msg
+                    "✓ Empty external URL test passed - Correct self-managed error: {error_msg}"
                 );
             }
         }
@@ -205,12 +195,9 @@ async fn test_no_config_uses_self_managed() {
             // Should be a self-managed driver error
             let error_msg = e.to_string();
             if error_msg.contains("External WebDriver") {
-                panic!("Got external WebDriver error with no config: {}", error_msg);
+                panic!("Got external WebDriver error with no config: {error_msg}");
             } else {
-                println!(
-                    "✓ No config test passed - Correct self-managed error: {}",
-                    error_msg
-                );
+                println!("✓ No config test passed - Correct self-managed error: {error_msg}");
             }
         }
         Err(_) => {
@@ -346,14 +333,10 @@ async fn test_multiple_calls_same_external_url() {
 
     if error_count >= 2 {
         println!(
-            "✓ Multiple external URL calls test passed ({}/3 calls failed as expected)",
-            error_count
+            "✓ Multiple external URL calls test passed ({error_count}/3 calls failed as expected)"
         );
     } else {
-        panic!(
-            "Expected multiple failures for unavailable external URL, got {}/3",
-            error_count
-        );
+        panic!("Expected multiple failures for unavailable external URL, got {error_count}/3");
     }
 }
 

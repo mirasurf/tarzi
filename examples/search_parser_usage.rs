@@ -30,7 +30,7 @@ async fn main() -> tarzi::Result<()> {
 
     // Test each engine type with the mock JSON
     for (engine_type, name) in &engines {
-        println!("\nTesting {} parser:", name);
+        println!("\nTesting {name} parser:");
         let parser = factory.get_parser(engine_type);
         println!("  Parser name: {}", parser.name());
         println!("  Supports {}: {}", name, parser.supports(engine_type));
@@ -44,7 +44,7 @@ async fn main() -> tarzi::Result<()> {
                 }
             }
             Err(e) => {
-                println!("  Parse error: {}", e);
+                println!("  Parse error: {e}");
             }
         }
     }

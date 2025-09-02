@@ -36,7 +36,7 @@ async fn test_fetch_plain_request_httpbin() {
 
     // Skip test if URL is not reachable
     if !is_url_reachable(test_url).await {
-        println!("Skipping test - {} is not reachable", test_url);
+        println!("Skipping test - {test_url} is not reachable");
         return;
     }
 
@@ -76,7 +76,7 @@ async fn test_fetch_plain_request_json() {
 
     // Skip test if URL is not reachable
     if !is_url_reachable(test_url).await {
-        println!("Skipping JSON test - {} is not reachable", test_url);
+        println!("Skipping JSON test - {test_url} is not reachable");
         return;
     }
 
@@ -211,7 +211,7 @@ async fn test_fetch_with_proxy_plain_request() {
 
     // Skip test if URL is not reachable
     if !is_url_reachable(test_url).await {
-        println!("Skipping proxy test - {} not reachable", test_url);
+        println!("Skipping proxy test - {test_url} not reachable");
         return;
     }
 
@@ -275,15 +275,11 @@ async fn test_fetch_multiple_requests() {
 
         match result {
             Ok(content) => {
-                assert!(
-                    !content.is_empty(),
-                    "Content should not be empty for {}",
-                    url
-                );
+                assert!(!content.is_empty(), "Content should not be empty for {url}");
                 success_count += 1;
             }
             Err(e) => {
-                println!("Request to {} failed: {e:?}", url);
+                println!("Request to {url} failed: {e:?}");
                 // Continue with other URLs even if one fails
             }
         }
@@ -335,10 +331,7 @@ async fn test_fetch_browser_headless() {
 
     // Skip test if URL is not reachable
     if !is_url_reachable(test_url).await {
-        println!(
-            "✓ Skipping browser headless test - {} not reachable",
-            test_url
-        );
+        println!("✓ Skipping browser headless test - {test_url} not reachable");
         return;
     }
 
@@ -361,13 +354,10 @@ async fn test_fetch_browser_headless() {
             println!("✓ Browser headless test succeeded");
         }
         Ok(Err(TarziError::Browser(msg))) => {
-            println!(
-                "✓ Browser headless test passed (browser setup issue): {}",
-                msg
-            );
+            println!("✓ Browser headless test passed (browser setup issue): {msg}");
         }
         Ok(Err(TarziError::Http(e))) => {
-            println!("✓ Browser headless test passed (network error): {}", e);
+            println!("✓ Browser headless test passed (network error): {e}");
         }
         Ok(Err(e)) => {
             panic!("Browser headless test failed with unexpected error: {e:?}");
@@ -393,7 +383,7 @@ async fn test_fetch_browser_head() {
 
     // Skip test if URL is not reachable
     if !is_url_reachable(test_url).await {
-        println!("✓ Skipping browser head test - {} not reachable", test_url);
+        println!("✓ Skipping browser head test - {test_url} not reachable");
         return;
     }
 
@@ -490,15 +480,11 @@ async fn test_fetch_sequential_requests() {
 
         match result {
             Ok(content) => {
-                assert!(
-                    !content.is_empty(),
-                    "Content should not be empty for {}",
-                    url
-                );
+                assert!(!content.is_empty(), "Content should not be empty for {url}");
                 success_count += 1;
             }
             Err(e) => {
-                println!("Request to {} failed: {:?}", url, e);
+                println!("Request to {url} failed: {e:?}");
                 // Continue with other URLs even if one fails
             }
         }

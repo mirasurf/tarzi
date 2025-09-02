@@ -18,8 +18,7 @@ fn test_driver_lifecycle(
 ) -> Result<(), String> {
     if !test_helpers::is_driver_available(&driver_type) {
         return Err(format!(
-            "{} driver not available - skipping test",
-            expected_binary_name
+            "{expected_binary_name} driver not available - skipping test"
         ));
     }
 
@@ -51,7 +50,7 @@ fn test_driver_lifecycle(
                 if std::path::Path::new(path).exists() {
                     args.push("--binary".to_string());
                     args.push(path.to_string());
-                    println!("Using Firefox binary: {}", path);
+                    println!("Using Firefox binary: {path}");
                     break;
                 }
             }
@@ -119,7 +118,7 @@ fn test_driver_lifecycle(
 
             // Stop the driver
             if let Err(e) = manager.stop_driver(port) {
-                return Err(format!("Failed to stop driver: {}", e));
+                return Err(format!("Failed to stop driver: {e}"));
             }
 
             // Verify the driver is no longer listed
@@ -138,9 +137,9 @@ fn test_driver_lifecycle(
             if error_msg.contains(expected_binary_name)
                 || error_msg.contains(&driver_type.to_string())
             {
-                Err(format!("Driver startup failed (expected): {}", error_msg))
+                Err(format!("Driver startup failed (expected): {error_msg}"))
             } else {
-                Err(format!("Unexpected error: {}", error_msg))
+                Err(format!("Unexpected error: {error_msg}"))
             }
         }
     }
@@ -194,9 +193,9 @@ fn test_chrome_driver_lifecycle() {
         }
         Err(msg) => {
             if msg.contains("not available - skipping test") {
-                println!("✓ Chrome driver test skipped: {}", msg);
+                println!("✓ Chrome driver test skipped: {msg}");
             } else {
-                panic!("Chrome driver test failed unexpectedly: {}", msg);
+                panic!("Chrome driver test failed unexpectedly: {msg}");
             }
         }
     }
@@ -212,9 +211,9 @@ fn test_firefox_driver_lifecycle() {
         }
         Err(msg) => {
             if msg.contains("not available - skipping test") {
-                println!("✓ Firefox driver test skipped: {}", msg);
+                println!("✓ Firefox driver test skipped: {msg}");
             } else {
-                panic!("Firefox driver test failed unexpectedly: {}", msg);
+                panic!("Firefox driver test failed unexpectedly: {msg}");
             }
         }
     }
@@ -244,15 +243,9 @@ fn test_nonexistent_driver() {
         Err(e) => {
             let error_msg = format!("{e}");
             if error_msg.contains("not found") || error_msg.contains("nonexistent-driver") {
-                println!(
-                    "✓ Non-existent driver error handling works correctly: {}",
-                    error_msg
-                );
+                println!("✓ Non-existent driver error handling works correctly: {error_msg}");
             } else {
-                panic!(
-                    "Unexpected error message for non-existent driver: {}",
-                    error_msg
-                );
+                panic!("Unexpected error message for non-existent driver: {error_msg}");
             }
         }
     }
