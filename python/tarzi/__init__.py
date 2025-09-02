@@ -10,8 +10,8 @@ from .tarzi import (
     WebFetcher,
     convert_html,
     fetch_url,
-    search_with_content,
     search_web,
+    search_with_content,
 )
 
 # Get version dynamically
