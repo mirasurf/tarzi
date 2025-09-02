@@ -81,7 +81,7 @@ class TarziFetcher:
         """Setup tarzi components with configuration."""
         try:
             # Import tarzi Rust bindings directly
-            from .tarzi import Config, WebFetcher, Converter
+            from .tarzi import Config, Converter, WebFetcher
 
             # Create tarzi configuration
             config_str = f"""

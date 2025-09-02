@@ -1,4 +1,7 @@
 # Re-export everything from the Rust module
+# High-level Python API imports
+from .fetcher import ContentMode, TarziFetcher
+from .searcher import SearchWithContentResult, TarziSearcher
 from .tarzi import (
     Config,
     Converter,
@@ -10,10 +13,6 @@ from .tarzi import (
     search_and_fetch,
     search_web,
 )
-
-# High-level Python API imports
-from .fetcher import ContentMode, TarziFetcher
-from .searcher import SearchWithContentResult, TarziSearcher
 
 # Get version dynamically
 try:
