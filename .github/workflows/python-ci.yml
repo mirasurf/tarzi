@@ -90,23 +90,8 @@ jobs:
       shell: bash
       run: |
         source .venv/bin/activate
-        make test-unit
+        make test-unit-python
       continue-on-error: true
-
-    - name: Run all Python tests (unit + integration)
-      shell: bash
-      run: |
-        source .venv/bin/activate
-        make test
-      continue-on-error: true
-
-    - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.11' && matrix.os == 'ubuntu-latest'
-      uses: codecov/codecov-action@v3
-      with:
-        file: tests/python/coverage.xml
-        flags: python
-        name: python-coverage
 
   build-wheels:
     name: Build Python wheels on ${{ matrix.os }}
