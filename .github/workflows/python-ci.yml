@@ -39,7 +39,7 @@ jobs:
 
     - name: Build Python extension (develop)
       run: |
-        uv pip install maturin
+        make install-uv-env
         uv run maturin develop --release
 
     - name: Run Python unit tests
