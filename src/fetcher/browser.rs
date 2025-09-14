@@ -64,8 +64,29 @@ impl BrowserManager {
             instance_id, headless, user_data_dir
         );
 
-        let driver_type = self.get_driver_type_from_config();
-        let browser_result = match driver_type {
+        // Determine actual driver type that was started by checking managed driver info
+        let actual_driver_type = if let Some(managed_info) = &self.managed_driver_info {
+            let driver_type = match managed_info.config.driver_type {
+                crate::fetcher::driver::DriverType::Firefox => "firefox",
+                crate::fetcher::driver::DriverType::Chrome => "chrome",
+                crate::fetcher::driver::DriverType::Generic(_) => "chrome", // fallback
+            };
+            info!(
+                "Using capabilities for actually started driver: {}",
+                driver_type
+            );
+            driver_type
+        } else {
+            // If no managed driver, use config-based detection (for external drivers)
+            let driver_type = self.get_driver_type_from_config();
+            info!(
+                "Using capabilities from config for external driver: {}",
+                driver_type
+            );
+            driver_type
+        };
+
+        let browser_result = match actual_driver_type {
             "firefox" => {
                 let mut caps = DesiredCapabilities::firefox();
                 self.configure_firefox_capabilities(&mut caps, headless, &user_data_dir)

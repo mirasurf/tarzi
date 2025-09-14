@@ -89,7 +89,7 @@ impl Config {
     /// 2. ~/.tarzi.toml (user config)
     /// 3. tarzi.toml (project config)
     /// 4. Default values (lowest priority)
-    pub fn load_with_precedence() -> Result<Self> {
+    pub fn load() -> Result<Self> {
         // Start with default config
         let mut config = Config::new();
 
@@ -100,7 +100,7 @@ impl Config {
         }
 
         // Load from user config (~/.tarzi.toml) if it exists (overrides project config)
-        let user_config = Self::load();
+        let user_config = Self::load_config_file();
         if let Ok(user_config) = user_config {
             config.merge(&user_config);
         }
@@ -166,7 +166,7 @@ impl Config {
         }
     }
 
-    pub fn load() -> Result<Self> {
+    pub fn load_config_file() -> Result<Self> {
         let config_path = Self::get_config_path()?;
 
         if config_path.exists() {
@@ -183,20 +183,20 @@ impl Config {
         }
     }
 
-    pub fn load_or_create() -> Result<Self> {
+    pub fn load_or_create_config_file() -> Result<Self> {
         let config_path = Self::get_config_path()?;
 
         if config_path.exists() {
-            Self::load()
+            Self::load_config_file()
         } else {
             // Create default config file
             let config = Config::new();
-            config.save()?;
+            config.save_config_file()?;
             Ok(config)
         }
     }
 
-    pub fn save(&self) -> Result<()> {
+    pub fn save_config_file(&self) -> Result<()> {
         let config_path = Self::get_config_path()?;
 
         // Create parent directory if it doesn't exist
@@ -696,7 +696,7 @@ limit = 5
         }
 
         // Test loading with precedence
-        let config = Config::load_with_precedence().unwrap();
+        let config = Config::load().unwrap();
 
         // User config should take precedence over project config
         assert_eq!(config.general.log_level, "warn"); // from user config

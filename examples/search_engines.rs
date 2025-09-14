@@ -6,7 +6,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
 
     // Load configuration with proper precedence
-    let config = Config::load_with_precedence()?;
+    let mut config = Config::load()?;
+
+    // Configure to use Chrome driver by default
+    config.fetcher.web_driver = "chromedriver".to_string();
     println!("Loaded config with search engine: {}", config.search.engine);
     println!("Query pattern: {}", config.search.query_pattern);
 

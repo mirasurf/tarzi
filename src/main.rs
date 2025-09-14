@@ -99,7 +99,7 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Load configuration with proper precedence
-    let mut config = Config::load_with_precedence()?;
+    let mut config = Config::load()?;
 
     // Apply CLI parameters to config
     let mut cli_params = CliConfigParams::new();

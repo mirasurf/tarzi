@@ -301,7 +301,7 @@ impl PySearchEngine {
     #[new]
     fn new() -> Self {
         // Use configuration loading with precedence to ensure proper defaults
-        let config = crate::config::Config::load_with_precedence().unwrap_or_default();
+        let config = crate::config::Config::load().unwrap_or_default();
         Self {
             inner: SearchEngine::from_config(&config),
         }
@@ -610,7 +610,7 @@ impl PyConfig {
     /// Raises:
     ///     ValueError: If save fails
     fn save(&self) -> PyResult<()> {
-        self.inner.save().map_err(|e| {
+        self.inner.save_dev().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Failed to save config: {e}"))
         })
     }

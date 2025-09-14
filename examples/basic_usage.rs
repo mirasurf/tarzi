@@ -1,4 +1,4 @@
-use tarzi::{FetchMode, Format, Result, SearchEngine, WebFetcher};
+use tarzi::{FetchMode, Format, Result, SearchEngine, WebFetcher, config::Config};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -7,10 +7,14 @@ async fn main() -> Result<()> {
 
     println!("=== Tarzi Modular Example ===\n");
 
+    // Load configuration and configure Chrome driver
+    let mut config = Config::load().unwrap_or_default();
+    config.fetcher.web_driver = "chromedriver".to_string();
+
     // Example 1: Using the fetcher module directly
     println!("1. Fetching content with different modes:");
 
-    let mut fetcher = WebFetcher::new();
+    let mut fetcher = WebFetcher::from_config(&config);
     let test_url = tarzi::constants::HTTPBIN_HTML_URL;
 
     // Plain request mode
@@ -36,7 +40,7 @@ async fn main() -> Result<()> {
     // Example 2: Using the search module
     println!("2. Searching and fetching content:");
 
-    let mut search_engine = SearchEngine::new();
+    let mut search_engine = SearchEngine::from_config(&config);
     let query = "agentic AI";
 
     // Search for results

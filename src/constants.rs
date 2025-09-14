@@ -155,7 +155,8 @@ pub const BING_QUERY_PATTERN: &str = "https://www.bing.com/search?q={query}";
 pub const GOOGLE_QUERY_PATTERN: &str = "https://www.google.com/search?q={query}";
 pub const BRAVE_QUERY_PATTERN: &str = "https://search.brave.com/search?q={query}";
 pub const BAIDU_QUERY_PATTERN: &str = "https://www.baidu.com/s?wd={query}";
-pub const SOUGOU_WEIXIN_QUERY_PATTERN: &str = "https://weixin.sogou.com/weixin?quey={query}";
+pub const SOUGOU_WEIXIN_QUERY_PATTERN: &str =
+    "https://weixin.sogou.com/weixin?type=2&s_from=input&&ie=utf8&query={query}";
 
 // ============================================================================
 // Default Values

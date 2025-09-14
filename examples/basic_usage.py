@@ -128,6 +128,7 @@ timeout = 30
 user_agent = "Tarzi Python Example/1.0"
 format = "markdown"
 proxy = ""
+web_driver = "chromedriver"
 
 [search]
 engine = "bing"

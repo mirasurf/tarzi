@@ -17,6 +17,7 @@ pub struct SearchEngine {
     query_pattern: String,
     user_agent: String,
     parser_factory: ParserFactory,
+    fetch_mode: FetchMode,
 }
 
 impl SearchEngine {
@@ -28,6 +29,7 @@ impl SearchEngine {
             query_pattern: SearchEngineType::Bing.get_query_pattern(),
             user_agent: crate::constants::DEFAULT_USER_AGENT.to_string(),
             parser_factory: ParserFactory::new(),
+            fetch_mode: FetchMode::BrowserHeadless, // Default mode
         }
     }
 
@@ -62,12 +64,17 @@ impl SearchEngine {
             engine_type.get_query_pattern()
         };
 
+        // Parse fetch mode from config
+        let fetch_mode =
+            FetchMode::from_str(&config.fetcher.mode).unwrap_or(FetchMode::BrowserHeadless);
+
         Self {
             fetcher,
             engine_type,
             query_pattern,
             user_agent: config.fetcher.user_agent.clone(),
             parser_factory: ParserFactory::new(),
+            fetch_mode,
         }
     }
 
@@ -81,11 +88,8 @@ impl SearchEngine {
             .query_pattern
             .replace("{query}", &urlencoding::encode(query));
 
-        // Try browser mode first, then fallback to plain HTTP if it fails
-        let search_page_content = match self
-            .fetch_with_retry(&search_url, FetchMode::BrowserHeadless)
-            .await
-        {
+        // Use configured fetch mode for search
+        let search_page_content = match self.fetch_with_retry(&search_url, self.fetch_mode).await {
             Ok(content) => content,
             Err(browser_error) => {
                 return Err(TarziError::Search(format!(

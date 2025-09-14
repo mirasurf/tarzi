@@ -70,6 +70,7 @@ def main():
         config.search.engine = "bing"
         config.search.limit = 2
         config.fetcher.user_agent = "Custom Tarzi Bot/1.0"
+        config.fetcher.web_driver = "chromedriver"  # Use Chrome driver by default
 
         search_engine = tarzi.SearchEngine.from_config(config)
         results = search_engine.search("blockchain technology", 2)

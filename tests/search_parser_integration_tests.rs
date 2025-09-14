@@ -2,6 +2,7 @@ use std::time::Duration;
 use tarzi::constants::CHROMEDRIVER_DEFAULT_URL;
 use tarzi::search::parser::{
     BaiduParser, BaseParser, BingParser, BraveParser, DuckDuckGoParser, GoogleParser,
+    SogouWeixinParser,
 };
 use tarzi::search::types::SearchEngineType;
 use tarzi::utils::is_webdriver_available;
@@ -402,6 +403,189 @@ async fn perform_baidu_search(query: &str) -> Result<String, Box<dyn std::error:
     }
 
     result
+}
+
+/// Perform a real Sogou Weixin search using WebDriver and return the HTML
+async fn perform_sogou_weixin_search(query: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let webdriver_url = CHROMEDRIVER_DEFAULT_URL;
+
+    // Setup Firefox capabilities for geckodriver (default)
+    let mut caps = DesiredCapabilities::firefox();
+    caps.add_arg("--disable-blink-features=AutomationControlled")?;
+    caps.add_arg("--disable-web-security")?;
+    caps.add_arg("--disable-features=VizDisplayCompositor")?;
+    caps.add_arg("--no-first-run")?;
+    caps.add_arg("--disable-default-apps")?;
+
+    // Connect to WebDriver
+    let driver = WebDriver::new(webdriver_url, caps).await?;
+
+    let result = async {
+        // Navigate to Sogou Weixin
+        driver.goto("https://weixin.sogou.com/").await?;
+        println!("Navigated to Sogou Weixin homepage");
+
+        // Wait a moment for the page to load
+        tokio::time::sleep(Duration::from_millis(2000)).await;
+
+        // Try to find search box
+        let search_box = match driver.find(By::Name("query")).await {
+            Ok(el) => el,
+            Err(_) => match driver.find(By::Css("input[type='text']")).await {
+                Ok(el) => el,
+                Err(_) => driver.find(By::Css("input#query")).await?,
+            },
+        };
+
+        search_box.clear().await?;
+        search_box.send_keys(query).await?;
+        println!("Entered search query: '{query}'");
+
+        // Submit search: try Enter first, fallback to a submit button
+        match search_box.send_keys(Key::Enter).await {
+            Ok(_) => println!("Submitted search with Enter key"),
+            Err(_) => {
+                // Try common button selectors
+                if let Ok(btn) = driver.find(By::Css("input[type='submit']")).await {
+                    btn.click().await?;
+                } else if let Ok(btn) = driver.find(By::Css("button[type='submit']")).await {
+                    btn.click().await?;
+                }
+                println!("Clicked search button");
+            }
+        }
+
+        // Wait for search results to load - look for result containers
+        let mut search_results_loaded = false;
+        for _ in 0..20 {
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            // Weixin result pages often have anchors linking to mp.weixin.qq.com
+            match driver
+                .find_all(By::Css("a[href*='mp.weixin.qq.com'], a[href*='weixin.sogou.com/link']"))
+                .await
+            {
+                Ok(elements) if !elements.is_empty() => {
+                    println!("Sogou Weixin search results loaded successfully");
+                    search_results_loaded = true;
+                    break;
+                }
+                _ => continue,
+            }
+        }
+
+        if !search_results_loaded {
+            println!("Warning: Sogou Weixin results did not load within timeout, getting page source anyway");
+        }
+
+        // Additional wait to ensure all results are loaded
+        tokio::time::sleep(Duration::from_millis(2000)).await;
+
+        // Get page source
+        let page_source = driver.source().await?;
+        println!(
+            "Retrieved Sogou Weixin page source, length: {} characters",
+            page_source.len()
+        );
+
+        Ok::<String, Box<dyn std::error::Error>>(page_source)
+    }
+    .await;
+
+    // Always quit the driver
+    if let Err(e) = driver.quit().await {
+        eprintln!("Warning: Failed to quit WebDriver: {e}");
+    }
+
+    result
+}
+
+#[tokio::test]
+async fn test_sogou_weixin_parser_real_world_integration() {
+    // Skip test if WebDriver is not available
+    if !is_webdriver_available().await {
+        println!("Skipping Sogou Weixin real-world integration test: WebDriver not available");
+        println!("To run this test, start a WebDriver server (e.g., geckodriver on port 4444)");
+        return;
+    }
+
+    println!("Starting real-world Sogou Weixin search integration test...");
+
+    // Perform a real search with timeout (Sogou may have anti-bot)
+    let search_query = "rust 编程语言";
+    let html_content = match tokio::time::timeout(
+        Duration::from_secs(30),
+        perform_sogou_weixin_search(search_query),
+    )
+    .await
+    {
+        Ok(Ok(html)) => html,
+        Ok(Err(e)) => {
+            println!("⚠️  Sogou Weixin search failed: {e}");
+            println!("This is likely due to anti-automation measures or regional restrictions.");
+            println!("The SogouWeixinParser logic is tested by parsing below if HTML present.");
+            return; // Skip the test gracefully
+        }
+        Err(_) => {
+            println!("⚠️  Sogou Weixin search timed out after 30 seconds");
+            println!("This is likely due to anti-automation measures or CAPTCHA.");
+            return; // Skip the test gracefully
+        }
+    };
+
+    // Simple sanity check
+    assert!(html_content.contains("weixin.sogou.com") || html_content.contains("mp.weixin.qq.com"));
+    assert!(html_content.len() > 2000);
+    println!("✓ Successfully retrieved Sogou Weixin search results HTML");
+
+    // Create SogouWeixinParser and parse the results
+    let parser = SogouWeixinParser::new();
+    assert_eq!(parser.name(), "SogouWeixinParser");
+    assert!(parser.supports(&SearchEngineType::SougouWeixin));
+    println!("✓ SogouWeixinParser created and validated");
+
+    let limit = 5;
+    let results = match parser.parse(&html_content, limit) {
+        Ok(results) => results,
+        Err(e) => {
+            eprintln!("Failed to parse Sogou Weixin HTML: {e}");
+            if std::env::var("TARZI_DEBUG").is_ok() {
+                std::fs::write("debug_sogou_weixin.html", &html_content).ok();
+                println!("Debug HTML saved to debug_sogou_weixin.html");
+            }
+            panic!("Parser failed: {e}");
+        }
+    };
+
+    println!("✓ Successfully parsed {} search results", results.len());
+
+    if results.is_empty() {
+        println!("⚠️  Warning: No Sogou Weixin results found. Possible anti-bot or layout change.");
+        if std::env::var("TARZI_DEBUG").is_ok() {
+            std::fs::write("debug_sogou_weixin_no_results.html", &html_content).ok();
+            println!("Debug HTML saved to debug_sogou_weixin_no_results.html");
+        }
+        return; // Don't fail the test hard in flaky environments
+    }
+
+    assert!(
+        results.len() <= limit,
+        "Should not exceed the requested limit"
+    );
+
+    for (i, result) in results.iter().enumerate() {
+        println!("Result {}: {} - {}", i + 1, result.title, result.url);
+        assert_eq!(result.rank, i + 1, "Rank should be sequential");
+        assert!(
+            result.url.contains("mp.weixin.qq.com"),
+            "URL should point to mp.weixin.qq.com: {}",
+            result.url
+        );
+    }
+
+    // Test with different limits
+    let small_limit = 2;
+    let small_results = parser.parse(&html_content, small_limit).unwrap();
+    assert!(small_results.len() <= small_limit);
 }
 
 #[tokio::test]

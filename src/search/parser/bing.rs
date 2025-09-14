@@ -72,3 +72,126 @@ impl Default for BingParser {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::search::types::SearchEngineType;
+
+    #[test]
+    fn test_bing_parser() {
+        let parser = BingParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <li class="b_algo">
+                    <h2><a href="https://example1.com">Test Result 1</a></h2>
+                    <div class="b_caption"><p>This is a test snippet 1</p></div>
+                </li>
+                <li class="b_algo">
+                    <h2><a href="https://example2.com">Test Result 2</a></h2>
+                    <div class="b_caption"><p>This is a test snippet 2</p></div>
+                </li>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 3).unwrap();
+
+        assert_eq!(results.len(), 2);
+        assert_eq!(parser.name(), "BingParser");
+        assert!(parser.supports(&SearchEngineType::Bing));
+        assert!(!parser.supports(&SearchEngineType::Google));
+
+        assert_eq!(results[0].title, "Test Result 1");
+        assert_eq!(results[0].url, "https://example1.com");
+        assert_eq!(results[0].snippet, "This is a test snippet 1");
+        assert_eq!(results[0].rank, 1);
+    }
+
+    #[test]
+    fn test_bing_parser_empty_html() {
+        let parser = BingParser::new();
+        let results = parser.parse("", 5).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_bing_parser_no_results() {
+        let parser = BingParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <div class="no-results">No search results found</div>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 5).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_bing_parser_limit_enforcement() {
+        let parser = BingParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <li class="b_algo">
+                    <h2><a href="https://example1.com">Result 1</a></h2>
+                    <div class="b_caption"><p>Snippet 1</p></div>
+                </li>
+                <li class="b_algo">
+                    <h2><a href="https://example2.com">Result 2</a></h2>
+                    <div class="b_caption"><p>Snippet 2</p></div>
+                </li>
+                <li class="b_algo">
+                    <h2><a href="https://example3.com">Result 3</a></h2>
+                    <div class="b_caption"><p>Snippet 3</p></div>
+                </li>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 2).unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].rank, 1);
+        assert_eq!(results[1].rank, 2);
+    }
+
+    #[test]
+    fn test_bing_parser_url_normalization() {
+        let parser = BingParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <li class="b_algo">
+                    <h2><a href="/relative/path">Relative URL</a></h2>
+                    <div class="b_caption"><p>Test snippet</p></div>
+                </li>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 5).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].url, "https://www.bing.com/relative/path");
+    }
+
+    #[test]
+    fn test_bing_parser_missing_elements() {
+        let parser = BingParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <li class="b_algo">
+                    <h2><a href="https://example1.com">Title Only</a></h2>
+                </li>
+                <li class="b_algo">
+                    <div class="b_caption"><p>Snippet without title</p></div>
+                </li>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 5).unwrap();
+        assert_eq!(results.len(), 1); // Only the first one with title should be included
+        assert_eq!(results[0].title, "Title Only");
+        assert_eq!(results[0].snippet, ""); // No snippet for this result
+    }
+}

@@ -101,6 +101,8 @@ impl DuckDuckGoParser {
                         .map(|href| {
                             if href.starts_with("http") {
                                 href.to_string()
+                            } else if href.starts_with("//") {
+                                format!("https:{href}")
                             } else if href.starts_with("/") {
                                 format!("https://duckduckgo.com{href}")
                             } else {
@@ -123,6 +125,8 @@ impl DuckDuckGoParser {
                             .map(|href| {
                                 if href.starts_with("http") {
                                     href.to_string()
+                                } else if href.starts_with("//") {
+                                    format!("https:{href}")
                                 } else if href.starts_with("/") {
                                     format!("https://duckduckgo.com{href}")
                                 } else {
@@ -174,5 +178,182 @@ impl DuckDuckGoParser {
 impl Default for DuckDuckGoParser {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::search::types::SearchEngineType;
+
+    #[test]
+    fn test_duckduckgo_parser() {
+        let parser = DuckDuckGoParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <div class="result__body">
+                    <a class="result__a" href="https://example1.com">DuckDuckGo Test Result 1</a>
+                    <div class="result__snippet">This is a test snippet for DuckDuckGo 1</div>
+                </div>
+                <div class="result__body">
+                    <a class="result__a" href="https://example2.com">DuckDuckGo Test Result 2</a>
+                    <div class="result__snippet">This is a test snippet for DuckDuckGo 2</div>
+                </div>
+                <div class="result__body">
+                    <a class="result__a" href="https://example3.com">DuckDuckGo Test Result 3</a>
+                    <div class="result__snippet">This is a test snippet for DuckDuckGo 3</div>
+                </div>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 2).unwrap();
+
+        assert_eq!(results.len(), 2);
+        assert_eq!(parser.name(), "DuckDuckGoParser");
+        assert!(parser.supports(&SearchEngineType::DuckDuckGo));
+
+        assert_eq!(results[0].title, "DuckDuckGo Test Result 1");
+        assert_eq!(results[0].url, "https://example1.com");
+        assert_eq!(
+            results[0].snippet,
+            "This is a test snippet for DuckDuckGo 1"
+        );
+        assert_eq!(results[0].rank, 1);
+
+        assert_eq!(results[1].title, "DuckDuckGo Test Result 2");
+        assert_eq!(results[1].url, "https://example2.com");
+        assert_eq!(
+            results[1].snippet,
+            "This is a test snippet for DuckDuckGo 2"
+        );
+        assert_eq!(results[1].rank, 2);
+    }
+
+    #[test]
+    fn test_duckduckgo_parser_empty_and_edge_cases() {
+        let parser = DuckDuckGoParser::new();
+
+        // Test empty HTML
+        let results = parser.parse("", 5).unwrap();
+        assert!(results.is_empty());
+
+        // Test zero limit
+        let html = r#"<html><body><article><a class="result__a" href="https://example.com">Test</a></article></body></html>"#;
+        let results = parser.parse(html, 0).unwrap();
+        assert!(results.is_empty());
+    }
+
+    #[test]
+    fn test_duckduckgo_parser_article_structure() {
+        let parser = DuckDuckGoParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <article>
+                    <a class="eVNpHGjtxRBq_gLOfGDr" href="https://example1.com">Modern Article 1</a>
+                    <div class="OgdwYG6KE2qthn9XQWFC">Modern snippet 1</div>
+                </article>
+                <article>
+                    <a class="LQNqh2U1kzYxREs65IJu" href="https://example2.com">Modern Article 2</a>
+                    <div class="kY2IgmnCmOGjharHErah">Modern snippet 2</div>
+                </article>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 10).unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].title, "Modern Article 1");
+        assert_eq!(results[0].snippet, "Modern snippet 1");
+        assert_eq!(results[1].title, "Modern Article 2");
+        assert_eq!(results[1].snippet, "Modern snippet 2");
+    }
+
+    #[test]
+    fn test_duckduckgo_parser_url_deduplication() {
+        let parser = DuckDuckGoParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <article>
+                    <a class="result__a" href="https://duplicate.com">First</a>
+                </article>
+                <article>
+                    <a class="result__a" href="https://duplicate.com">Duplicate</a>
+                </article>
+                <article>
+                    <a class="result__a" href="https://unique.com">Unique</a>
+                </article>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 10).unwrap();
+        assert_eq!(results.len(), 2); // Should deduplicate
+        assert_eq!(results[0].url, "https://duplicate.com");
+        assert_eq!(results[1].url, "https://unique.com");
+    }
+
+    #[test]
+    fn test_duckduckgo_parser_url_normalization() {
+        let parser = DuckDuckGoParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <article>
+                    <a class="result__a" href="/relative">Relative URL</a>
+                </article>
+                <article>
+                    <a class="result__a" href="//protocol-relative.com">Protocol-relative</a>
+                </article>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 10).unwrap();
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].url, "https://duckduckgo.com/relative");
+        assert_eq!(results[1].url, "https://protocol-relative.com");
+    }
+
+    #[test]
+    fn test_duckduckgo_parser_fallback_selector() {
+        let parser = DuckDuckGoParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <div class="result__body">
+                    <a href="https://fallback.com">Fallback Title</a>
+                    <div class="result__snippet">Fallback snippet</div>
+                </div>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 10).unwrap();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].title, "Fallback Title");
+        assert_eq!(results[0].snippet, "Fallback snippet");
+    }
+
+    #[test]
+    fn test_duckduckgo_parser_missing_data() {
+        let parser = DuckDuckGoParser::new();
+        let html = r#"
+        <html>
+            <body>
+                <article>
+                    <a>No href</a>
+                </article>
+                <article>
+                    <a href="">Empty href</a>
+                </article>
+                <article>
+                    <a href="https://good.com">Good result</a>
+                </article>
+            </body>
+        </html>
+        "#;
+        let results = parser.parse(html, 10).unwrap();
+        assert_eq!(results.len(), 1); // Only the good result
+        assert_eq!(results[0].url, "https://good.com");
+        assert_eq!(results[0].title, "Good result");
     }
 }

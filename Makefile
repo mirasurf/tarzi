@@ -45,19 +45,17 @@ build-python: ## Build Python wheel
 # =============================================================================
 
 .PHONY: install
-install: install-rust install-python ## Install everything (Rust + Python)
-
-.PHONY: install-rust
-install-rust: build-rust ## Install Rust binary
+install: build-rust build-python
 	cp $(RUST_TARGET) /usr/local/bin/tarzi
-
-.PHONY: install-python
-install-python: build-python ## Install Python package
 	pip install $(PYTHON_PACKAGE)
 
 # =============================================================================
 # TEST COMMANDS
 # =============================================================================
+
+.PHONY: install-uv-env
+install-uv-env:
+	uv sync --extra dev
 
 .PHONY: test
 test: test-unit test-integration ## Run all tests (unit + integration)
@@ -70,10 +68,8 @@ test-unit-rust: ## Run Rust unit tests only
 	$(CARGO) test --lib --features test-helpers
 
 .PHONY: test-unit-python
-test-unit-python: ## Run Python unit tests only
-	python3 -m venv .venv
-	.venv/bin/pip install -e .[test] pytest pytest-mock pytest-asyncio
-	cd $(PYTHON_TEST_DIR) && $(PWD)/.venv/bin/python -m pytest -m unit -v
+test-unit-python: install-uv-env ## Run Python unit tests only
+	uv run -m pytest -m unit -v
 
 .PHONY: test-integration
 test-integration: test-integration-rust test-integration-python ## Run all integration tests (Rust + Python)
@@ -83,87 +79,52 @@ test-integration-rust: ## Run Rust integration tests
 	$(CARGO) test --test '*' --features test-helpers
 
 .PHONY: test-integration-python
-test-integration-python: ## Run Python integration tests only
-	python3 -m venv .venv
-	.venv/bin/pip install -e .[test] pytest pytest-mock pytest-asyncio
-	cd $(PYTHON_TEST_DIR) && $(PWD)/.venv/bin/python -m pytest -m integration -v
+test-integration-python: install-uv-env ## Run Python integration tests only
+	uv run -m pytest -m integration -v
 
 # =============================================================================
 # CODE QUALITY COMMANDS
 # =============================================================================
 
 .PHONY: format
-format: format-rust format-python ## Format code (Rust + Python)
-
-.PHONY: format-rust
-format-rust: ## Format Rust code
+format: install-uv-env ## Format code (Rust + Python)
 	$(CARGO) fmt
-
-.PHONY: format-python
-format-python: ## Format Python code (optional tools)
-	@command -v autoflake >/dev/null 2>&1 && autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES) || echo "autoflake not found, skipping Python auto-cleanup"
-	@command -v isort >/dev/null 2>&1 && isort $(PYTHON_MODULES) || echo "isort not found, skipping Python import sorting"
-	@command -v black >/dev/null 2>&1 && black $(PYTHON_MODULES) || echo "black not found, skipping Python formatting"
+	@uv run autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES) || echo "autoflake not found, skipping Python auto-cleanup"
+	@uv run isort $(PYTHON_MODULES) || echo "isort not found, skipping Python import sorting"
+	@uv run black $(PYTHON_MODULES) || echo "black not found, skipping Python formatting"
 
 .PHONY: format-check
-format-check: format-check-rust format-check-python ## Check code formatting (Rust + Python)
-
-.PHONY: format-check-rust
-format-check-rust: ## Check Rust code formatting
+format-check: install-uv-env ## Check code formatting (Rust + Python)
 	$(CARGO) fmt -- --check
-
-.PHONY: format-check-python
-format-check-python: ## Check Python code formatting (optional tools)
-	@command -v black >/dev/null 2>&1 && black --check $(PYTHON_MODULES) || echo "black not found, skipping Python format check"
-	@command -v isort >/dev/null 2>&1 && isort --check-only $(PYTHON_MODULES) || echo "isort not found, skipping Python import check"
+	@uv run black --check $(PYTHON_MODULES) || echo "black not found, skipping Python format check"
+	@uv run isort --check-only $(PYTHON_MODULES) || echo "isort not found, skipping Python import check"
 
 .PHONY: lint
-lint: format-check lint-rust lint-python ## Lint code (Rust + Python)
-
-.PHONY: lint-rust
-lint-rust: ## Lint Rust code
+lint: install-uv-env ## Lint code (Rust + Python)
 	$(CARGO) clippy --all-targets --all-features -- -D warnings
-
-.PHONY: lint-python
-lint-python: ## Lint Python code (optional tools)
-	@command -v ruff >/dev/null 2>&1 && ruff check $(PYTHON_MODULES) || echo "ruff not found, skipping Python linting"
-
-.PHONY: lint-fix
-lint-fix: lint-fix-rust lint-fix-python ## Fix linting issues (Rust + Python)
-
-.PHONY: lint-fix-rust
-lint-fix-rust: ## Fix Rust linting issues
-	$(CARGO) clippy --fix --allow-dirty --allow-staged --all-targets --all-features -- -D warnings
-
-.PHONY: lint-fix-python
-lint-fix-python: ## Fix Python linting issues (optional tools)
-	@command -v ruff >/dev/null 2>&1 && ruff check --fix $(PYTHON_MODULES) || echo "ruff not found, skipping Python lint fixes"
+	@uv run ruff check $(PYTHON_MODULES) || echo "ruff not found, skipping Python linting"
 
 .PHONY: check
 check: format-check lint
 	$(CARGO) check
 
 .PHONY: autofix
-autofix: lint-fix format
+autofix: install-uv-env format ## Fix linting issues (Rust + Python)
+	$(CARGO) clippy --fix --allow-dirty --allow-staged --all-targets --all-features -- -D warnings
+	@uv run ruff check --fix $(PYTHON_MODULES) || echo "ruff not found, skipping Python lint fixes"
 
 # =============================================================================
 # CLEAN COMMANDS
 # =============================================================================
 
 .PHONY: clean
-clean: clean-rust clean-python ## Clean everything including dependencies
+clean:  ## Clean everything including dependencies
 	rm -rf target/
 	rm -rf .venv/
 	rm -rf __pycache__/
 	rm -rf *.egg-info/
-
-.PHONY: clean-rust
-clean-rust: ## Clean Rust build artifacts
 	$(CARGO) clean
 	rm -rf target/wheels/
-
-.PHONY: clean-python
-clean-python: ## Clean Python test artifacts
 	rm -rf $(PYTHON_TEST_DIR)/.pytest_cache
 	rm -rf $(PYTHON_TEST_DIR)/htmlcov
 	rm -rf $(PYTHON_TEST_DIR)/.coverage
@@ -284,6 +245,25 @@ setup-docs: ## Setup documentation development environment
 	pip install -r docs/requirements.txt
 	@echo "$(GREEN)✅ Documentation environment ready$(RESET)"
 
+.PHONY: setup-drivers
+setup-drivers: ## Install WebDriver dependencies (requires brew on macOS/Linux)
+	@echo "$(BLUE)Installing WebDriver dependencies...$(RESET)"
+	@if command -v brew >/dev/null 2>&1; then \
+		echo "$(GREEN)Installing ChromeDriver and GeckoDriver via brew...$(RESET)"; \
+		brew install --cask chromedriver || echo "$(RED)Failed to install chromedriver$(RESET)"; \
+		brew install geckodriver || echo "$(RED)Failed to install geckodriver$(RESET)"; \
+		echo "$(GREEN)✅ WebDriver dependencies installed$(RESET)"; \
+	else \
+		echo "$(RED)❌ Homebrew not found. Please install drivers manually:$(RESET)"; \
+		echo "  - ChromeDriver: https://chromedriver.chromium.org/"; \
+		echo "  - GeckoDriver: https://github.com/mozilla/geckodriver/releases"; \
+		echo "  - Or install Homebrew: https://brew.sh/"; \
+		exit 1; \
+	fi
+
+.PHONY: setup-full
+setup-full: setup setup-drivers setup-docs ## Complete development environment setup
+
 # =============================================================================
 # DEVELOPMENT COMMANDS
 # =============================================================================
@@ -300,4 +280,29 @@ dev-release: ## Run in development mode (release build)
 dev-check: check test-unit ## Quick development check (check + unit tests)
 
 .PHONY: full-check
-full-check: format-check lint test build ## Full development check (all check + all tests + build) 
+full-check: format-check lint test build ## Full development check (all check + all tests + build)
+
+.PHONY: run-examples
+run-examples: run-examples-rust run-examples-python ## Run all examples (Rust + Python)
+
+.PHONY: run-examples-rust
+run-examples-rust: ## Run all Rust examples
+	@echo "$(BLUE)Running Rust examples...$(RESET)"
+	@for example in basic_usage browser_driver_usage search_engines sogou_weixin_search simple_usage; do \
+		echo "$(GREEN)Running example: $$example$(RESET)"; \
+		$(CARGO) run --example $$example || echo "$(RED)Example $$example failed$(RESET)"; \
+		echo ""; \
+	done
+	@echo "$(GREEN)✅ All Rust examples completed$(RESET)"
+
+.PHONY: run-examples-python
+run-examples-python: install-uv-env ## Run all Python examples
+	@echo "$(BLUE)Running Python examples...$(RESET)"
+	@for example in examples/basic_usage.py examples/search_engines.py; do \
+		if [ -f "$$example" ]; then \
+			echo "$(GREEN)Running example: $$example$(RESET)"; \
+			uv run python "$$example" || echo "$(RED)Example $$example failed$(RESET)"; \
+			echo ""; \
+		fi; \
+	done
+	@echo "$(GREEN)✅ All Python examples completed$(RESET)" 

@@ -13,10 +13,13 @@ async fn main() -> Result<()> {
     println!("=== Browser Driver Integration Demo ===\n");
 
     // Load configuration with proper precedence
-    let config = Config::load_with_precedence().unwrap_or_else(|_| {
+    let mut config = Config::load().unwrap_or_else(|_| {
         println!("Using default configuration (no config files found)");
         Config::default()
     });
+
+    // Configure to use Chrome driver by default
+    config.fetcher.web_driver = "chromedriver".to_string();
 
     // Create WebFetcher with configuration
     let mut fetcher = WebFetcher::from_config(&config);

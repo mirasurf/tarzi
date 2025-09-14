@@ -1,16 +1,16 @@
 [project]
 name = "tarzi"
-version = "0.0.23"
+version = "0.1.0"
 requires-python = ">=3.10"
 keywords = ["web-scraping", "search-engine", "ai-tools", "rust", "browser-automation"]
 description = "Rust-native lite search for AI applications"
 readme = "README.md"
 license = {text = "Apache-2.0"}
 authors = [
-    {name = "xmingc", email = "chenxm35@gmail.com"},
+    {name = "Xiaming Chen", email = "chenxm35@gmail.com"},
 ]
 maintainers = [
-    {name = "xmingc", email = "chenxm35@gmail.com"},
+    {name = "Xiaming Chen", email = "chenxm35@gmail.com"},
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -34,16 +34,16 @@ Repository = "https://github.com/mirasurf/tarzi"
 
 [project.optional-dependencies]
 dev = [
-    "maturin>=1.0,<2.0",
-    "pytest>=6.0",
-    "pytest-asyncio>=0.20.0",
-    "patchelf>=0.15.0",
-    "black>=22.0",
-    "ruff>=0.1.0",
-    "isort>=5.0",
-    "autoflake>=2.0",
-    "twine>=4.0.0",
-    "build>=0.10.0",
+    "maturin>=1.5,<2.0",
+    "pytest>=7.4,<9",
+    "pytest-asyncio>=0.21,<0.25",
+    "patchelf>=0.17.2",
+    "black>=23.12,<25",
+    "ruff>=0.3,<0.6",
+    "isort>=5.13,<6",
+    "autoflake>=2.2,<3",
+    "twine>=4.0,<6",
+    "build>=1.0,<2",
 ]
 docs = [
     "sphinx>=6.0.0",
@@ -102,3 +102,7 @@ line_length = 120
 [tool.autoflake]
 remove-all-unused-imports = true
 remove-unused-variables = true 
+
+[tool.uv]
+python-preference = "system"
+resolution = "lowest-direct"
