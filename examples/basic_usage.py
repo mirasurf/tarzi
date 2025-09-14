@@ -132,7 +132,6 @@ web_driver = "chromedriver"
 
 [search]
 engine = "bing"
-api_key = ""
 query_pattern = "https://www.bing.com/search?q={query}"
 """
         config = tarzi.Config.from_str(config_str)

@@ -5,14 +5,12 @@
 //! - Support for multiple search engines (Bing, Google, DuckDuckGo, etc.)
 //! - Extensible parser system for extracting search results from HTML
 
-pub mod api;
 pub mod engine;
 pub mod parser;
 pub mod providers;
 pub mod types;
 
 // Re-export main types and functions
-pub use api::AutoSwitchStrategy;
 pub use engine::SearchEngine;
 pub use parser::ParserFactory;
 pub use types::{SearchEngineType, SearchResult};

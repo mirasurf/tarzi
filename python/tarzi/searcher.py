@@ -68,7 +68,6 @@ class TarziSearcher:
             config_str = f"""
 [search]
 engine = "{self.search_engine}"
-autoswitch = "smart"
 limit = 10
 """
             self._config = Config.from_str(config_str)

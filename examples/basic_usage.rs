@@ -1,4 +1,4 @@
-use tarzi::{FetchMode, Format, Result, SearchEngine, WebFetcher, config::Config};
+use tarzi::{config::Config, FetchMode, Format, Result, SearchEngine, WebFetcher};
 
 #[tokio::main]
 async fn main() -> Result<()> {

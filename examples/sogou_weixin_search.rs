@@ -1,8 +1,8 @@
 use std::str::FromStr;
 use tarzi::{
-    Result,
     config::Config,
-    search::{SearchEngine, types::SearchEngineType},
+    search::{types::SearchEngineType, SearchEngine},
+    Result,
 };
 
 #[tokio::main]
@@ -50,11 +50,7 @@ async fn main() -> Result<()> {
             println!("\nFound {} WeChat articles:", results.len());
 
             if results.is_empty() {
-                println!("No results found. This might be due to:");
-                println!("- Network connectivity issues");
-                println!("- SougouWeixin blocking automated requests");
-                println!("- No recent articles matching the query");
-                println!("- WebDriver not available (run 'make setup-drivers' to install)");
+                println!("No results found.");
             } else {
                 for (i, result) in results.iter().enumerate() {
                     println!("\n{}. {}", i + 1, result.title);
@@ -72,19 +68,6 @@ async fn main() -> Result<()> {
         }
         Err(e) => {
             eprintln!("Search failed: {}", e);
-            eprintln!("\nPossible causes:");
-            eprintln!("- Network connectivity issues");
-            eprintln!("- WebDriver (Chrome/Firefox) not available");
-            eprintln!("- SougouWeixin anti-bot measures (CAPTCHA protection)");
-            eprintln!("- Configuration issues");
-            eprintln!("\nTo install WebDriver dependencies:");
-            eprintln!("- Run: make setup-drivers (requires Homebrew)");
-            eprintln!("- Or manually install:");
-            eprintln!("  • ChromeDriver: brew install --cask chromedriver");
-            eprintln!("  • GeckoDriver: brew install geckodriver");
-            eprintln!("\nNote: SougouWeixin has strong anti-bot protection and may require");
-            eprintln!("manual browser access or alternative search engines for automated use.");
-
             return Err(e);
         }
     }

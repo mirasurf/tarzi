@@ -6,7 +6,7 @@
 #[cfg(feature = "test-helpers")]
 use std::time::Duration;
 #[cfg(feature = "test-helpers")]
-use tarzi::fetcher::driver::{DriverConfig, DriverManager, DriverStatus, DriverType, test_helpers};
+use tarzi::fetcher::driver::{test_helpers, DriverConfig, DriverManager, DriverStatus, DriverType};
 #[cfg(not(feature = "test-helpers"))]
 use tarzi::fetcher::driver::{DriverManager, DriverType};
 
