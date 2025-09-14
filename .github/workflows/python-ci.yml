@@ -97,8 +97,8 @@ jobs:
     - name: Create virtual environment and install dependencies
       shell: bash
       run: |
+        make install-uv-env
         uv pip install -r docs/requirements.txt
-        uv pip install maturin
 
     - name: Build Python extension for docs
       shell: bash
