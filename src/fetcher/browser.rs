@@ -486,6 +486,22 @@ impl BrowserManager {
         Ok(())
     }
 
+    /// Synchronous best-effort stop of managed driver (for Drop paths)
+    pub fn stop_managed_driver_sync(&mut self) {
+        if let (Some(driver_manager), Some(driver_info)) =
+            (&mut self.driver_manager, &self.managed_driver_info)
+        {
+            match driver_manager.stop_driver(driver_info.config.port) {
+                Ok(()) => {
+                    self.managed_driver_info = None;
+                }
+                Err(e) => {
+                    warn!("Failed to stop managed driver synchronously: {}", e);
+                }
+            }
+        }
+    }
+
     /// Check if this browser manager has a managed driver
     pub fn has_managed_driver(&self) -> bool {
         self.managed_driver_info.is_some()
@@ -553,9 +569,13 @@ impl BrowserManager {
 impl Drop for BrowserManager {
     fn drop(&mut self) {
         if !self.browsers.is_empty() || self.managed_driver_info.is_some() {
-            warn!(
-                "BrowserManager dropped without explicit shutdown. Resources may not be cleaned up properly. Consider calling shutdown() before dropping."
+            // Best-effort cleanup without spawning a runtime. We ensure the managed driver is stopped,
+            // which will terminate associated sessions; then drop any WebDriver handles.
+            info!(
+                "BrowserManager dropped without explicit shutdown. Stopping managed driver and dropping sessions."
             );
+            self.stop_managed_driver_sync();
+            self.browsers.clear();
         }
     }
 }

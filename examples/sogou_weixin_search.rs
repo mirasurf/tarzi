@@ -89,5 +89,8 @@ async fn main() -> Result<()> {
         }
     }
 
+    // Ensure clean shutdown of browser and driver resources
+    search_engine.shutdown().await;
+
     Ok(())
 }

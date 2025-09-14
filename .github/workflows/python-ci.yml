@@ -61,8 +61,8 @@ jobs:
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
 
-    - name: Install maturin
-      run: uv pip install maturin[patchelf]
+    - name: Install uv environment
+      run: make install-uv-env
 
     - name: Build wheels
       run: uv run maturin build --release --out dist

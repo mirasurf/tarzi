@@ -475,9 +475,8 @@ impl Default for WebFetcher {
 impl Drop for WebFetcher {
     fn drop(&mut self) {
         if self.browser_manager.has_browsers() || self.browser_manager.has_managed_driver() {
-            warn!(
-                "WebFetcher dropped without explicit shutdown. Resources may not be cleaned up properly. Consider calling shutdown() before dropping."
-            );
+            // Avoid starting a runtime in Drop. Ask BrowserManager to synchronously stop driver.
+            self.browser_manager.stop_managed_driver_sync();
         }
     }
 }

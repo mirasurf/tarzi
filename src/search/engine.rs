@@ -223,7 +223,7 @@ impl SearchEngine {
         Ok(())
     }
 
-    /// Explicitly shut down browser and driver resources
+    /// Ensure to explicitly shut down browser and driver resources
     pub async fn shutdown(&mut self) {
         self.fetcher.shutdown().await;
     }

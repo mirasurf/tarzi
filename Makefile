@@ -2,7 +2,7 @@
 
 # Variables
 CARGO = cargo
-MATURIN = maturin
+MATURIN = uv run maturin
 PYTHON = python3
 PYTEST = pytest
 RUST_TARGET = target/release/tarzi
