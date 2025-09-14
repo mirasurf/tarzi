@@ -1,8 +1,8 @@
 use tarzi::{
-    Result,
     config::Config,
     converter::Format,
     fetcher::{types::FetchMode, webfetcher::WebFetcher},
+    Result,
 };
 
 #[tokio::main]

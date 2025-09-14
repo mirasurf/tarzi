@@ -1,12 +1,12 @@
 use super::driver::{DriverConfig, DriverInfo, DriverManager, DriverType};
 use crate::{
-    Result,
     config::Config,
     constants::{
-        BROWSER_LAUNCH_TIMEOUT, CHROME_DRIVER_ARGS, CHROMEDRIVER_DEFAULT_PORT, DEFAULT_TIMEOUT,
+        BROWSER_LAUNCH_TIMEOUT, CHROMEDRIVER_DEFAULT_PORT, CHROME_DRIVER_ARGS, DEFAULT_TIMEOUT,
         FIREFOX_DRIVER_ARGS, GECKODRIVER_DEFAULT_PORT, WEBDRIVER_CHECK_TIMEOUT,
     },
     error::TarziError,
+    Result,
 };
 use std::{collections::HashMap, path::PathBuf};
 use tempfile::TempDir;

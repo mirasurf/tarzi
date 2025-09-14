@@ -130,9 +130,6 @@ except ImportError as e:
             results = self.search(query, search_mode, limit)
             return [(r, f"Mock content for {r.url}") for r in results]
 
-        def with_api_key(self, api_key):
-            return self
-
         @classmethod
         def from_config(cls, config):
             return cls()
@@ -218,7 +215,6 @@ proxy = ""
 
 [search]
 engine = "bing"
-api_key = ""
 query_pattern = "https://www.bing.com/search?q={query}"
 """
 

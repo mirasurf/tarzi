@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
 Unit tests for updated Config structure in tarzi.
-Tests the new configuration without deprecated api_key field.
 """
 
 import pytest
@@ -42,66 +41,6 @@ engine = "duckduckgo"
 class TestUpdatedConfig:
     """Test cases for updated configuration structure."""
 
-    def test_config_without_deprecated_api_key(self, modern_config):
-        """Test that config loads successfully without deprecated api_key field."""
-        config = tarzi.Config.from_str(modern_config)
-        assert isinstance(config, tarzi.Config)
-
-    def test_new_api_key_fields_support(self, modern_config):
-        """Test that new specific API key fields are supported."""
-        config = tarzi.Config.from_str(modern_config)
-
-        # Test that components can be created with new config structure
-        search_engine = tarzi.SearchEngine.from_config(config)
-        assert isinstance(search_engine, tarzi.SearchEngine)
-
-        fetcher = tarzi.WebFetcher.from_config(config)
-        assert isinstance(fetcher, tarzi.WebFetcher)
-
-        converter = tarzi.Converter.from_config(config)
-        assert isinstance(converter, tarzi.Converter)
-
-    def test_autoswitch_configuration(self):
-        """Test autoswitch configuration options."""
-        autoswitch_configs = [
-            'autoswitch = "smart"',
-            'autoswitch = "none"',
-            'autoswitch = "Smart"',
-            'autoswitch = "None"',
-            'autoswitch = "SMART"',
-            'autoswitch = "NONE"',
-        ]
-
-        for autoswitch_line in autoswitch_configs:
-            config_str = f"""
-[search]
-engine = "duckduckgo"
-{autoswitch_line}
-"""
-            config = tarzi.Config.from_str(config_str)
-            assert isinstance(config, tarzi.Config)
-
-            # Should be able to create search engine
-            engine = tarzi.SearchEngine.from_config(config)
-            assert isinstance(engine, tarzi.SearchEngine)
-
-    def test_multiple_api_providers_configuration(self):
-        """Test configuration with multiple API providers."""
-        config_str = """
-[search]
-engine = "brave"
-brave_api_key = "brave_test_key"
-exa_api_key = "exa_test_key"
-travily_api_key = "travily_test_key"
-autoswitch = "smart"
-"""
-        config = tarzi.Config.from_str(config_str)
-        assert isinstance(config, tarzi.Config)
-
-        # Should be able to create components with multiple providers
-        engine = tarzi.SearchEngine.from_config(config)
-        assert isinstance(engine, tarzi.SearchEngine)
-
     def test_proxy_configuration_integration(self):
         """Test proxy configuration works with all components."""
         config_str = """
@@ -111,7 +50,6 @@ timeout = 45
 
 [search]
 engine = "brave"
-brave_api_key = "test_key"
 """
         config = tarzi.Config.from_str(config_str)
         assert isinstance(config, tarzi.Config)
@@ -245,12 +183,6 @@ limit = {limit}
     def test_invalid_configuration_handling(self):
         """Test handling of invalid configuration values."""
         invalid_configs = [
-            # Invalid autoswitch value should default gracefully
-            """
-[search]
-engine = "duckduckgo"
-autoswitch = "invalid_value"
-""",
             # Invalid limit should handle gracefully or error appropriately
             """
 [search]
@@ -315,7 +247,6 @@ mode = "plain_request"
             """
 [search]
 engine = "brave"
-brave_api_key = "test_key"
 """,
         ]
 

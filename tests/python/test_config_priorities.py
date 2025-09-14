@@ -58,7 +58,6 @@ proxy = "http://user-proxy:3128"
 [search]
 engine = "google"
 limit = 5
-brave_api_key = "user_brave_key"
 """
 
 
@@ -230,10 +229,6 @@ proxy = "http://config-proxy:8080"
 [search]
 engine = "duckduckgo"
 limit = 5
-brave_api_key = "config_brave_key"
-exa_api_key = "config_exa_key"
-travily_api_key = "config_travily_key"
-autoswitch = "smart"
 """
         config = tarzi.Config.from_str(config_str)
 
@@ -261,40 +256,6 @@ autoswitch = "smart"
                     os.environ[var] = value
                 elif var in os.environ:
                     del os.environ[var]
-
-    def test_api_key_configuration_priority(self):
-        """Test that API key configuration works with different priority sources."""
-        # Config with multiple API keys
-        config_str = """
-[search]
-engine = "brave"
-brave_api_key = "config_brave_key"
-exa_api_key = "config_exa_key"
-travily_api_key = "config_travily_key"
-autoswitch = "smart"
-"""
-        config = tarzi.Config.from_str(config_str)
-
-        # Verify components can be created with API keys
-        search_engine = tarzi.SearchEngine.from_config(config)
-        assert isinstance(search_engine, tarzi.SearchEngine)
-
-    def test_search_engine_switching_priority(self):
-        """Test search engine switching with different configuration priorities."""
-        # Test autoswitch configuration
-        config_str = """
-[search]
-engine = "brave"
-autoswitch = "smart"
-brave_api_key = "brave_key_123"
-exa_api_key = "exa_key_789"
-limit = 10
-"""
-        config = tarzi.Config.from_str(config_str)
-
-        # Verify search engine can be created with switching configuration
-        search_engine = tarzi.SearchEngine.from_config(config)
-        assert isinstance(search_engine, tarzi.SearchEngine)
 
     def test_web_driver_configuration_priority(self):
         """Test web driver configuration with different priority sources."""
@@ -385,11 +346,6 @@ engine = "duckduckgo"
             """
 [search]
 engine = "invalid-engine"
-""",
-            # Invalid autoswitch value (no longer supported)
-            """
-[search]
-engine = "brave"
 """,
         ]
 

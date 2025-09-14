@@ -1,5 +1,5 @@
-use crate::Result;
 use crate::search::types::{SearchEngineType, SearchResult};
+use crate::Result;
 use serde_json::Value;
 
 /// Base trait for all search result parsers
