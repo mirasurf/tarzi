@@ -6,7 +6,7 @@ This submodule provides a flexible and extensible system for parsing search resu
 
 ### Core Components
 
-1. **`SearchResultParser` trait** - Defines the interface for all parsers
+1. **`BaseParser` trait** - Defines the interface for all parsers
 2. **`ParserFactory`** - Factory pattern for creating and managing parsers
 3. **Built-in parsers** - Pre-implemented parsers for popular search engines
 4. **Custom parser system** - Extensible system for user-defined parsers
@@ -55,11 +55,11 @@ let results = parser.parse(html_content, 10)?;
 ### Registering Custom Parsers
 
 ```rust
-use tarzi::search::{SearchEngine, SearchResultParser};
+use tarzi::search::{SearchEngine, BaseParser};
 
 // Implement your own parser
 struct MyCustomParser;
-impl SearchResultParser for MyCustomParser {
+impl BaseParser for MyCustomParser {
     // Implementation details...
 }
 
@@ -119,7 +119,7 @@ cargo test search::parser
 ### Adding New Search Engines
 
 1. Create a new parser file (e.g., `newsearchengine.rs`)
-2. Implement the `SearchResultParser` trait
+2. Implement the `BaseParser` trait
 3. Add the parser to `ParserFactory::get_parser()`
 4. Update `SearchEngineType` enum if needed
 

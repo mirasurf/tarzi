@@ -14,5 +14,5 @@ pub mod types;
 // Re-export main types and functions
 pub use api::AutoSwitchStrategy;
 pub use engine::SearchEngine;
-pub use parser::{ParserFactory, SearchResultParser};
+pub use parser::ParserFactory;
 pub use types::{SearchEngineType, SearchResult};

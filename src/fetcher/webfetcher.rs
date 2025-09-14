@@ -44,14 +44,14 @@ impl WebFetcher {
 
         // Use environment variables for proxy with fallback to config
         let proxy = crate::config::get_proxy_from_env_or_config(&config.fetcher.proxy);
-        if let Some(proxy) = proxy
-            && !proxy.is_empty()
-        {
-            if let Ok(proxy_obj) = reqwest::Proxy::http(&proxy) {
-                client_builder = client_builder.proxy(proxy_obj);
-                info!("Using proxy from environment/config: {}", proxy);
-            } else {
-                warn!("Invalid proxy configuration: {}", proxy);
+        if let Some(proxy) = proxy {
+            if !proxy.is_empty() {
+                if let Ok(proxy_obj) = reqwest::Proxy::http(&proxy) {
+                    client_builder = client_builder.proxy(proxy_obj);
+                    info!("Using proxy from environment/config: {}", proxy);
+                } else {
+                    warn!("Invalid proxy configuration: {}", proxy);
+                }
             }
         }
 

@@ -1,5 +1,4 @@
-use super::SearchResultParser;
-use super::base::{BaseSearchParser, BaseWebParser, WebSearchParser};
+use super::base::{BaseParser, BaseParserImpl};
 use crate::Result;
 use crate::search::types::{SearchEngineType, SearchResult};
 use select::document::Document;
@@ -8,18 +7,18 @@ use std::collections::HashSet;
 
 /// Google web parser (HTML-based)
 pub struct GoogleParser {
-    base: BaseWebParser,
+    base: BaseParserImpl,
 }
 
 impl GoogleParser {
     pub fn new() -> Self {
         Self {
-            base: BaseWebParser::new("GoogleParser".to_string(), SearchEngineType::Google),
+            base: BaseParserImpl::new("GoogleParser".to_string(), SearchEngineType::Google),
         }
     }
 }
 
-impl BaseSearchParser for GoogleParser {
+impl BaseParser for GoogleParser {
     fn name(&self) -> &str {
         self.base.name()
     }
@@ -27,10 +26,8 @@ impl BaseSearchParser for GoogleParser {
     fn engine_type(&self) -> SearchEngineType {
         self.base.engine_type()
     }
-}
 
-impl WebSearchParser for GoogleParser {
-    fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
         let mut seen_urls = HashSet::new();
@@ -200,20 +197,6 @@ impl GoogleParser {
         } else {
             href.to_string()
         }
-    }
-}
-
-impl SearchResultParser for GoogleParser {
-    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        self.parse_html(html, limit)
-    }
-
-    fn name(&self) -> &str {
-        BaseSearchParser::name(self)
-    }
-
-    fn supports(&self, engine_type: &SearchEngineType) -> bool {
-        BaseSearchParser::supports(self, engine_type)
     }
 }
 

@@ -1,7 +1,7 @@
 use std::time::Duration;
 use tarzi::constants::CHROMEDRIVER_DEFAULT_URL;
 use tarzi::search::parser::{
-    BaiduParser, BingParser, BraveParser, DuckDuckGoParser, GoogleParser, SearchResultParser,
+    BaiduParser, BaseParser, BingParser, BraveParser, DuckDuckGoParser, GoogleParser,
 };
 use tarzi::search::types::SearchEngineType;
 use tarzi::utils::is_webdriver_available;
@@ -190,10 +190,11 @@ async fn perform_google_search(query: &str) -> Result<String, Box<dyn std::error
         tokio::time::sleep(Duration::from_millis(2000)).await;
 
         // Try to accept cookies if prompted
-        if let Ok(cookie_button) = driver.find(By::Css("button#L2AGLb")).await
-            && (cookie_button.click().await).is_ok() {
-            println!("Accepted Google cookies");
-            tokio::time::sleep(Duration::from_millis(1000)).await;
+        if let Ok(cookie_button) = driver.find(By::Css("button#L2AGLb")).await {
+            if (cookie_button.click().await).is_ok() {
+                println!("Accepted Google cookies");
+                tokio::time::sleep(Duration::from_millis(1000)).await;
+            }
         }
 
         // Try to find search box with different selectors

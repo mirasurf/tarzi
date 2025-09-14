@@ -143,6 +143,7 @@ pub const SEARCH_ENGINE_BING: &str = "bing";
 pub const SEARCH_ENGINE_GOOGLE: &str = "google";
 pub const SEARCH_ENGINE_BRAVE: &str = "brave";
 pub const SEARCH_ENGINE_BAIDU: &str = "baidu";
+pub const SEARCH_ENGINE_SOUGOU_WEIXIN: &str = "sogou_weixin";
 
 // ============================================================================
 // Search Engine Query Patterns
@@ -154,6 +155,7 @@ pub const BING_QUERY_PATTERN: &str = "https://www.bing.com/search?q={query}";
 pub const GOOGLE_QUERY_PATTERN: &str = "https://www.google.com/search?q={query}";
 pub const BRAVE_QUERY_PATTERN: &str = "https://search.brave.com/search?q={query}";
 pub const BAIDU_QUERY_PATTERN: &str = "https://www.baidu.com/s?wd={query}";
+pub const SOUGOU_WEIXIN_QUERY_PATTERN: &str = "https://weixin.sogou.com/weixin?quey={query}";
 
 // ============================================================================
 // Default Values

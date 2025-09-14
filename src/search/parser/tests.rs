@@ -1,6 +1,5 @@
 use super::{
-    BaiduParser, BingParser, BraveParser, DuckDuckGoParser, GoogleParser, ParserFactory,
-    SearchResultParser,
+    BaiduParser, BaseParser, BingParser, BraveParser, DuckDuckGoParser, GoogleParser, ParserFactory,
 };
 use crate::search::types::SearchEngineType;
 

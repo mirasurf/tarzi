@@ -3,7 +3,7 @@ use crate::search::types::{SearchEngineType, SearchResult};
 use serde_json::Value;
 
 /// Base trait for all search result parsers
-pub trait BaseSearchParser: Send + Sync {
+pub trait BaseParser: Send + Sync {
     /// Get the name of the parser
     fn name(&self) -> &str;
 
@@ -14,45 +14,24 @@ pub trait BaseSearchParser: Send + Sync {
     fn supports(&self, engine_type: &SearchEngineType) -> bool {
         &self.engine_type() == engine_type
     }
-}
 
-/// Base trait for web query parsers (HTML-based)
-pub trait WebSearchParser: BaseSearchParser {
     /// Parse search results from HTML content
-    fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>>;
+    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>>;
 }
 
-/// Base trait for API query parsers (JSON-based)
-pub trait ApiSearchParser: BaseSearchParser {
-    /// Parse search results from JSON content
-    fn parse_json(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>>;
-}
-
-/// Unified parser trait that combines web and API parsing capabilities
-pub trait SearchResultParser: Send + Sync {
-    /// Parse search results from content (HTML or JSON)
-    fn parse(&self, content: &str, limit: usize) -> Result<Vec<SearchResult>>;
-
-    /// Get the name of the parser
-    fn name(&self) -> &str;
-
-    /// Check if this parser can handle the given search engine type
-    fn supports(&self, engine_type: &SearchEngineType) -> bool;
-}
-
-/// Base implementation for web parsers
-pub struct BaseWebParser {
+/// Common base implementation for all parsers
+pub struct BaseParserImpl {
     name: String,
     engine_type: SearchEngineType,
 }
 
-impl BaseWebParser {
+impl BaseParserImpl {
     pub fn new(name: String, engine_type: SearchEngineType) -> Self {
         Self { name, engine_type }
     }
 }
 
-impl BaseSearchParser for BaseWebParser {
+impl BaseParser for BaseParserImpl {
     fn name(&self) -> &str {
         &self.name
     }
@@ -60,27 +39,9 @@ impl BaseSearchParser for BaseWebParser {
     fn engine_type(&self) -> SearchEngineType {
         self.engine_type
     }
-}
 
-/// Base implementation for API parsers
-pub struct BaseApiParser {
-    name: String,
-    engine_type: SearchEngineType,
-}
-
-impl BaseApiParser {
-    pub fn new(name: String, engine_type: SearchEngineType) -> Self {
-        Self { name, engine_type }
-    }
-}
-
-impl BaseSearchParser for BaseApiParser {
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn engine_type(&self) -> SearchEngineType {
-        self.engine_type
+    fn parse(&self, _html: &str, _limit: usize) -> Result<Vec<SearchResult>> {
+        Ok(Vec::new()) // dummy implementation
     }
 }
 

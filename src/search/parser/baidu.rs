@@ -1,36 +1,30 @@
-use super::SearchResultParser;
-use super::base::{
-    ApiSearchParser, BaseApiParser, BaseSearchParser, BaseWebParser, WebSearchParser,
-};
+use super::base::{BaseParser, BaseParserImpl};
 use crate::Result;
 use crate::search::types::{SearchEngineType, SearchResult};
 use select::document::Document;
 use select::predicate::{And, Class, Descendant, Name};
-use serde_json::Value;
 
 pub struct BaiduParser {
-    base: BaseWebParser,
+    base: BaseParserImpl,
 }
 
 impl BaiduParser {
     pub fn new() -> Self {
         Self {
-            base: BaseWebParser::new("BaiduParser".to_string(), SearchEngineType::Baidu),
+            base: BaseParserImpl::new("BaiduParser".to_string(), SearchEngineType::Baidu),
         }
     }
 }
 
-impl BaseSearchParser for BaiduParser {
+impl BaseParser for BaiduParser {
     fn name(&self) -> &str {
         self.base.name()
     }
     fn engine_type(&self) -> SearchEngineType {
         self.base.engine_type()
     }
-}
 
-impl WebSearchParser for BaiduParser {
-    fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
         let result_selector = And(Class("result"), Class("c-container"));
@@ -71,81 +65,7 @@ impl WebSearchParser for BaiduParser {
     }
 }
 
-impl SearchResultParser for BaiduParser {
-    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        self.parse_html(html, limit)
-    }
-    fn name(&self) -> &str {
-        BaseSearchParser::name(self)
-    }
-    fn supports(&self, engine_type: &SearchEngineType) -> bool {
-        BaseSearchParser::supports(self, engine_type)
-    }
-}
-
 impl Default for BaiduParser {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-pub struct BaiduApiParser {
-    base: BaseApiParser,
-}
-
-impl BaiduApiParser {
-    pub fn new() -> Self {
-        Self {
-            base: BaseApiParser::new("BaiduApiParser".to_string(), SearchEngineType::Baidu),
-        }
-    }
-}
-
-impl BaseSearchParser for BaiduApiParser {
-    fn name(&self) -> &str {
-        self.base.name()
-    }
-    fn engine_type(&self) -> SearchEngineType {
-        self.base.engine_type()
-    }
-}
-
-impl ApiSearchParser for BaiduApiParser {
-    fn parse_json(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        let json: Value = serde_json::from_str(json_content)?;
-        let mut results = Vec::new();
-        if let Some(results_array) = json["results"].as_array() {
-            for result in results_array.iter() {
-                // Check if we've reached the limit
-                if results.len() >= limit {
-                    break;
-                }
-
-                results.push(SearchResult {
-                    title: result["title"].as_str().unwrap_or("").to_string(),
-                    url: result["url"].as_str().unwrap_or("").to_string(),
-                    snippet: result["snippet"].as_str().unwrap_or("").to_string(),
-                    rank: results.len() + 1, // Use results.len() + 1 for proper ranking
-                });
-            }
-        }
-        Ok(results)
-    }
-}
-
-impl SearchResultParser for BaiduApiParser {
-    fn parse(&self, json_content: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        self.parse_json(json_content, limit)
-    }
-    fn name(&self) -> &str {
-        BaseSearchParser::name(self)
-    }
-    fn supports(&self, engine_type: &SearchEngineType) -> bool {
-        BaseSearchParser::supports(self, engine_type)
-    }
-}
-
-impl Default for BaiduApiParser {
     fn default() -> Self {
         Self::new()
     }

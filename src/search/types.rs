@@ -1,7 +1,8 @@
 use crate::constants::{
     BAIDU_QUERY_PATTERN, BING_QUERY_PATTERN, BRAVE_QUERY_PATTERN, DUCKDUCKGO_QUERY_PATTERN,
     GOOGLE_QUERY_PATTERN, SEARCH_ENGINE_BAIDU, SEARCH_ENGINE_BING, SEARCH_ENGINE_BRAVE,
-    SEARCH_ENGINE_DUCKDUCKGO, SEARCH_ENGINE_GOOGLE,
+    SEARCH_ENGINE_DUCKDUCKGO, SEARCH_ENGINE_GOOGLE, SEARCH_ENGINE_SOUGOU_WEIXIN,
+    SOUGOU_WEIXIN_QUERY_PATTERN,
 };
 use crate::error::TarziError;
 use serde::{Deserialize, Serialize};
@@ -14,6 +15,7 @@ pub enum SearchEngineType {
     Google,
     BraveSearch,
     Baidu,
+    SougouWeixin,
 }
 
 impl FromStr for SearchEngineType {
@@ -26,6 +28,7 @@ impl FromStr for SearchEngineType {
             SEARCH_ENGINE_GOOGLE => Ok(SearchEngineType::Google),
             SEARCH_ENGINE_BRAVE => Ok(SearchEngineType::BraveSearch),
             SEARCH_ENGINE_BAIDU => Ok(SearchEngineType::Baidu),
+            SEARCH_ENGINE_SOUGOU_WEIXIN => Ok(SearchEngineType::SougouWeixin),
             _ => Err(TarziError::InvalidEngine(s.to_string())),
         }
     }
@@ -39,6 +42,7 @@ impl SearchEngineType {
             SearchEngineType::Google => GOOGLE_QUERY_PATTERN.to_string(),
             SearchEngineType::BraveSearch => BRAVE_QUERY_PATTERN.to_string(),
             SearchEngineType::Baidu => BAIDU_QUERY_PATTERN.to_string(),
+            SearchEngineType::SougouWeixin => SOUGOU_WEIXIN_QUERY_PATTERN.to_string(),
         }
     }
 }
@@ -57,7 +61,7 @@ mod tests {
     use crate::constants::{
         BAIDU_QUERY_PATTERN, BING_QUERY_PATTERN, BRAVE_QUERY_PATTERN, DUCKDUCKGO_QUERY_PATTERN,
         GOOGLE_QUERY_PATTERN, SEARCH_ENGINE_BAIDU, SEARCH_ENGINE_BING, SEARCH_ENGINE_BRAVE,
-        SEARCH_ENGINE_DUCKDUCKGO, SEARCH_ENGINE_GOOGLE,
+        SEARCH_ENGINE_DUCKDUCKGO, SEARCH_ENGINE_GOOGLE, SEARCH_ENGINE_SOUGOU_WEIXIN,
     };
 
     #[test]
@@ -82,6 +86,10 @@ mod tests {
         assert_eq!(
             SearchEngineType::from_str(SEARCH_ENGINE_BAIDU).unwrap(),
             SearchEngineType::Baidu
+        );
+        assert_eq!(
+            SearchEngineType::from_str(SEARCH_ENGINE_SOUGOU_WEIXIN).unwrap(),
+            SearchEngineType::SougouWeixin
         );
 
         // Test invalid engine types
@@ -145,6 +153,10 @@ mod tests {
         assert_eq!(
             SearchEngineType::Baidu.get_query_pattern(),
             BAIDU_QUERY_PATTERN
+        );
+        assert_eq!(
+            SearchEngineType::SougouWeixin.get_query_pattern(),
+            SOUGOU_WEIXIN_QUERY_PATTERN
         );
     }
 

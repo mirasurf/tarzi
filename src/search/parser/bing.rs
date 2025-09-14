@@ -1,32 +1,30 @@
-use super::base::{BaseSearchParser, BaseWebParser, WebSearchParser};
+use super::base::{BaseParser, BaseParserImpl};
 use crate::Result;
 use crate::search::types::{SearchEngineType, SearchResult};
 use select::document::Document;
 use select::predicate::{Class, Descendant, Name};
 
 pub struct BingParser {
-    base: BaseWebParser,
+    base: BaseParserImpl,
 }
 
 impl BingParser {
     pub fn new() -> Self {
         Self {
-            base: BaseWebParser::new("BingParser".to_string(), SearchEngineType::Bing),
+            base: BaseParserImpl::new("BingParser".to_string(), SearchEngineType::Bing),
         }
     }
 }
 
-impl BaseSearchParser for BingParser {
+impl BaseParser for BingParser {
     fn name(&self) -> &str {
         self.base.name()
     }
     fn engine_type(&self) -> SearchEngineType {
         self.base.engine_type()
     }
-}
 
-impl WebSearchParser for BingParser {
-    fn parse_html(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
+    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
         let document = Document::from(html);
         let mut results = Vec::new();
         for node in document.find(Class("b_algo")) {
@@ -66,19 +64,6 @@ impl WebSearchParser for BingParser {
             }
         }
         Ok(results)
-    }
-}
-
-use super::SearchResultParser;
-impl SearchResultParser for BingParser {
-    fn parse(&self, html: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        self.parse_html(html, limit)
-    }
-    fn name(&self) -> &str {
-        BaseSearchParser::name(self)
-    }
-    fn supports(&self, engine_type: &SearchEngineType) -> bool {
-        BaseSearchParser::supports(self, engine_type)
     }
 }
 

@@ -85,6 +85,7 @@ impl_search_provider!(BingSearchProvider, SearchEngineType::Bing);
 impl_search_provider!(DuckDuckGoProvider, SearchEngineType::DuckDuckGo);
 impl_search_provider!(BraveSearchProvider, SearchEngineType::BraveSearch);
 impl_search_provider!(BaiduSearchProvider, SearchEngineType::Baidu);
+impl_search_provider!(SougouWeixinProvider, SearchEngineType::SougouWeixin);
 
 /// Provider variant enum for different search engines
 #[derive(Debug)]
@@ -94,6 +95,7 @@ pub enum ProviderVariant {
     DuckDuckGo(DuckDuckGoProvider),
     BraveSearch(BraveSearchProvider),
     Baidu(BaiduSearchProvider),
+    SougouWeixin(SougouWeixinProvider),
 }
 
 impl ProviderVariant {
@@ -115,6 +117,9 @@ impl ProviderVariant {
             SearchEngineType::Baidu => Ok(ProviderVariant::Baidu(BaiduSearchProvider::new_web(
                 *config.fetcher,
             ))),
+            SearchEngineType::SougouWeixin => Ok(ProviderVariant::SougouWeixin(
+                SougouWeixinProvider::new_web(*config.fetcher),
+            )),
         }
     }
 
@@ -126,6 +131,7 @@ impl ProviderVariant {
             ProviderVariant::DuckDuckGo(_) => SearchEngineType::DuckDuckGo,
             ProviderVariant::BraveSearch(_) => SearchEngineType::BraveSearch,
             ProviderVariant::Baidu(_) => SearchEngineType::Baidu,
+            ProviderVariant::SougouWeixin(_) => SearchEngineType::SougouWeixin,
         }
     }
 }
