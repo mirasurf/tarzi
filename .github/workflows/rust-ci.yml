@@ -38,7 +38,7 @@ jobs:
           ${{ runner.os }}-cargo-
 
     - name: Check code
-      run: make format-check-rust lint-rust
+      run: make format-check lint
 
   test:
     name: Test on ${{ matrix.os }}

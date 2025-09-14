@@ -60,6 +60,51 @@ impl BaseParser for SogouWeixinParser {
             }
 
             let Some(href) = anchor.attr("href") else {
+                // Try common data attributes used by Sogou Weixin when href is javascript:void(0)
+                // or missing
+                let mut candidate: Option<String> = None;
+                for key in [
+                    "data-share",
+                    "data-url",
+                    "data-href",
+                    "data-shareurl",
+                    "data-link",
+                ] {
+                    if let Some(val) = anchor.attr(key) {
+                        if !val.is_empty() {
+                            candidate = Some(val.to_string());
+                            break;
+                        }
+                    }
+                }
+                if candidate.is_none() {
+                    continue;
+                }
+
+                let mut resolved_url = resolve_weixin_url(&candidate.unwrap());
+                resolved_url = normalize_url(&resolved_url);
+                if !is_mp_weixin_url(&resolved_url) {
+                    continue;
+                }
+
+                if resolved_url.is_empty() || seen_urls.contains(&resolved_url) {
+                    continue;
+                }
+
+                let mut title = anchor.text().trim().to_string();
+                if title.is_empty() {
+                    title = anchor.text().trim().to_string();
+                }
+
+                let snippet = String::new();
+
+                seen_urls.insert(resolved_url.clone());
+                results.push(SearchResult {
+                    title,
+                    url: resolved_url,
+                    snippet,
+                    rank: results.len() + 1,
+                });
                 continue;
             };
             if href.is_empty() {
@@ -72,8 +117,10 @@ impl BaseParser for SogouWeixinParser {
             // Normalize common URL forms
             resolved_url = normalize_url(&resolved_url);
 
-            // Only keep results that actually point to mp.weixin.qq.com (strict check)
-            if !is_mp_weixin_url(&resolved_url) {
+            // Accept either direct mp.weixin links or sogou redirect links
+            let is_mp = is_mp_weixin_url(&resolved_url);
+            let is_redirect = is_sogou_weixin_redirect_url(&resolved_url);
+            if !is_mp && !is_redirect {
                 continue;
             }
 
@@ -114,6 +161,9 @@ fn normalize_url(href: &str) -> String {
         href.to_string()
     } else if href.starts_with("//") {
         format!("https:{href}")
+    } else if href.starts_with("/link?") {
+        // Relative sogou redirect
+        format!("https://weixin.sogou.com{href}")
     } else if href.starts_with('/') {
         // If it's a relative link to mp.weixin.qq.com
         if href.contains("mp.weixin.qq.com") {
@@ -136,8 +186,17 @@ fn resolve_weixin_url(href: &str) -> String {
     }
 
     // Try to parse as URL and extract the "url" query parameter used by sogou redirector
-    if href.contains("weixin.sogou.com/link") {
-        if let Ok(parsed) = Url::parse(href) {
+    // Handle both absolute and relative redirectors like:
+    // - https://weixin.sogou.com/link?url=<encoded>
+    // - /link?url=<encoded>
+    if href.contains("weixin.sogou.com/link") || href.starts_with("/link?") {
+        let absolute_href = if href.starts_with("/link?") {
+            format!("https://weixin.sogou.com{}", href)
+        } else {
+            href.to_string()
+        };
+
+        if let Ok(parsed) = Url::parse(&absolute_href) {
             for (k, v) in parsed.query_pairs() {
                 if k == "url" {
                     let inner = v.into_owned();
@@ -152,7 +211,7 @@ fn resolve_weixin_url(href: &str) -> String {
             }
         }
         // Manual fallback extraction if standard parsing fails or encoding is unexpected
-        if let Some(decoded) = extract_url_param(href) {
+        if let Some(decoded) = extract_url_param(&absolute_href) {
             if is_mp_weixin_url(&decoded) {
                 return decoded;
             }
@@ -184,6 +243,16 @@ fn is_mp_weixin_url(url_str: &str) -> bool {
     }
     if let Ok(u) = Url::parse(url_str) {
         return u.host_str() == Some("mp.weixin.qq.com");
+    }
+    false
+}
+
+fn is_sogou_weixin_redirect_url(url_str: &str) -> bool {
+    if url_str.starts_with("/link?") {
+        return true;
+    }
+    if let Ok(u) = Url::parse(url_str) {
+        return u.host_str() == Some("weixin.sogou.com") && u.path().starts_with("/link");
     }
     false
 }

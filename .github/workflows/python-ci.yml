@@ -10,21 +10,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  lint:
-    name: Lint Python Code
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-    uses: astral-sh/setup-uv@v4
-
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-
-    - name: Lint (Makefile)
-      run: make lint-python
-
   test:
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -57,7 +42,7 @@ jobs:
         uv pip install maturin
         uv run maturin develop --release
 
-    - name: Run Python unit tests (Makefile)
+    - name: Run Python unit tests
       run: make test-unit-python
 
   build-wheels:
