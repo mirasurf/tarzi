@@ -55,7 +55,7 @@ jobs:
   build:
     name: Build Release on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    needs: [check, test]
+    needs: [test]
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
