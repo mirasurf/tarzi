@@ -23,16 +23,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ${{ fromJson(format('[{0}]', github.event.inputs.platforms || '["ubuntu-latest", "macos-latest"]')) }}
-        python-version: ${{ fromJson(format('[{0}]', github.event.inputs.python_versions || '["3.10", "3.11", "3.12"]')) }}
-        arch: [amd64, arm64]
+        os: ${{ fromJson(github.event.inputs.platforms || '["ubuntu-latest", "macos-latest"]') }}
+        python-version: ${{ fromJson(github.event.inputs.python_versions || '["3.10", "3.11", "3.12"]') }}
+        arch: [x64, arm64]
+        exclude:
+          # Ubuntu doesn't support arm64 architecture in actions/setup-python
+          - os: ubuntu-latest
+            arch: arm64
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.arch }}
