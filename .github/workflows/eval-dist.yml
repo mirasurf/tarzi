@@ -11,7 +11,7 @@ on:
       platforms:
         description: 'Platforms to test (comma-separated)'
         required: false
-        default: 'ubuntu-latest,macos-latest'
+        default: 'ubuntu-latest,macos-13'
         type: string
 
 env:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: ${{ fromJson(github.event.inputs.platforms || '["ubuntu-latest", "macos-latest"]') }}
+        os: ${{ fromJson(github.event.inputs.platforms || '["ubuntu-latest", "macos-13"]') }}
         python-version: ${{ fromJson(github.event.inputs.python_versions || '["3.10", "3.11", "3.12"]') }}
         arch: [x64, arm64]
         exclude:

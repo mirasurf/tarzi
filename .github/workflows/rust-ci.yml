@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-13]  # Use macos-13 for better compatibility
         python-version: ['3.10']
     steps:
     - uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
     needs: [test]
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-13]  # Use macos-13 for better compatibility
         python-version: ['3.10']
     steps:
     - uses: actions/checkout@v4

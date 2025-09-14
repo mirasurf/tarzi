@@ -13,9 +13,10 @@ jobs:
   test:
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-13]  # Use macos-13 for better compatibility
         python-version: ['3.10']
     steps:
     - uses: actions/checkout@v4
@@ -34,7 +35,28 @@ jobs:
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install openssl pkg-config
+        # Update Homebrew and install dependencies with retry logic
+        echo "🍺 Updating Homebrew..."
+        brew update || (echo "⚠️ Homebrew update failed, continuing..." && true)
+        
+        echo "📦 Installing system dependencies..."
+        for pkg in openssl pkg-config autoconf automake libtool; do
+          echo "Installing $pkg..."
+          brew install $pkg || (echo "⚠️ Failed to install $pkg, retrying..." && brew install $pkg)
+        done
+        
+        # Set up OpenSSL environment variables for macOS
+        OPENSSL_PREFIX=$(brew --prefix openssl)
+        echo "OPENSSL_DIR=$OPENSSL_PREFIX" >> $GITHUB_ENV
+        echo "OPENSSL_LIB_DIR=$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+        echo "OPENSSL_INCLUDE_DIR=$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=$OPENSSL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        
+        # Verify OpenSSL installation
+        echo "✅ OpenSSL installed at: $OPENSSL_PREFIX"
+        echo "✅ OpenSSL version: $(openssl version)"
+        echo "📋 OpenSSL library files:"
+        ls -la "$OPENSSL_PREFIX/lib" | head -5
 
     - name: Set up uv
       uses: astral-sh/setup-uv@v3
@@ -43,11 +65,6 @@ jobs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: stable
-
-    - name: Install build tools on macOS
-      if: runner.os == 'macOS'
-      run: |
-        brew install autoconf automake libtool openssl pkg-config
 
     - name: Cache Rust dependencies
       uses: actions/cache@v4
@@ -62,12 +79,29 @@ jobs:
 
     - name: Install uv environment and maturin
       run: |
+        echo "🔧 Setting up uv environment..."
         uv --version
+        echo "📦 Installing dependencies..."
         uv sync --extra dev || uv sync
+        echo "🔨 Installing maturin..."
         uv pip install maturin
+        echo "✅ Environment setup complete"
+        
+        # Debug information for macOS
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          echo "🍎 macOS Debug Information:"
+          echo "OPENSSL_DIR: $OPENSSL_DIR"
+          echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          pkg-config --cflags --libs openssl || echo "⚠️ pkg-config openssl check failed"
+        fi
         
     - name: Build Python extension (develop)
       run: uv run maturin develop --release
+      env:
+        # Ensure OpenSSL environment variables are available for maturin on macOS
+        OPENSSL_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_DIR || '' }}
+        OPENSSL_LIB_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_LIB_DIR || '' }}
+        OPENSSL_INCLUDE_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_INCLUDE_DIR || '' }}
 
     - name: Run Python unit tests
       run: make test-unit-python
@@ -75,9 +109,10 @@ jobs:
   build-wheels:
     name: Build Python wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-13]  # Use macos-13 for better compatibility
         python-version: ['3.10']
     steps:
     - uses: actions/checkout@v4
@@ -96,7 +131,28 @@ jobs:
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
-        brew install openssl pkg-config
+        # Update Homebrew and install dependencies with retry logic
+        echo "🍺 Updating Homebrew..."
+        brew update || (echo "⚠️ Homebrew update failed, continuing..." && true)
+        
+        echo "📦 Installing system dependencies..."
+        for pkg in openssl pkg-config autoconf automake libtool; do
+          echo "Installing $pkg..."
+          brew install $pkg || (echo "⚠️ Failed to install $pkg, retrying..." && brew install $pkg)
+        done
+        
+        # Set up OpenSSL environment variables for macOS
+        OPENSSL_PREFIX=$(brew --prefix openssl)
+        echo "OPENSSL_DIR=$OPENSSL_PREFIX" >> $GITHUB_ENV
+        echo "OPENSSL_LIB_DIR=$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+        echo "OPENSSL_INCLUDE_DIR=$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=$OPENSSL_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+        
+        # Verify OpenSSL installation
+        echo "✅ OpenSSL installed at: $OPENSSL_PREFIX"
+        echo "✅ OpenSSL version: $(openssl version)"
+        echo "📋 OpenSSL library files:"
+        ls -la "$OPENSSL_PREFIX/lib" | head -5
 
     - name: Set up uv
       uses: astral-sh/setup-uv@v3
@@ -106,28 +162,48 @@ jobs:
       with:
         toolchain: stable
 
-    - name: Install build tools on macOS
-      if: runner.os == 'macOS'
-      run: |
-        brew install autoconf automake libtool openssl pkg-config
-
     - name: Install uv environment and maturin
       run: |
+        echo "🔧 Setting up uv environment..."
         uv --version
+        echo "📦 Installing dependencies..."
         uv sync --extra dev || uv sync
+        echo "🔨 Installing maturin..."
         uv pip install maturin
+        echo "✅ Environment setup complete"
+        
+        # Debug information for macOS
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          echo "🍎 macOS Debug Information:"
+          echo "OPENSSL_DIR: $OPENSSL_DIR"
+          echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          pkg-config --cflags --libs openssl || echo "⚠️ pkg-config openssl check failed"
+        fi
 
     - name: Build wheels
       run: uv run maturin build --release --out dist
+      env:
+        # Ensure OpenSSL environment variables are available for maturin on macOS
+        OPENSSL_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_DIR || '' }}
+        OPENSSL_LIB_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_LIB_DIR || '' }}
+        OPENSSL_INCLUDE_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_INCLUDE_DIR || '' }}
 
     - name: Test wheel installation
       shell: bash
       run: |
         python -m venv test_env
         source test_env/bin/activate
+        pip install --upgrade pip
         wheel_file=$(ls dist/*.whl | head -1)
+        echo "Installing wheel: $wheel_file"
         pip install "$wheel_file"
-        python -c "import tarzi; print('Wheel installed successfully')"
+        python -c "import tarzi; print('✅ Wheel installed successfully')"
+        # Test basic functionality
+        python -c "
+        import tarzi
+        print('✅ Basic import test passed')
+        print(f'✅ tarzi version: {tarzi.__version__}')
+        "
 
     - name: Upload wheels as artifacts
       uses: actions/upload-artifact@v4
@@ -138,13 +214,14 @@ jobs:
   docs:
     name: Build Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.10'
         
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
@@ -177,6 +254,11 @@ jobs:
       shell: bash
       run: |
         uv run maturin develop --release
+      env:
+        # Ensure OpenSSL environment variables are available for maturin on macOS
+        OPENSSL_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_DIR || '' }}
+        OPENSSL_LIB_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_LIB_DIR || '' }}
+        OPENSSL_INCLUDE_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_INCLUDE_DIR || '' }}
 
     - name: Build documentation
       shell: bash
