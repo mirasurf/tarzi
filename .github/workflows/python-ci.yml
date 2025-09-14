@@ -13,23 +13,139 @@ jobs:
   test:
     name: Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-13]  # Use macos-13 for better compatibility
         python-version: ['3.10']
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: astral-sh/setup-uv@v4
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+        
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        # System information
+        echo "🍎 macOS System Information:"
+        echo "Architecture: $(uname -m)"
+        echo "macOS Version: $(sw_vers -productVersion)"
+        echo "Xcode Version: $(xcode-select --version || echo 'Xcode not available')"
+        
+        # Install Xcode command line tools if needed
+        echo "🔧 Ensuring Xcode command line tools..."
+        xcode-select --install || echo "Command line tools already installed"
+        
+        # Update Homebrew and install dependencies with retry logic
+        echo "🍺 Setting up Homebrew..."
+        export HOMEBREW_NO_AUTO_UPDATE=1
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
+        
+        # Install dependencies with better error handling
+        echo "📦 Installing system dependencies..."
+        PACKAGES="openssl@3 pkg-config autoconf automake libtool cmake"
+        for pkg in $PACKAGES; do
+          echo "Installing $pkg..."
+          if ! brew install $pkg; then
+            echo "⚠️ Failed to install $pkg, trying alternative approach..."
+            brew unlink $pkg 2>/dev/null || true
+            if ! brew install $pkg --force-bottle; then
+              if ! brew install $pkg --build-from-source; then
+                echo "❌ Failed to install $pkg with all methods"
+                if [ "$pkg" = "openssl@3" ]; then
+                  echo "Trying to install openssl (default version)..."
+                  brew install openssl || echo "Failed to install default openssl too"
+                fi
+              fi
+            fi
+          fi
+        done
+        
+        # Verify critical dependencies
+        if ! command -v pkg-config &> /dev/null; then
+          echo "❌ pkg-config not found, trying to fix..."
+          brew install pkg-config --force
+        fi
+        
+        # Set up comprehensive environment variables for macOS
+        # Try to find OpenSSL (prefer openssl@3, fallback to openssl)
+        if brew --prefix openssl@3 &>/dev/null; then
+          OPENSSL_PREFIX=$(brew --prefix openssl@3)
+          echo "✅ Using OpenSSL 3.x"
+        elif brew --prefix openssl &>/dev/null; then
+          OPENSSL_PREFIX=$(brew --prefix openssl)
+          echo "✅ Using OpenSSL (default version)"
+        else
+          echo "❌ OpenSSL not found, using system default"
+          OPENSSL_PREFIX="/usr"
+        fi
+        
+        echo "OPENSSL_DIR=$OPENSSL_PREFIX" >> $GITHUB_ENV
+        echo "OPENSSL_LIB_DIR=$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+        echo "OPENSSL_INCLUDE_DIR=$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=$OPENSSL_PREFIX/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
+        
+        # Additional environment variables for better compatibility
+        echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+        echo "RUSTFLAGS=-L $OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+        
+        # Verify installations
+        echo "✅ OpenSSL installed at: $OPENSSL_PREFIX"
+        echo "✅ OpenSSL version: $(openssl version)"
+        echo "✅ pkg-config version: $(pkg-config --version)"
+        echo "📋 OpenSSL library files:"
+        ls -la "$OPENSSL_PREFIX/lib" | grep -E "(libssl|libcrypto)" | head -5
+        
+        # Test pkg-config
+        pkg-config --cflags --libs openssl || echo "⚠️ pkg-config test failed"
+
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v3
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
-
-    - name: Install build tools on macOS
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+        
+    - name: Configure Rust for macOS
       if: runner.os == 'macOS'
       run: |
-        brew install autoconf automake libtool
+        echo "🦀 Configuring Rust for macOS..."
+        echo "Rust version: $(rustc --version)"
+        echo "Cargo version: $(cargo --version)"
+        
+        # Set up Rust environment variables for macOS
+        echo "CARGO_TARGET_DIR=${{ github.workspace }}/target" >> $GITHUB_ENV
+        
+        # Configure cargo for better macOS compatibility
+        mkdir -p ~/.cargo
+        cat > ~/.cargo/config.toml << EOF
+        [target.x86_64-apple-darwin]
+        rustflags = [
+          "-C", "link-arg=-undefined",
+          "-C", "link-arg=dynamic_lookup",
+        ]
+        
+        [target.aarch64-apple-darwin]
+        rustflags = [
+          "-C", "link-arg=-undefined", 
+          "-C", "link-arg=dynamic_lookup",
+        ]
+        EOF
+        
+        echo "✅ Rust configured for macOS"
 
     - name: Cache Rust dependencies
       uses: actions/cache@v4
@@ -42,10 +158,121 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
 
+    - name: Install uv environment and maturin
+      run: |
+        echo "🔧 Setting up uv environment..."
+        uv --version
+        python --version
+        
+        # macOS-specific environment setup
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          echo "🍎 Setting up macOS environment variables..."
+          export CC=clang
+          export CXX=clang++
+          export ARCHFLAGS="-arch $(uname -m)"
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+          echo "ARCHFLAGS=-arch $(uname -m)" >> $GITHUB_ENV
+        fi
+        
+        echo "📦 Installing dependencies..."
+        # Try with extra dev first, fallback to regular sync
+        if ! uv sync --extra dev; then
+          echo "⚠️ uv sync with dev extras failed, trying without extras..."
+          uv sync
+        fi
+        
+        echo "🔨 Installing maturin with specific version..."
+        # Install maturin with specific version for better compatibility
+        uv pip install "maturin>=1.5,<2.0"
+        
+        # Verify maturin installation
+        uv run maturin --version
+        echo "✅ Environment setup complete"
+        
+        # Debug information for macOS
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          echo "🍎 macOS Debug Information:"
+          echo "Architecture: $(uname -m)"
+          echo "CC: $CC"
+          echo "OPENSSL_DIR: $OPENSSL_DIR"
+          echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          echo "RUSTFLAGS: $RUSTFLAGS"
+          echo "Testing OpenSSL with pkg-config:"
+          if pkg-config --cflags --libs openssl; then
+            echo "✅ pkg-config openssl works"
+          else
+            echo "⚠️ pkg-config openssl check failed, trying alternatives..."
+            # Try to find openssl.pc file
+            find /opt/homebrew /usr/local -name "openssl.pc" 2>/dev/null | head -5
+            # Check if we can find OpenSSL libraries manually
+            find /opt/homebrew /usr/local -name "libssl*" 2>/dev/null | head -5
+          fi
+          
+          echo "Testing OpenSSL library linking:"
+          if ls -la "$OPENSSL_LIB_DIR" | grep -E "(libssl|libcrypto)"; then
+            echo "✅ OpenSSL libraries found"
+          else
+            echo "⚠️ OpenSSL libraries not found in expected location, searching..."
+            find /opt/homebrew /usr/local -name "libssl*" -o -name "libcrypto*" 2>/dev/null | head -10
+          fi
+          
+          # Test if we can compile a simple program
+          echo "🧪 Testing basic compilation..."
+          echo '#include <openssl/ssl.h>
+          int main() { SSL_library_init(); return 0; }' > /tmp/test_openssl.c
+          if $CC -I"$OPENSSL_INCLUDE_DIR" -L"$OPENSSL_LIB_DIR" -lssl -lcrypto /tmp/test_openssl.c -o /tmp/test_openssl 2>/dev/null; then
+            echo "✅ OpenSSL compilation test passed"
+          else
+            echo "⚠️ OpenSSL compilation test failed"
+          fi
+          rm -f /tmp/test_openssl.c /tmp/test_openssl
+        fi
+        
     - name: Build Python extension (develop)
       run: |
-        make install-uv-env
-        uv run maturin develop --release
+        echo "🔨 Building Python extension in development mode..."
+        
+        # Set up build environment for macOS
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          echo "🍎 Configuring macOS build environment..."
+          export OPENSSL_ROOT_DIR="$OPENSSL_DIR"
+          export OPENSSL_LIBRARIES="$OPENSSL_LIB_DIR"
+          export OPENSSL_INCLUDE_DIRS="$OPENSSL_INCLUDE_DIR"
+          
+          # Additional flags for macOS
+          export MACOSX_DEPLOYMENT_TARGET="10.12"
+          export CARGO_CFG_TARGET_OS="macos"
+          
+          echo "Environment configured:"
+          echo "  OPENSSL_ROOT_DIR: $OPENSSL_ROOT_DIR"
+          echo "  OPENSSL_LIBRARIES: $OPENSSL_LIBRARIES"
+          echo "  OPENSSL_INCLUDE_DIRS: $OPENSSL_INCLUDE_DIRS"
+        fi
+        
+        # Build with verbose output for debugging
+        if ! uv run maturin develop --release --verbose; then
+          echo "❌ Maturin develop failed, trying with additional flags..."
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            # Try with explicit target
+            uv run maturin develop --release --verbose --target "$(rustc -vV | grep host | cut -d' ' -f2)"
+          else
+            uv run maturin develop --release --verbose
+          fi
+        fi
+        
+        echo "✅ Python extension built successfully"
+      env:
+        # Comprehensive environment variables for maturin
+        OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
+        OPENSSL_LIB_DIR: ${{ env.OPENSSL_LIB_DIR }}
+        OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_INCLUDE_DIR }}
+        PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
+        RUSTFLAGS: ${{ env.RUSTFLAGS }}
+        CPPFLAGS: ${{ env.CPPFLAGS }}
+        LDFLAGS: ${{ env.LDFLAGS }}
+        CC: ${{ env.CC }}
+        CXX: ${{ env.CXX }}
 
     - name: Run Python unit tests
       run: make test-unit-python
@@ -53,38 +280,279 @@ jobs:
   build-wheels:
     name: Build Python wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-13]  # Use macos-13 for better compatibility
         python-version: ['3.10']
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: astral-sh/setup-uv@v4
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+        
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        # System information
+        echo "🍎 macOS System Information:"
+        echo "Architecture: $(uname -m)"
+        echo "macOS Version: $(sw_vers -productVersion)"
+        echo "Xcode Version: $(xcode-select --version || echo 'Xcode not available')"
+        
+        # Install Xcode command line tools if needed
+        echo "🔧 Ensuring Xcode command line tools..."
+        xcode-select --install || echo "Command line tools already installed"
+        
+        # Update Homebrew and install dependencies with retry logic
+        echo "🍺 Setting up Homebrew..."
+        export HOMEBREW_NO_AUTO_UPDATE=1
+        export HOMEBREW_NO_INSTALL_CLEANUP=1
+        
+        # Install dependencies with better error handling
+        echo "📦 Installing system dependencies..."
+        PACKAGES="openssl@3 pkg-config autoconf automake libtool cmake"
+        for pkg in $PACKAGES; do
+          echo "Installing $pkg..."
+          if ! brew install $pkg; then
+            echo "⚠️ Failed to install $pkg, trying alternative approach..."
+            brew unlink $pkg 2>/dev/null || true
+            if ! brew install $pkg --force-bottle; then
+              if ! brew install $pkg --build-from-source; then
+                echo "❌ Failed to install $pkg with all methods"
+                if [ "$pkg" = "openssl@3" ]; then
+                  echo "Trying to install openssl (default version)..."
+                  brew install openssl || echo "Failed to install default openssl too"
+                fi
+              fi
+            fi
+          fi
+        done
+        
+        # Verify critical dependencies
+        if ! command -v pkg-config &> /dev/null; then
+          echo "❌ pkg-config not found, trying to fix..."
+          brew install pkg-config --force
+        fi
+        
+        # Set up comprehensive environment variables for macOS
+        # Try to find OpenSSL (prefer openssl@3, fallback to openssl)
+        if brew --prefix openssl@3 &>/dev/null; then
+          OPENSSL_PREFIX=$(brew --prefix openssl@3)
+          echo "✅ Using OpenSSL 3.x"
+        elif brew --prefix openssl &>/dev/null; then
+          OPENSSL_PREFIX=$(brew --prefix openssl)
+          echo "✅ Using OpenSSL (default version)"
+        else
+          echo "❌ OpenSSL not found, using system default"
+          OPENSSL_PREFIX="/usr"
+        fi
+        
+        echo "OPENSSL_DIR=$OPENSSL_PREFIX" >> $GITHUB_ENV
+        echo "OPENSSL_LIB_DIR=$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+        echo "OPENSSL_INCLUDE_DIR=$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=$OPENSSL_PREFIX/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig" >> $GITHUB_ENV
+        
+        # Additional environment variables for better compatibility
+        echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
+        echo "CPPFLAGS=-I$OPENSSL_PREFIX/include" >> $GITHUB_ENV
+        echo "LDFLAGS=-L$OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+        echo "RUSTFLAGS=-L $OPENSSL_PREFIX/lib" >> $GITHUB_ENV
+        
+        # Verify installations
+        echo "✅ OpenSSL installed at: $OPENSSL_PREFIX"
+        echo "✅ OpenSSL version: $(openssl version)"
+        echo "✅ pkg-config version: $(pkg-config --version)"
+        echo "📋 OpenSSL library files:"
+        ls -la "$OPENSSL_PREFIX/lib" | grep -E "(libssl|libcrypto)" | head -5
+        
+        # Test pkg-config
+        pkg-config --cflags --libs openssl || echo "⚠️ pkg-config test failed"
+
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v3
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
-
-    - name: Install build tools on macOS
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+        
+    - name: Configure Rust for macOS
       if: runner.os == 'macOS'
       run: |
-        brew install autoconf automake libtool
+        echo "🦀 Configuring Rust for macOS..."
+        echo "Rust version: $(rustc --version)"
+        echo "Cargo version: $(cargo --version)"
+        
+        # Set up Rust environment variables for macOS
+        echo "CARGO_TARGET_DIR=${{ github.workspace }}/target" >> $GITHUB_ENV
+        
+        # Configure cargo for better macOS compatibility
+        mkdir -p ~/.cargo
+        cat > ~/.cargo/config.toml << EOF
+        [target.x86_64-apple-darwin]
+        rustflags = [
+          "-C", "link-arg=-undefined",
+          "-C", "link-arg=dynamic_lookup",
+        ]
+        
+        [target.aarch64-apple-darwin]
+        rustflags = [
+          "-C", "link-arg=-undefined", 
+          "-C", "link-arg=dynamic_lookup",
+        ]
+        EOF
+        
+        echo "✅ Rust configured for macOS"
 
-    - name: Install uv environment
-      run: make install-uv-env
+    - name: Install uv environment and maturin
+      run: |
+        echo "🔧 Setting up uv environment..."
+        uv --version
+        python --version
+        
+        # macOS-specific environment setup
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          echo "🍎 Setting up macOS environment variables..."
+          export CC=clang
+          export CXX=clang++
+          export ARCHFLAGS="-arch $(uname -m)"
+          echo "CC=clang" >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+          echo "ARCHFLAGS=-arch $(uname -m)" >> $GITHUB_ENV
+        fi
+        
+        echo "📦 Installing dependencies..."
+        # Try with extra dev first, fallback to regular sync
+        if ! uv sync --extra dev; then
+          echo "⚠️ uv sync with dev extras failed, trying without extras..."
+          uv sync
+        fi
+        
+        echo "🔨 Installing maturin with specific version..."
+        # Install maturin with specific version for better compatibility
+        uv pip install "maturin>=1.5,<2.0"
+        
+        # Verify maturin installation
+        uv run maturin --version
+        echo "✅ Environment setup complete"
+        
+        # Debug information for macOS
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          echo "🍎 macOS Debug Information:"
+          echo "Architecture: $(uname -m)"
+          echo "CC: $CC"
+          echo "OPENSSL_DIR: $OPENSSL_DIR"
+          echo "PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          echo "RUSTFLAGS: $RUSTFLAGS"
+          echo "Testing OpenSSL with pkg-config:"
+          if pkg-config --cflags --libs openssl; then
+            echo "✅ pkg-config openssl works"
+          else
+            echo "⚠️ pkg-config openssl check failed, trying alternatives..."
+            # Try to find openssl.pc file
+            find /opt/homebrew /usr/local -name "openssl.pc" 2>/dev/null | head -5
+            # Check if we can find OpenSSL libraries manually
+            find /opt/homebrew /usr/local -name "libssl*" 2>/dev/null | head -5
+          fi
+          
+          echo "Testing OpenSSL library linking:"
+          if ls -la "$OPENSSL_LIB_DIR" | grep -E "(libssl|libcrypto)"; then
+            echo "✅ OpenSSL libraries found"
+          else
+            echo "⚠️ OpenSSL libraries not found in expected location, searching..."
+            find /opt/homebrew /usr/local -name "libssl*" -o -name "libcrypto*" 2>/dev/null | head -10
+          fi
+          
+          # Test if we can compile a simple program
+          echo "🧪 Testing basic compilation..."
+          echo '#include <openssl/ssl.h>
+          int main() { SSL_library_init(); return 0; }' > /tmp/test_openssl.c
+          if $CC -I"$OPENSSL_INCLUDE_DIR" -L"$OPENSSL_LIB_DIR" -lssl -lcrypto /tmp/test_openssl.c -o /tmp/test_openssl 2>/dev/null; then
+            echo "✅ OpenSSL compilation test passed"
+          else
+            echo "⚠️ OpenSSL compilation test failed"
+          fi
+          rm -f /tmp/test_openssl.c /tmp/test_openssl
+        fi
 
     - name: Build wheels
-      run: uv run maturin build --release --out dist
+      run: |
+        echo "🎡 Building Python wheels..."
+        
+        # Set up build environment for macOS
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          echo "🍎 Configuring macOS wheel build environment..."
+          export OPENSSL_ROOT_DIR="$OPENSSL_DIR"
+          export OPENSSL_LIBRARIES="$OPENSSL_LIB_DIR"
+          export OPENSSL_INCLUDE_DIRS="$OPENSSL_INCLUDE_DIR"
+          export MACOSX_DEPLOYMENT_TARGET="10.12"
+          
+          # Determine target architecture
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "arm64" ]; then
+            TARGET="aarch64-apple-darwin"
+          else
+            TARGET="x86_64-apple-darwin"
+          fi
+          echo "Building for target: $TARGET"
+        fi
+        
+        # Create output directory
+        mkdir -p dist
+        
+        # Build wheels with verbose output
+        echo "🔨 Starting wheel build..."
+        if ! uv run maturin build --release --out dist --verbose; then
+          echo "❌ Wheel build failed, trying with target specification..."
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            uv run maturin build --release --out dist --verbose --target "$TARGET"
+          else
+            echo "Retrying wheel build..."
+            uv run maturin build --release --out dist --verbose
+          fi
+        fi
+        
+        echo "📦 Built wheels:"
+        ls -la dist/
+        echo "✅ Wheel build completed"
+      env:
+        # Comprehensive environment variables for maturin
+        OPENSSL_DIR: ${{ env.OPENSSL_DIR }}
+        OPENSSL_LIB_DIR: ${{ env.OPENSSL_LIB_DIR }}
+        OPENSSL_INCLUDE_DIR: ${{ env.OPENSSL_INCLUDE_DIR }}
+        PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
+        RUSTFLAGS: ${{ env.RUSTFLAGS }}
+        CPPFLAGS: ${{ env.CPPFLAGS }}
+        LDFLAGS: ${{ env.LDFLAGS }}
+        CC: ${{ env.CC }}
+        CXX: ${{ env.CXX }}
 
     - name: Test wheel installation
       shell: bash
       run: |
         python -m venv test_env
         source test_env/bin/activate
+        pip install --upgrade pip
         wheel_file=$(ls dist/*.whl | head -1)
+        echo "Installing wheel: $wheel_file"
         pip install "$wheel_file"
-        python -c "import tarzi; print('Wheel installed successfully')"
+        python -c "import tarzi; print('✅ Wheel installed successfully')"
+        # Test basic functionality
+        python -c "
+        import tarzi
+        print('✅ Basic import test passed')
+        print(f'✅ tarzi version: {tarzi.__version__}')
+        "
 
     - name: Upload wheels as artifacts
       uses: actions/upload-artifact@v4
@@ -95,25 +563,80 @@ jobs:
   docs:
     name: Build Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: astral-sh/setup-uv@v4
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+        
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install openssl pkg-config
+
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v3
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+        
+    - name: Configure Rust for macOS
+      if: runner.os == 'macOS'
+      run: |
+        echo "🦀 Configuring Rust for macOS..."
+        echo "Rust version: $(rustc --version)"
+        echo "Cargo version: $(cargo --version)"
+        
+        # Set up Rust environment variables for macOS
+        echo "CARGO_TARGET_DIR=${{ github.workspace }}/target" >> $GITHUB_ENV
+        
+        # Configure cargo for better macOS compatibility
+        mkdir -p ~/.cargo
+        cat > ~/.cargo/config.toml << EOF
+        [target.x86_64-apple-darwin]
+        rustflags = [
+          "-C", "link-arg=-undefined",
+          "-C", "link-arg=dynamic_lookup",
+        ]
+        
+        [target.aarch64-apple-darwin]
+        rustflags = [
+          "-C", "link-arg=-undefined", 
+          "-C", "link-arg=dynamic_lookup",
+        ]
+        EOF
+        
+        echo "✅ Rust configured for macOS"
 
     - name: Create virtual environment and install dependencies
       shell: bash
       run: |
-        make install-uv-env
+        uv --version
+        uv sync --extra dev || uv sync
+        uv pip install maturin
         uv pip install -r docs/requirements.txt
 
     - name: Build Python extension for docs
       shell: bash
       run: |
         uv run maturin develop --release
+      env:
+        # Ensure OpenSSL environment variables are available for maturin on macOS
+        OPENSSL_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_DIR || '' }}
+        OPENSSL_LIB_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_LIB_DIR || '' }}
+        OPENSSL_INCLUDE_DIR: ${{ runner.os == 'macOS' && env.OPENSSL_INCLUDE_DIR || '' }}
 
     - name: Build documentation
       shell: bash

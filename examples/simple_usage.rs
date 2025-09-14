@@ -1,6 +1,6 @@
 use tarzi::{
-    FetchMode, Format, Result, WebFetcher, config::Config, converter::Converter,
-    search::SearchEngine,
+    config::Config, converter::Converter, search::SearchEngine, FetchMode, Format, Result,
+    WebFetcher,
 };
 
 #[tokio::main]
