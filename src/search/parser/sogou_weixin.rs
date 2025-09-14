@@ -70,11 +70,9 @@ impl BaseParser for SogouWeixinParser {
                     "data-shareurl",
                     "data-link",
                 ] {
-                    if let Some(val) = anchor.attr(key) {
-                        if !val.is_empty() {
-                            candidate = Some(val.to_string());
-                            break;
-                        }
+                    if let Some(val) = anchor.attr(key).filter(|v| !v.is_empty()) {
+                        candidate = Some(val.to_string());
+                        break;
                     }
                 }
                 if candidate.is_none() {
@@ -211,10 +209,8 @@ fn resolve_weixin_url(href: &str) -> String {
             }
         }
         // Manual fallback extraction if standard parsing fails or encoding is unexpected
-        if let Some(decoded) = extract_url_param(&absolute_href) {
-            if is_mp_weixin_url(&decoded) {
-                return decoded;
-            }
+        if let Some(decoded) = extract_url_param(&absolute_href).filter(|u| is_mp_weixin_url(u)) {
+            return decoded;
         }
     }
 

@@ -26,6 +26,11 @@ jobs:
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
 
+    - name: Install build tools on macOS
+      if: runner.os == 'macOS'
+      run: |
+        brew install autoconf automake libtool
+
     - name: Cache Rust dependencies
       uses: actions/cache@v4
       with:
@@ -60,6 +65,11 @@ jobs:
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
+
+    - name: Install build tools on macOS
+      if: runner.os == 'macOS'
+      run: |
+        brew install autoconf automake libtool
 
     - name: Install uv environment
       run: make install-uv-env
