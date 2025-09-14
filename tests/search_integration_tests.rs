@@ -2,9 +2,9 @@ use std::time::{Duration, Instant};
 use tarzi::config::Config;
 use tarzi::converter::Format;
 use tarzi::fetcher::FetchMode;
-use tarzi::search::SearchEngine;
 use tarzi::search::parser::ParserFactory;
 use tarzi::search::types::SearchEngineType;
+use tarzi::search::SearchEngine;
 
 /// Default test timeout for search operations
 const SEARCH_TEST_TIMEOUT: Duration = Duration::from_secs(120);

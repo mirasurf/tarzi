@@ -47,8 +47,15 @@ jobs:
         python-version: ${{ matrix.python-version }}
         architecture: ${{ matrix.arch }}
     
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
     
     - name: Cache Rust dependencies
       uses: actions/cache@v4
@@ -166,8 +173,15 @@ jobs:
       with:
         python-version: '3.10'
     
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
     
     - name: Install maturin
       run: pip install maturin[patchelf]
@@ -230,8 +244,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: stable
     
     - name: Publish to crates.io
       env:

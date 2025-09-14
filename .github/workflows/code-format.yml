@@ -21,12 +21,24 @@ jobs:
       with:
         python-version: '3.10'
         
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libssl-dev pkg-config
+        
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install openssl pkg-config
+
     - name: Set up uv
       uses: astral-sh/setup-uv@v3
 
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
       with:
+        toolchain: stable
         components: rustfmt, clippy
 
     - name: Cache dependencies
