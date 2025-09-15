@@ -67,13 +67,13 @@ impl WebFetcher {
 
     /// Fetch content from URL and convert to specified format
     pub async fn fetch(&mut self, url: &str, mode: FetchMode, format: Format) -> Result<String> {
-        let raw_content = self.fetch_url(url, mode).await?;
+        let raw_content = self.fetch_url_raw(url, mode).await?;
         let converted_content = self.converter.convert(&raw_content, format).await?;
         Ok(converted_content)
     }
 
     /// Get raw content without conversion (for internal use)
-    pub async fn fetch_url(&mut self, url: &str, mode: FetchMode) -> Result<String> {
+    pub async fn fetch_url_raw(&mut self, url: &str, mode: FetchMode) -> Result<String> {
         match mode {
             FetchMode::PlainRequest => self.fetch_plain_request(url).await,
             FetchMode::BrowserHead => self.fetch_with_browser(url, false).await,
@@ -475,8 +475,14 @@ impl Default for WebFetcher {
 impl Drop for WebFetcher {
     fn drop(&mut self) {
         if self.browser_manager.has_browsers() || self.browser_manager.has_managed_driver() {
-            // Avoid starting a runtime in Drop. Ask BrowserManager to synchronously stop driver.
+            // Best-effort cleanup without spawning a runtime. We ensure the managed driver is stopped,
+            // which will terminate associated sessions; then drop any WebDriver handles.
+            tracing::info!(
+                "WebFetcher dropped without explicit shutdown. Stopping managed driver and dropping sessions."
+            );
             self.browser_manager.stop_managed_driver_sync();
+            // Clear browsers to drop WebDriver handles (browser sessions will be terminated by driver shutdown)
+            self.browser_manager.clear_browsers();
         }
     }
 }
@@ -566,7 +572,7 @@ mod tests {
 
         // Test with invalid URL
         let result = fetcher
-            .fetch_url("not-a-valid-url", FetchMode::PlainRequest)
+            .fetch_url_raw("not-a-valid-url", FetchMode::PlainRequest)
             .await;
         assert!(result.is_err());
 
@@ -592,7 +598,7 @@ mod tests {
 
         for invalid_url in invalid_urls {
             let result = fetcher
-                .fetch_url(invalid_url, FetchMode::PlainRequest)
+                .fetch_url_raw(invalid_url, FetchMode::PlainRequest)
                 .await;
             assert!(
                 result.is_err(),

@@ -62,7 +62,7 @@ format = "markdown"
 
     # Ensure clean shutdown of browser and driver resources
     try:
-        search_engine.cleanup()
+        search_engine.shutdown()
     except Exception as e:
         print(f"Warning: Failed to properly cleanup search engine: {e}")
 

@@ -502,6 +502,12 @@ impl BrowserManager {
         }
     }
 
+    /// Clear all browser instances (for Drop paths)
+    /// This should be called after stop_managed_driver_sync() to ensure proper cleanup
+    pub fn clear_browsers(&mut self) {
+        self.browsers.clear();
+    }
+
     /// Check if this browser manager has a managed driver
     pub fn has_managed_driver(&self) -> bool {
         self.managed_driver_info.is_some()
@@ -575,7 +581,7 @@ impl Drop for BrowserManager {
                 "BrowserManager dropped without explicit shutdown. Stopping managed driver and dropping sessions."
             );
             self.stop_managed_driver_sync();
-            self.browsers.clear();
+            self.clear_browsers();
         }
     }
 }

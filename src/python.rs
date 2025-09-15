@@ -468,24 +468,25 @@ impl PySearchEngine {
             })
     }
 
-    /// Clean up resources
+    /// Shutdown browser and driver resources
+    ///
+    /// This method ensures proper cleanup of browser instances and WebDriver processes.
+    /// It should be called when the search engine is no longer needed to free up system resources.
     ///
     /// Returns:
     ///     None
     ///     
     /// Raises:
-    ///     RuntimeError: If cleanup fails
-    fn cleanup(&mut self) -> PyResult<()> {
+    ///     RuntimeError: If shutdown fails
+    fn shutdown(&mut self) -> PyResult<()> {
         let rt = tokio::runtime::Runtime::new().map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
                 "Failed to create async runtime: {e}"
             ))
         })?;
 
-        rt.block_on(async { self.inner.cleanup().await })
-            .map_err(|e| {
-                PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Cleanup failed: {e}"))
-            })
+        rt.block_on(async { self.inner.shutdown().await });
+        Ok(())
     }
 
     fn __repr__(&self) -> String {

@@ -79,10 +79,6 @@ impl SearchEngine {
     }
 
     pub async fn search(&mut self, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
-        self.search_browser(query, limit).await
-    }
-
-    async fn search_browser(&mut self, query: &str, limit: usize) -> Result<Vec<SearchResult>> {
         // Use the query pattern from config to build the search URL
         let search_url = self
             .query_pattern
@@ -109,7 +105,7 @@ impl SearchEngine {
         const RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
 
         for attempt in 1..=MAX_RETRIES {
-            match self.fetcher.fetch_url(url, fetch_mode).await {
+            match self.fetcher.fetch_url_raw(url, fetch_mode).await {
                 Ok(content) => {
                     if attempt > 1 {
                         info!("Successfully fetched content on attempt {}", attempt);
@@ -213,13 +209,12 @@ impl SearchEngine {
         // For browser mode with proxy, we would need to configure the browser with proxy settings
         // This is a simplified implementation.
         // FIXME (xiaming.cxm): to be implemented.
-        self.search_browser(query, limit).await
+        self.search(query, limit).await
     }
 
-    /// Clean up resources
+    /// Backward compatibility
     pub async fn cleanup(&mut self) -> Result<()> {
-        info!("Cleaning up SearchEngine resources");
-        // The fetcher will handle its own cleanup
+        self.fetcher.shutdown().await;
         Ok(())
     }
 
@@ -238,7 +233,6 @@ impl Default for SearchEngine {
 impl Drop for SearchEngine {
     fn drop(&mut self) {
         info!("SearchEngine dropping - cleanup will be handled by WebFetcher");
-        // The fetcher will handle its own cleanup
     }
 }
 

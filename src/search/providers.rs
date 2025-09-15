@@ -60,7 +60,7 @@ macro_rules! impl_search_provider {
 
                 let search_page_content = self
                     .fetcher
-                    .fetch_url(&search_url, crate::fetcher::FetchMode::BrowserHeadless)
+                    .fetch_url_raw(&search_url, crate::fetcher::FetchMode::BrowserHeadless)
                     .await?;
 
                 // Use the parser to extract results
