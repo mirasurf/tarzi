@@ -1,0 +1,45 @@
+name: Build Documentation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Setup uv environment
+      run: |
+        make install-uv-env
+        uv run pip install -r docs/requirements.txt
+
+    - name: Build Python extension for docs
+      run: |
+        uv run maturin develop --release
+
+    - name: Build documentation
+      run: |
+        cd docs
+        uv run make html
+
+    - name: Upload documentation
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: docs/_build/html/

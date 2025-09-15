@@ -37,6 +37,8 @@ dev = [
     "maturin>=1.5,<2.0",
     "pytest>=7.4,<9",
     "pytest-asyncio>=0.21,<0.25",
+    "pytest-cov>=0.6",
+    "pytest-mock>=0.1.0",
     'docopt>=0.6.2',
     'patchelf>=0.17.2.0; sys_platform == "linux"',
     "black>=23.12,<25",

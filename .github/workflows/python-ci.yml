@@ -21,7 +21,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -39,29 +39,25 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
 
-    - name: Install maturin
-      run: pip install maturin[patchelf]
+    - name: Setup uv environment
+      run: make install-uv-env
 
-    - name: Create virtual environment
-      run: python -m venv .venv
+    # - name: Install maturin
+    #   run: pip install maturin[patchelf]
 
-    - name: Install test dependencies
-      shell: bash
-      run: |
-        source .venv/bin/activate
-        pip install --upgrade pip
-        pip install pytest pytest-cov pytest-mock pytest-asyncio
+    # - name: Install test dependencies
+    #   shell: bash
+    #   run: |
+    #     source .venv/bin/activate
+    #     pip install --upgrade pip
+    #     pip install pytest pytest-cov pytest-mock pytest-asyncio
 
     - name: Build Python extension
-      shell: bash
       run: |
-        source .venv/bin/activate
-        maturin develop --release
+        uv run maturin develop --release
 
     - name: Run Python unit tests only
-      shell: bash
       run: |
-        source .venv/bin/activate
         make test-unit-python
       continue-on-error: true
 
@@ -83,65 +79,14 @@ jobs:
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
 
-    - name: Install maturin
-      run: pip install maturin[patchelf]
+    - name: Setup uv environment
+      run: make install-uv-env
 
     - name: Build wheels
-      run: maturin build --release --out dist
+      run: |
+        uv run maturin build --release --out dist
 
     - name: Test wheel installation
-      shell: bash
       run: |
-        python -m venv test_env
-        source test_env/bin/activate
-        wheel_file=$(ls dist/*.whl | head -1)
-        pip install "$wheel_file"
-        python -c "import tarzi; print('Wheel installed successfully')"
-
-    - name: Upload wheels as artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: wheels-${{ matrix.os }}
-        path: dist/
-
-  docs:
-    name: Build Documentation
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-
-    - name: Create virtual environment and install dependencies
-      shell: bash
-      run: |
-        python -m venv .venv
-        source .venv/bin/activate
-        pip install --upgrade pip
-        pip install -r docs/requirements.txt
-        pip install maturin
-
-    - name: Build Python extension for docs
-      shell: bash
-      run: |
-        source .venv/bin/activate
-        maturin develop --release
-
-    - name: Build documentation
-      shell: bash
-      run: |
-        source .venv/bin/activate
-        cd docs
-        make html
-
-    - name: Upload documentation
-      uses: actions/upload-artifact@v4
-      with:
-        name: documentation
-        path: docs/_build/html/
+        uv run pip install "$wheel_file"
+        uv run python -c "import tarzi; print('Wheel installed successfully')"
