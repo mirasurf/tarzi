@@ -28,7 +28,7 @@ jobs:
     - name: Set up uv
       uses: astral-sh/setup-uv@v3
 
-    - name: Setup uv environment
+    - name: Install python dependencies
       run: make install-uv-env
     
     - name: Set up Rust
@@ -82,7 +82,7 @@ jobs:
     - name: Set up uv
       uses: astral-sh/setup-uv@v3
 
-    - name: Setup uv environment
+    - name: Install python dependencies
       run: make install-uv-env
 
     - name: Set up Rust
@@ -94,5 +94,6 @@ jobs:
 
     - name: Test wheel installation
       run: |
+        wheel_file=$(ls dist/*.whl | head -1)
         uv run pip install "$wheel_file"
         uv run python -c "import tarzi; print('Wheel installed successfully')"
