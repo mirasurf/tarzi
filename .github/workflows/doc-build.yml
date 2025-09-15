@@ -24,6 +24,9 @@ jobs:
     - name: Set up Rust
       uses: dtolnay/rust-toolchain@stable
 
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v3
+
     - name: Setup uv environment
       run: |
         make install-uv-env
