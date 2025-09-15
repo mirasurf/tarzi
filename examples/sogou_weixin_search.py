@@ -20,10 +20,10 @@ limit = 10
 [fetcher]
 web_driver = "chromedriver"
 mode = "browser_head"
-timeout = 30
+timeout = 60
 format = "markdown"
 """
-    
+
     try:
         config = tarzi.Config.from_str(config_str)
     except Exception as e:

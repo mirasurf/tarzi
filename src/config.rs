@@ -86,9 +86,8 @@ impl Config {
 
     /// Load configuration with proper precedence order:
     /// 1. CLI parameters (highest priority)
-    /// 2. ~/.tarzi.toml (user config)
-    /// 3. tarzi.toml (project config)
-    /// 4. Default values (lowest priority)
+    /// 2. tarzi.toml (project config)
+    /// 3. Default values (lowest priority)
     pub fn load() -> Result<Self> {
         // Start with default config
         let mut config = Config::new();
@@ -97,12 +96,6 @@ impl Config {
         let project_config = Self::load_dev();
         if let Ok(project_config) = project_config {
             config.merge(&project_config);
-        }
-
-        // Load from user config (~/.tarzi.toml) if it exists (overrides project config)
-        let user_config = Self::load_config_file();
-        if let Ok(user_config) = user_config {
-            config.merge(&user_config);
         }
 
         Ok(config)
@@ -164,62 +157,6 @@ impl Config {
         if let Some(engine) = &cli_params.search_engine {
             self.search.engine = engine.clone();
         }
-    }
-
-    pub fn load_config_file() -> Result<Self> {
-        let config_path = Self::get_config_path()?;
-
-        if config_path.exists() {
-            let content = fs::read_to_string(&config_path)
-                .map_err(|e| TarziError::Config(format!("Failed to read config file: {e}")))?;
-
-            let config: Config = toml::from_str(&content)
-                .map_err(|e| TarziError::Config(format!("Failed to parse config file: {e}")))?;
-
-            Ok(config)
-        } else {
-            // Return default config if file doesn't exist
-            Ok(Config::new())
-        }
-    }
-
-    pub fn load_or_create_config_file() -> Result<Self> {
-        let config_path = Self::get_config_path()?;
-
-        if config_path.exists() {
-            Self::load_config_file()
-        } else {
-            // Create default config file
-            let config = Config::new();
-            config.save_config_file()?;
-            Ok(config)
-        }
-    }
-
-    pub fn save_config_file(&self) -> Result<()> {
-        let config_path = Self::get_config_path()?;
-
-        // Create parent directory if it doesn't exist
-        if let Some(parent) = config_path.parent() {
-            fs::create_dir_all(parent).map_err(|e| {
-                TarziError::Config(format!("Failed to create config directory: {e}"))
-            })?;
-        }
-
-        let content = toml::to_string_pretty(self)
-            .map_err(|e| TarziError::Config(format!("Failed to serialize config: {e}")))?;
-
-        fs::write(&config_path, content)
-            .map_err(|e| TarziError::Config(format!("Failed to write config file: {e}")))?;
-
-        Ok(())
-    }
-
-    fn get_config_path() -> Result<PathBuf> {
-        let home_dir = std::env::var("HOME")
-            .map_err(|_| TarziError::Config("HOME environment variable not set".to_string()))?;
-
-        Ok(PathBuf::from(home_dir).join(".tarzi.toml"))
     }
 
     pub fn get_dev_config_path() -> PathBuf {
@@ -653,7 +590,6 @@ web_driver_url = "http://localhost:9999"
 
         let temp_dir = tempdir().unwrap();
         let project_config_path = temp_dir.path().join("tarzi.toml");
-        let user_config_path = temp_dir.path().join(".tarzi.toml");
 
         // Create project config
         let project_config_str = r#"
@@ -672,51 +608,22 @@ limit = 10
 "#;
         fs::write(&project_config_path, project_config_str).unwrap();
 
-        // Create user config (should override project config)
-        let user_config_str = r#"
-[general]
-log_level = "warn"
-timeout = 45
+        // Test loading the config directly from the file
+        let content = fs::read_to_string(&project_config_path).unwrap();
+        let project_config: Config = toml::from_str(&content).unwrap();
 
-[fetcher]
-mode = "plain_request"
-format = "json"
-timeout = 60
+        // Start with default config and merge project config
+        let mut config = Config::new();
+        config.merge(&project_config);
 
-[search]
-engine = "google"
-limit = 5
-"#;
-        fs::write(&user_config_path, user_config_str).unwrap();
-
-        // Temporarily change HOME to temp_dir for testing
-        let original_home = std::env::var("HOME").ok();
-        unsafe {
-            std::env::set_var("HOME", temp_dir.path().to_str().unwrap());
-        }
-
-        // Test loading with precedence
-        let config = Config::load().unwrap();
-
-        // User config should take precedence over project config
-        assert_eq!(config.general.log_level, "warn"); // from user config
-        assert_eq!(config.general.timeout, 45); // from user config
-        assert_eq!(config.fetcher.mode, FETCHER_MODE_PLAIN_REQUEST); // from user config
-        assert_eq!(config.fetcher.format, FORMAT_JSON); // from user config
-        assert_eq!(config.fetcher.timeout, 60); // from user config
-        assert_eq!(config.search.engine, SEARCH_ENGINE_GOOGLE); // from user config
-        assert_eq!(config.search.limit, 5); // from user config
-
-        // Restore original HOME
-        if let Some(home) = original_home {
-            unsafe {
-                std::env::set_var("HOME", home);
-            }
-        } else {
-            unsafe {
-                std::env::remove_var("HOME");
-            }
-        }
+        // Project config should override defaults
+        assert_eq!(config.general.log_level, "debug"); // from project config
+        assert_eq!(config.general.timeout, 60); // from project config
+        assert_eq!(config.fetcher.mode, FETCHER_MODE_BROWSER_HEADLESS); // from project config
+        assert_eq!(config.fetcher.format, FORMAT_MARKDOWN); // from project config
+        assert_eq!(config.fetcher.timeout, 30); // from project config
+        assert_eq!(config.search.engine, SEARCH_ENGINE_BING); // from project config
+        assert_eq!(config.search.limit, 10); // from project config
     }
 
     #[test]
