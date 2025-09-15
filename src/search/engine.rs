@@ -2,9 +2,9 @@ use super::parser::ParserFactory;
 use super::types::{SearchEngineType, SearchResult};
 use crate::config::Config;
 use crate::{
-    Result,
     error::TarziError,
     fetcher::{FetchMode, WebFetcher},
+    Result,
 };
 use std::str::FromStr;
 

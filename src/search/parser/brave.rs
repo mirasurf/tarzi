@@ -1,6 +1,6 @@
 use super::base::{BaseParser, BaseParserImpl};
-use crate::Result;
 use crate::search::types::{SearchEngineType, SearchResult};
+use crate::Result;
 use select::document::Document;
 use select::predicate::{Class, Name};
 

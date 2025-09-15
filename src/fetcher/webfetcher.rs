@@ -1,9 +1,9 @@
 use crate::{
-    Result,
     config::Config,
     constants::{DEFAULT_TIMEOUT, DEFAULT_USER_AGENT, PAGE_LOAD_WAIT},
     converter::{Converter, Format},
     error::TarziError,
+    Result,
 };
 use reqwest::Client;
 use tracing::{error, info, warn};

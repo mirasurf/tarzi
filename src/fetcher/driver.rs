@@ -5,8 +5,8 @@
 //! status checking, and automatic cleanup.
 
 use crate::{
-    Result, TarziError,
     constants::{CHROMEDRIVER_DEFAULT_PORT, DEFAULT_TIMEOUT_SECS},
+    Result, TarziError,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

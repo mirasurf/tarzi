@@ -870,8 +870,6 @@ proxy = ""
 
 [search]
 engine = "bing"
-api_key = ""
-query_pattern = "https://www.bing.com/search?q={query}"
 "#;
         let config: Config = toml::from_str(config_str).unwrap();
         assert_eq!(config.fetcher.user_agent, "Test Agent");
@@ -906,12 +904,10 @@ query_pattern = "https://www.bing.com/search?q={query}"
         setup_python();
         let result = fetch_url("https://example.com", "invalid", "html");
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("Invalid fetch mode")
-        );
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid fetch mode"));
     }
 
     #[test]
@@ -927,12 +923,10 @@ query_pattern = "https://www.bing.com/search?q={query}"
         setup_python();
         let result = search_with_content("test", 5, "invalid", "html");
         assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("Invalid fetch mode")
-        );
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Invalid fetch mode"));
     }
 
     #[test]
