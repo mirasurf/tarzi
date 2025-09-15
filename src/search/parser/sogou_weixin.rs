@@ -189,7 +189,7 @@ fn resolve_weixin_url(href: &str) -> String {
     // - /link?url=<encoded>
     if href.contains("weixin.sogou.com/link") || href.starts_with("/link?") {
         let absolute_href = if href.starts_with("/link?") {
-            format!("https://weixin.sogou.com{}", href)
+            format!("https://weixin.sogou.com{href}")
         } else {
             href.to_string()
         };
@@ -452,7 +452,7 @@ mod tests {
 
         let encoded = urlencoding::encode("https://mp.weixin.qq.com/s/XYZ");
         let redirected =
-            resolve_weixin_url(&format!("https://weixin.sogou.com/link?url={}", encoded));
+            resolve_weixin_url(&format!("https://weixin.sogou.com/link?url={encoded}"));
         assert_eq!(redirected, "https://mp.weixin.qq.com/s/XYZ");
     }
 }

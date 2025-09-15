@@ -67,7 +67,7 @@ async fn main() -> Result<()> {
             }
         }
         Err(e) => {
-            eprintln!("Search failed: {}", e);
+            eprintln!("Search failed: {e}");
             return Err(e);
         }
     }

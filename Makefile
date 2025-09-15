@@ -93,19 +93,16 @@ format: install-uv-env ## Format code (Rust + Python)
 	@uv run isort $(PYTHON_MODULES) || echo "isort not found, skipping Python import sorting"
 	@uv run black $(PYTHON_MODULES) || echo "black not found, skipping Python formatting"
 
-.PHONY: format-check
-format-check: install-uv-env ## Check code formatting (Rust + Python)
-	$(CARGO) fmt -- --check
-	@uv run black --check $(PYTHON_MODULES) || echo "black not found, skipping Python format check"
-	@uv run isort --check-only $(PYTHON_MODULES) || echo "isort not found, skipping Python import check"
-
 .PHONY: lint
 lint: install-uv-env ## Lint code (Rust + Python)
 	$(CARGO) clippy --all-targets --all-features -- -D warnings
 	@uv run ruff check $(PYTHON_MODULES) || echo "ruff not found, skipping Python linting"
 
 .PHONY: check
-check: format-check lint
+check: install-uv-env lint
+	$(CARGO) fmt -- --check
+	@uv run black --check $(PYTHON_MODULES) || echo "black not found, skipping Python format check"
+	@uv run isort --check-only $(PYTHON_MODULES) || echo "isort not found, skipping Python import check"
 	$(CARGO) check
 
 .PHONY: autofix
@@ -177,31 +174,6 @@ publish-python: ## Publish Python package to PyPI
 	twine check $(PYTHON_PACKAGE)
 	twine upload $(PYTHON_PACKAGE)
 	@echo "$(GREEN)✅ Package published to PyPI$(RESET)"
-
-.PHONY: publish-python-test
-publish-python-test: ## Publish Python package to TestPyPI
-	@if [ -z "$(shell ls -A target/wheels/ 2>/dev/null)" ]; then \
-		echo "$(RED)❌ No wheels found. Run 'make build-python' first.$(RESET)"; \
-		exit 1; \
-	fi
-	twine check $(PYTHON_PACKAGE)
-	twine upload --repository testpypi $(PYTHON_PACKAGE)
-	@echo "$(GREEN)✅ Package published to TestPyPI$(RESET)"
-
-.PHONY: check-publish-prereqs
-check-publish-prereqs: ## Check prerequisites for publishing
-	@command -v twine >/dev/null 2>&1 || (echo "$(RED)❌ twine not found. Install with: pip install twine$(RESET)" && exit 1)
-	@python -c "import twine" 2>/dev/null || (echo "$(RED)❌ twine not available in Python. Install with: pip install twine$(RESET)" && exit 1)
-	@if [ -z "$${TWINE_USERNAME}" ] && [ -z "$${TWINE_PASSWORD}" ] && [ ! -f ~/.pypirc ]; then \
-		echo "$(RED)❌ PyPI credentials not found. Set TWINE_USERNAME/TWINE_PASSWORD or configure ~/.pypirc$(RESET)"; \
-		exit 1; \
-	fi
-
-.PHONY: build-and-publish-python
-build-and-publish-python: check-publish-prereqs build-python publish-python ## Build and publish Python package to PyPI
-
-.PHONY: build-and-publish-python-test
-build-and-publish-python-test: check-publish-prereqs build-python publish-python-test ## Build and publish Python package to TestPyPI
 
 # =============================================================================
 # UTILITY COMMANDS
@@ -280,7 +252,7 @@ dev-release: ## Run in development mode (release build)
 dev-check: check test-unit ## Quick development check (check + unit tests)
 
 .PHONY: full-check
-full-check: format-check lint test build ## Full development check (all check + all tests + build)
+full-check: check test build ## Full development check (all check + all tests + build)
 
 .PHONY: run-examples
 run-examples: run-examples-rust run-examples-python ## Run all examples (Rust + Python)

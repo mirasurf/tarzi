@@ -58,4 +58,4 @@ jobs:
         uv sync --extra dev || uv sync
         
     - name: Check code
-      run: make format-check lint
+      run: make check
