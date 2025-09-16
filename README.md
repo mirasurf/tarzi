@@ -29,6 +29,8 @@
   </a>
 </p>
 
+> **⚠️ Current Limitation**: Currently only search engines without anti-bot protection are workable, such as DuckDuckGo and Brave. We require advanced features to bypass anti-bot measures for other engines like Google and Bing.
+
 ## 🐒 Tarzi
 
 **Tarzi** is a unified search interface designed for **Retrieval-Augmented Generation (RAG)** and **agentic systems** built on large language models. Search is a core functionality in these systems, yet most search engine providers (SEPs) impose API paywalls or strict rate limits. **Tarzi**, empowered by browser automation and web crawling technologies, removes these barriers by supporting token-free queries across multiple search engines. With a single dependency, you can integrate and switch between different SEPs as needed—seamlessly and efficiently.
@@ -48,12 +50,9 @@
 
 ## 🧪 Advanced Features (Under dev.)
 
-- 🖥️ **Custom Browser Controls**: Set screen size, viewport, and locale for realistic behavior  
 - 🕵️‍♂️ **Anti-Bot Evasion**: Use fingerprint spoofing, proxy rotation, and human-like actions to avoid detection  
 - 🧠 **Smarter Queries**: Improve search results with prompt rewriting and intent-aware queries 
 - 🔗 **Workflow Automation**: Chain steps like search, click, form fill, and scraping into automated flows  
-- 🤖 **Agent Integration (MCP)**: Connect with agent frameworks for context-aware, distributed task execution  
-- 📊 **Observability**: Monitor success rate, latency, CAPTCHA frequency, and export logs for analysis
 
 ## Install
 

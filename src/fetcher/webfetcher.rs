@@ -137,30 +137,36 @@ impl WebFetcher {
         tokio::time::sleep(PAGE_LOAD_WAIT).await;
         info!("Wait completed");
 
-        // Get the page content
-        info!("Extracting page content...");
-        let content_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.source()).await;
-
-        let content = match content_result {
-            Ok(Ok(content)) => {
-                info!(
-                    "Successfully extracted page content ({} characters)",
-                    content.len()
+        // Get the page content (prefer dynamic DOM via JS execution, fallback to page source)
+        info!("Extracting page content (dynamic DOM if available)...");
+        let content = match WebFetcher::get_outer_html_from(&browser).await {
+            Ok(html) => html,
+            Err(e) => {
+                warn!(
+                    "Falling back to page source due to error getting dynamic DOM: {}",
+                    e
                 );
-                content
-            }
-            Ok(Err(e)) => {
-                error!("Failed to get page content: {}", e);
-                return Err(TarziError::Browser(format!("Failed to get content: {e}")));
-            }
-            Err(_) => {
-                error!("Timeout while extracting page content (30 seconds)");
-                return Err(TarziError::Browser(
-                    "Timeout while extracting page content".to_string(),
-                ));
+                let content_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.source()).await;
+                match content_result {
+                    Ok(Ok(content)) => content,
+                    Ok(Err(e)) => {
+                        error!("Failed to get page content: {}", e);
+                        return Err(TarziError::Browser(format!("Failed to get content: {e}")));
+                    }
+                    Err(_) => {
+                        error!("Timeout while extracting page content (30 seconds)");
+                        return Err(TarziError::Browser(
+                            "Timeout while extracting page content".to_string(),
+                        ));
+                    }
+                }
             }
         };
 
+        info!(
+            "Successfully extracted page content ({} characters)",
+            content.len()
+        );
         Ok(content)
     }
 
@@ -254,27 +260,31 @@ impl WebFetcher {
                 // Wait for page load
                 tokio::time::sleep(PAGE_LOAD_WAIT).await;
 
-                // Get page content
-                let content_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.source()).await;
-                let content = match content_result {
-                    Ok(Ok(content)) => {
-                        info!(
-                            "Successfully extracted page content with proxy ({} characters)",
-                            content.len()
+                // Get page content (prefer dynamic DOM via JS execution, fallback to page source)
+                let content = match WebFetcher::get_outer_html_from(browser).await {
+                    Ok(html) => html,
+                    Err(e) => {
+                        warn!(
+                            "Falling back to page source (proxy) due to error getting dynamic DOM: {}",
+                            e
                         );
-                        content
-                    }
-                    Ok(Err(e)) => {
-                        error!("Failed to get page content with proxy: {}", e);
-                        return Err(TarziError::Browser(format!(
-                            "Failed to get content with proxy: {e}"
-                        )));
-                    }
-                    Err(_) => {
-                        error!("Timeout while extracting page content with proxy");
-                        return Err(TarziError::Browser(
-                            "Timeout while extracting content with proxy".to_string(),
-                        ));
+                        let content_result =
+                            tokio::time::timeout(DEFAULT_TIMEOUT, browser.source()).await;
+                        match content_result {
+                            Ok(Ok(content)) => content,
+                            Ok(Err(e)) => {
+                                error!("Failed to get page content with proxy: {}", e);
+                                return Err(TarziError::Browser(format!(
+                                    "Failed to get content with proxy: {e}"
+                                )));
+                            }
+                            Err(_) => {
+                                error!("Timeout while extracting page content with proxy");
+                                return Err(TarziError::Browser(
+                                    "Timeout while extracting content with proxy".to_string(),
+                                ));
+                            }
+                        }
                     }
                 };
 
@@ -395,37 +405,38 @@ impl WebFetcher {
         tokio::time::sleep(PAGE_LOAD_WAIT).await;
         info!("Wait completed for browser instance {}", instance_id);
 
-        // Get the page content
+        // Get the page content (prefer dynamic DOM via JS execution, fallback to page source)
         info!(
-            "Extracting page content from browser instance {}...",
+            "Extracting page content from browser instance {} (dynamic DOM if available)...",
             instance_id
         );
-        let content_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.source()).await;
-
-        let content = match content_result {
-            Ok(Ok(content)) => {
-                info!(
-                    "Successfully extracted page content from browser instance {} ({} characters)",
-                    instance_id,
-                    content.len()
-                );
-                content
-            }
-            Ok(Err(e)) => {
-                error!(
-                    "Failed to get page content from browser instance {}: {}",
+        let content = match WebFetcher::get_outer_html_from(browser).await {
+            Ok(html) => html,
+            Err(e) => {
+                warn!(
+                    "Falling back to page source for instance {} due to error getting dynamic DOM: {}",
                     instance_id, e
                 );
-                return Err(TarziError::Browser(format!("Failed to get content: {e}")));
-            }
-            Err(_) => {
-                error!(
-                    "Timeout while extracting page content from browser instance {} (30 seconds)",
-                    instance_id
-                );
-                return Err(TarziError::Browser(
-                    "Timeout while extracting page content".to_string(),
-                ));
+                let content_result = tokio::time::timeout(DEFAULT_TIMEOUT, browser.source()).await;
+                match content_result {
+                    Ok(Ok(content)) => content,
+                    Ok(Err(e)) => {
+                        error!(
+                            "Failed to get page content from browser instance {}: {}",
+                            instance_id, e
+                        );
+                        return Err(TarziError::Browser(format!("Failed to get content: {e}")));
+                    }
+                    Err(_) => {
+                        error!(
+                            "Timeout while extracting page content from browser instance {} (30 seconds)",
+                            instance_id
+                        );
+                        return Err(TarziError::Browser(
+                            "Timeout while extracting page content".to_string(),
+                        ));
+                    }
+                }
             }
         };
 
@@ -463,6 +474,106 @@ impl WebFetcher {
 
     pub async fn shutdown(&mut self) {
         self.browser_manager.shutdown().await;
+    }
+
+    // Attempt to get the fully-hydrated DOM as HTML via JavaScript execution.
+    // Falls back to WebDriver page source on error.
+    async fn get_outer_html_from(browser: &thirtyfour::WebDriver) -> Result<String> {
+        // Ensure document is ready
+        if let Ok(ret) = browser
+            .execute(
+                "return document.readyState;",
+                Vec::<serde_json::Value>::new(),
+            )
+            .await
+        {
+            if let Ok(state) = ret.convert::<String>() {
+                if state != "complete" {
+                    tokio::time::sleep(PAGE_LOAD_WAIT).await;
+                }
+            }
+        }
+
+        // Briefly wait for anchors to populate (dynamic JS apps)
+        let mut attempts = 0u8;
+        while attempts < 30 {
+            if let Ok(ret) = browser
+                .execute(
+                    "return document.querySelectorAll('a[href]').length;",
+                    Vec::<serde_json::Value>::new(),
+                )
+                .await
+            {
+                if let Ok(count) = ret.convert::<i64>() {
+                    if count >= 20 {
+                        break;
+                    }
+                }
+            }
+            attempts += 1;
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        }
+
+        // Try to trigger lazy loading by scrolling
+        for _ in 0..3u8 {
+            let _ = browser
+                .execute(
+                    "window.scrollTo({top: document.body.scrollHeight, behavior: 'instant'});",
+                    Vec::<serde_json::Value>::new(),
+                )
+                .await;
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            let _ = browser
+                .execute(
+                    "window.scrollTo({top: 0, behavior: 'instant'});",
+                    Vec::<serde_json::Value>::new(),
+                )
+                .await;
+            tokio::time::sleep(std::time::Duration::from_millis(800)).await;
+        }
+
+        // If Brave SERP, inject extracted results into a JSON script tag for parsing
+        let _ = browser
+            .execute(
+                r#"(function(){
+                try {
+                    const isBraveHost = location.hostname.endsWith('search.brave.com');
+                    if (!isBraveHost) return 0;
+                    const results = [];
+                    const anchors = Array.from(document.querySelectorAll('a[href]'));
+                    const isExternal = (u) => { try { const x=new URL(u, location.origin); return x.hostname!==location.hostname; } catch(_) { return false; } };
+                    for (const a of anchors) {
+                        const href = a.getAttribute('href');
+                        if (!href || !isExternal(href)) continue;
+                        const title = (a.textContent||'').trim();
+                        if (!title || title.length < 5) continue;
+                        const rect = a.getBoundingClientRect();
+                        if (!rect || rect.width === 0 || rect.height === 0) continue;
+                        results.push({ title, url: a.href, snippet: '' });
+                        if (results.length >= 15) break;
+                    }
+                    let s = document.querySelector('#tarzi-brave-results');
+                    if (!s) { s = document.createElement('script'); s.id='tarzi-brave-results'; s.type='application/json'; document.body.appendChild(s); }
+                    s.textContent = JSON.stringify({ results });
+                    return results.length;
+                } catch(e) { return -1; }
+            })();"#,
+                Vec::<serde_json::Value>::new(),
+            )
+            .await;
+
+        // Return hydrated DOM HTML
+        let ret = browser
+            .execute(
+                "return document.documentElement.outerHTML;",
+                Vec::<serde_json::Value>::new(),
+            )
+            .await
+            .map_err(|e| TarziError::Browser(format!("execute() failed: {e}")))?;
+        let html: String = ret
+            .convert()
+            .map_err(|e| TarziError::Browser(format!("failed to convert script return: {e}")))?;
+        Ok(html)
     }
 }
 

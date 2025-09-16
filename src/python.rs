@@ -222,7 +222,7 @@ impl PyWebFetcher {
             ))
         })?;
 
-        rt.block_on(async { self.inner.fetch_url(url, mode).await })
+        rt.block_on(async { self.inner.fetch_url_raw(url, mode).await })
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
                     "Failed to fetch raw content from '{url}': {e}"

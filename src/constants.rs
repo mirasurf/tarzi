@@ -19,7 +19,7 @@ pub const CHROMEDRIVER_DEFAULT_PORT: u16 = 9515;
 pub const GECKODRIVER_DEFAULT_PORT: u16 = 4444;
 
 /// Default HTTP client user agent
-pub const DEFAULT_USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
+pub const DEFAULT_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 /// Default ChromeDriver
 pub const CHROMEDRIVER: &str = "chromedriver";
@@ -153,7 +153,7 @@ pub const SEARCH_ENGINE_SOUGOU_WEIXIN: &str = "sogou_weixin";
 pub const DUCKDUCKGO_QUERY_PATTERN: &str = "https://duckduckgo.com/?q={query}";
 pub const BING_QUERY_PATTERN: &str = "https://www.bing.com/search?q={query}";
 pub const GOOGLE_QUERY_PATTERN: &str = "https://www.google.com/search?q={query}";
-pub const BRAVE_QUERY_PATTERN: &str = "https://search.brave.com/search?q={query}";
+pub const BRAVE_QUERY_PATTERN: &str = "https://search.brave.com/search?q={query}&source=web";
 pub const BAIDU_QUERY_PATTERN: &str = "https://www.baidu.com/s?wd={query}";
 pub const SOUGOU_WEIXIN_QUERY_PATTERN: &str =
     "https://weixin.sogou.com/weixin?type=2&s_from=input&&ie=utf8&query={query}";
