@@ -35,7 +35,6 @@ jobs:
     - name: Build wheels
       uses: pypa/cibuildwheel@v3.1.4
       env:
-        CIBW_SOME_OPTION: value
         CIBW_BEFORE_ALL: |
           echo "=== Installing OpenSSL dependencies ==="
           if yum > /dev/null 2>&1; then

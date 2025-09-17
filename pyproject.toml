@@ -74,6 +74,9 @@ python-source = "python"
 [tool.cibuildwheel]
 skip = "*-musllinux_*"
 
+[tool.cibuildwheel.macos]
+environment = { MACOSX_DEPLOYMENT_TARGET = "10.14" }
+
 [project.scripts]
 pytarzi = "tarzi.__main__:main"
 

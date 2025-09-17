@@ -29,7 +29,7 @@ jobs:
 
     - name: Install python dependencies
       run: |
-        make install-uv-env
+        make install-dev
         uv run pip install -r docs/requirements.txt
 
     - name: Build Python extension for docs

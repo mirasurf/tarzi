@@ -53,8 +53,8 @@ install: build-rust build-python
 # TEST COMMANDS
 # =============================================================================
 
-.PHONY: install-uv-env
-install-uv-env:
+.PHONY: install-dev
+install-dev:
 	uv sync --extra dev
 
 .PHONY: test
@@ -68,7 +68,7 @@ test-unit-rust: ## Run Rust unit tests only
 	$(CARGO) test --lib --features test-helpers
 
 .PHONY: test-unit-python
-test-unit-python: install-uv-env ## Run Python unit tests only
+test-unit-python: install-dev ## Run Python unit tests only
 	uv run -m pytest -m unit -v
 
 .PHONY: test-integration
@@ -79,7 +79,7 @@ test-integration-rust: ## Run Rust integration tests
 	$(CARGO) test --test '*' --features test-helpers
 
 .PHONY: test-integration-python
-test-integration-python: install-uv-env ## Run Python integration tests only
+test-integration-python: install-dev ## Run Python integration tests only
 	uv run -m pytest -m integration -v
 
 # =============================================================================
@@ -87,26 +87,26 @@ test-integration-python: install-uv-env ## Run Python integration tests only
 # =============================================================================
 
 .PHONY: format
-format: install-uv-env ## Format code (Rust + Python)
+format: install-dev ## Format code (Rust + Python)
 	$(CARGO) fmt
 	@uv run autoflake --in-place --recursive --remove-all-unused-imports --remove-unused-variables $(PYTHON_MODULES) || echo "autoflake not found, skipping Python auto-cleanup"
 	@uv run isort $(PYTHON_MODULES) || echo "isort not found, skipping Python import sorting"
 	@uv run black $(PYTHON_MODULES) || echo "black not found, skipping Python formatting"
 
 .PHONY: lint
-lint: install-uv-env ## Lint code (Rust + Python)
+lint: install-dev ## Lint code (Rust + Python)
 	$(CARGO) clippy --all-targets --all-features -- -D warnings
 	@uv run ruff check $(PYTHON_MODULES) || echo "ruff not found, skipping Python linting"
 
 .PHONY: check
-check: install-uv-env lint
+check: install-dev lint
 	$(CARGO) fmt -- --check
 	@uv run black --check $(PYTHON_MODULES) || echo "black not found, skipping Python format check"
 	@uv run isort --check-only $(PYTHON_MODULES) || echo "isort not found, skipping Python import check"
 	$(CARGO) check
 
 .PHONY: autofix
-autofix: install-uv-env format ## Fix linting issues (Rust + Python)
+autofix: install-dev format ## Fix linting issues (Rust + Python)
 	$(CARGO) clippy --fix --allow-dirty --allow-staged --all-targets --all-features -- -D warnings
 	@uv run ruff check --fix $(PYTHON_MODULES) || echo "ruff not found, skipping Python lint fixes"
 
@@ -268,7 +268,7 @@ run-examples-rust: ## Run all Rust examples
 	@echo "$(GREEN)✅ All Rust examples completed$(RESET)"
 
 .PHONY: run-examples-python
-run-examples-python: install-uv-env ## Run all Python examples
+run-examples-python: install-dev ## Run all Python examples
 	@echo "$(BLUE)Running Python examples...$(RESET)"
 	@for example in examples/basic_usage.py examples/search_engines.py; do \
 		if [ -f "$$example" ]; then \
