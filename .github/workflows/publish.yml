@@ -110,23 +110,13 @@ jobs:
     - name: Install cibuildwheel
       run: uv run python -m pip install cibuildwheel==2.21.2
 
-    - name: Set Python version for cibuildwheel
-      run: |
-        case "${{ matrix.python-version }}" in
-          "3.10") echo "PYTHON_TAG=310" >> $GITHUB_ENV ;;
-          "3.11") echo "PYTHON_TAG=311" >> $GITHUB_ENV ;;
-          "3.12") echo "PYTHON_TAG=312" >> $GITHUB_ENV ;;
-          "3.13") echo "PYTHON_TAG=313" >> $GITHUB_ENV ;;
-        esac
-
     - name: Build wheels
       run: |
         uv run python -m cibuildwheel --output-dir wheelhouse
       env:
-        CIBW_BUILD: cp${PYTHON_TAG}-manylinux_${{ matrix.arch }}
+        CIBW_BUILD: cp${{ matrix.python-version == '3.10' && '310' || matrix.python-version == '3.11' && '311' || matrix.python-version == '3.12' && '312' || matrix.python-version == '3.13' && '313' }}-manylinux_${{ matrix.arch }}
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
         CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
-        CIBW_ARCHS: ${{ matrix.arch }}
         CIBW_ENVIRONMENT: >
           OPENSSL_ROOT_DIR=/usr
           OPENSSL_DIR=/usr
