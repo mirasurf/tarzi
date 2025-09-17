@@ -45,16 +45,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
 
-    # - name: Install maturin
-    #   run: pip install maturin[patchelf]
-
-    # - name: Install test dependencies
-    #   shell: bash
-    #   run: |
-    #     source .venv/bin/activate
-    #     pip install --upgrade pip
-    #     pip install pytest pytest-cov pytest-mock pytest-asyncio
-
     - name: Build Python extension
       run: |
         uv run maturin develop --release

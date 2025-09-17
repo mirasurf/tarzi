@@ -163,7 +163,7 @@ jobs:
           which rustc
         CIBW_BEFORE_BUILD: |
           echo "=== Installing maturin ==="
-          pip install maturin
+          uv run pip install maturin
 
     - name: Upload wheels
       uses: actions/upload-artifact@v4
