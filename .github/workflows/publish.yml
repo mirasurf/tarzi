@@ -43,15 +43,6 @@ jobs:
       uses: pypa/cibuildwheel@v3.1.4
       env:
         CIBW_SOME_OPTION: value
-        CIBW_ENVIRONMENT: >
-          # OPENSSL_ROOT_DIR=/usr
-          # OPENSSL_DIR=/usr
-          # OPENSSL_LIB_DIR=/usr/lib64
-          # OPENSSL_INCLUDE_DIR=/usr/include/openssl
-          # PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
-          #RUSTFLAGS="-C target-feature=-crt-static"
-          # PATH=/root/.cargo/bin:$PATH
-          # CARGO_HOME=/root/.cargo
         CIBW_BEFORE_ALL: |
           echo "=== Installing OpenSSL dependencies ==="
           if yum > /dev/null 2>&1; then
