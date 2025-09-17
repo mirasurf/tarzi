@@ -1,9 +1,9 @@
 use crate::{
+    Result,
     config::Config,
     constants::{DEFAULT_TIMEOUT, DEFAULT_USER_AGENT, PAGE_LOAD_WAIT},
     converter::{Converter, Format},
     error::TarziError,
-    Result,
 };
 use reqwest::Client;
 use tracing::{error, info, warn};
@@ -67,13 +67,13 @@ impl WebFetcher {
 
     /// Fetch content from URL and convert to specified format
     pub async fn fetch(&mut self, url: &str, mode: FetchMode, format: Format) -> Result<String> {
-        let raw_content = self.fetch_url_raw(url, mode).await?;
+        let raw_content = self.fetch_raw(url, mode).await?;
         let converted_content = self.converter.convert(&raw_content, format).await?;
         Ok(converted_content)
     }
 
     /// Get raw content without conversion (for internal use)
-    pub async fn fetch_url_raw(&mut self, url: &str, mode: FetchMode) -> Result<String> {
+    pub async fn fetch_raw(&mut self, url: &str, mode: FetchMode) -> Result<String> {
         match mode {
             FetchMode::PlainRequest => self.fetch_plain_request(url).await,
             FetchMode::BrowserHead => self.fetch_with_browser(url, false).await,
@@ -139,7 +139,7 @@ impl WebFetcher {
 
         // Get the page content (prefer dynamic DOM via JS execution, fallback to page source)
         info!("Extracting page content (dynamic DOM if available)...");
-        let content = match WebFetcher::get_outer_html_from(&browser).await {
+        let content = match WebFetcher::get_outer_html_from(browser).await {
             Ok(html) => html,
             Err(e) => {
                 warn!(
@@ -683,7 +683,7 @@ mod tests {
 
         // Test with invalid URL
         let result = fetcher
-            .fetch_url_raw("not-a-valid-url", FetchMode::PlainRequest)
+            .fetch_raw("not-a-valid-url", FetchMode::PlainRequest)
             .await;
         assert!(result.is_err());
 
@@ -709,7 +709,7 @@ mod tests {
 
         for invalid_url in invalid_urls {
             let result = fetcher
-                .fetch_url_raw(invalid_url, FetchMode::PlainRequest)
+                .fetch_raw(invalid_url, FetchMode::PlainRequest)
                 .await;
             assert!(
                 result.is_err(),

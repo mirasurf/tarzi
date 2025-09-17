@@ -94,7 +94,7 @@ except ImportError as e:
                 raise ValueError("Invalid format: invalid_format")
             return f"<html><body>Mock content from {url}</body></html>"
 
-        def fetch_url(self, url, mode):
+        def fetch(self, url, mode):
             if mode == "invalid_mode":
                 raise ValueError("Invalid fetch mode: invalid_mode")
             return f"Raw mock content from {url}"
@@ -168,7 +168,7 @@ except ImportError as e:
             return f"Mock {format_type} conversion of content"
 
         @staticmethod
-        def fetch_url(url, mode, format_type):
+        def fetch(url, mode, format_type):
             if mode == "invalid_mode":
                 raise ValueError("Invalid fetch mode: invalid_mode")
             if format_type == "invalid_format":

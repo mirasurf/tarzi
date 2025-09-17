@@ -1,8 +1,8 @@
 use std::str::FromStr;
 use tarzi::{
-    config::Config,
-    search::{types::SearchEngineType, SearchEngine},
     Result,
+    config::Config,
+    search::{SearchEngine, types::SearchEngineType},
 };
 
 #[tokio::main]

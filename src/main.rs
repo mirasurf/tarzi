@@ -2,11 +2,11 @@ use clap::{Parser, Subcommand};
 use std::str::FromStr;
 use tarzi::constants::{FORMAT_HTML, FORMAT_JSON, FORMAT_MARKDOWN};
 use tarzi::{
+    Result,
     config::{CliConfigParams, Config},
-    converter::{convert_search_results, Converter, Format},
+    converter::{Converter, Format, convert_search_results},
     fetcher::{FetchMode, WebFetcher},
     search::SearchEngine,
-    Result,
 };
 use tracing::{debug, info};
 

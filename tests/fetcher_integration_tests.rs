@@ -158,7 +158,7 @@ async fn test_fetch_raw_plain_request() {
 
     // Test fetching raw content without conversion
     let result = fetcher
-        .fetch_url_raw("https://httpbin.org/html", FetchMode::PlainRequest)
+        .fetch_raw("https://httpbin.org/html", FetchMode::PlainRequest)
         .await;
 
     assert!(result.is_ok());
@@ -432,7 +432,7 @@ async fn test_fetch_raw_browser() {
 
     // Test fetching raw content with browser
     let result = fetcher
-        .fetch_url_raw("https://httpbin.org/html", FetchMode::BrowserHeadless)
+        .fetch_raw("https://httpbin.org/html", FetchMode::BrowserHeadless)
         .await;
 
     // This might fail in CI environments without proper browser setup

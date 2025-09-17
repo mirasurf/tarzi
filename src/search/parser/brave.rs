@@ -1,6 +1,6 @@
 use super::base::{BaseParser, BaseParserImpl};
-use crate::search::types::{SearchEngineType, SearchResult};
 use crate::Result;
+use crate::search::types::{SearchEngineType, SearchResult};
 use regex;
 use select::document::Document;
 use select::predicate::{Class, Name};
@@ -144,9 +144,7 @@ impl BraveParser {
                     if let Ok(v) = serde_json::from_str::<serde_json::Value>(payload) {
                         if let Some(arr) = v.get("results").and_then(|x| x.as_array()) {
                             let filtered: Vec<_> = arr
-                                .iter()
-                                .cloned()
-                                .filter(|r| r.get("title").is_some() && r.get("url").is_some())
+                                .iter().filter(|&r| r.get("title").is_some() && r.get("url").is_some()).cloned()
                                 .collect();
                             if !filtered.is_empty() {
                                 return Some(filtered);
@@ -263,13 +261,8 @@ impl BraveParser {
     }
 
     fn find_array_start(&self, html: &str, from_pos: usize) -> Option<usize> {
-        let search_range = if from_pos > 1000 { from_pos - 1000 } else { 0 };
-        for i in (search_range..from_pos).rev() {
-            if html.chars().nth(i) == Some('[') {
-                return Some(i);
-            }
-        }
-        None
+        let search_range = from_pos.saturating_sub(1000);
+        (search_range..from_pos).rev().find(|&i| html.chars().nth(i) == Some('['))
     }
 
     fn parse_json_result(&self, json_result: &serde_json::Value) -> Option<SearchResult> {

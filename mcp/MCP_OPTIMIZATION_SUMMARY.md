@@ -19,7 +19,7 @@ The MCP (Model Context Protocol) implementation for Tarzi has been optimized to 
 
 **Changes Made:**
 - Removed import of `browser_config` module
-- Removed browser availability checks in `fetch_url()` and `search_and_fetch()` tools
+- Removed browser availability checks in `fetch()` and `search_and_fetch()` tools
 - Removed `get_browser_status()` resource function (removed `tarzi://browser` resource)
 - Removed browser status from `get_config()` and `get_status()` resources
 - Removed `--test-browser` command line argument
@@ -38,7 +38,7 @@ if mode == "browser":
 **After:**
 ```python
 # Fetch content using tarzi (tarzi handles browser automation dynamically)
-content = tarzi.fetch_url(url, mode, format)
+content = tarzi.fetch(url, mode, format)
 ```
 
 ### 3. Updated Test Files
@@ -102,7 +102,7 @@ content = tarzi.fetch_url(url, mode, format)
 ### For Existing Users
 
 **No Breaking Changes for Core Functionality:**
-- All MCP tools (`search_web`, `fetch_url`, `convert_html`, `search_and_fetch`) continue to work unchanged
+- All MCP tools (`search_web`, `fetch`, `convert_html`, `search_and_fetch`) continue to work unchanged
 - Browser mode still available with `mode: "browser"` parameter
 - Docker deployment remains the same
 

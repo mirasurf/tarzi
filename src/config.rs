@@ -2,7 +2,7 @@ use crate::constants::{
     DEFAULT_QUERY_PATTERN, DEFAULT_SEARCH_LIMIT, DEFAULT_TIMEOUT_SECS,
     FETCHER_MODE_BROWSER_HEADLESS, FORMAT_MARKDOWN, LOG_LEVEL_INFO, SEARCH_ENGINE_BING,
 };
-use crate::{error::TarziError, Result};
+use crate::{Result, error::TarziError};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;

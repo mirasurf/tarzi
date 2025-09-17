@@ -8,7 +8,7 @@ The Tarzi MCP Server provides the following tools and resources:
 
 ### Tools
 - **search_web**: Search the web using various search engines
-- **fetch_url**: Fetch content from web URLs with different formats (supports both HTTP and browser automation)
+- **fetch**: Fetch content from web URLs with different formats (supports both HTTP and browser automation)
 - **convert_html**: Convert HTML content to markdown, JSON, or YAML
 - **search_and_fetch**: Combined search and content fetching
 
@@ -129,7 +129,7 @@ Search the web using Tarzi search engines.
 }
 ```
 
-### fetch_url
+### fetch
 
 Fetch content from a web URL with optional browser automation.
 
@@ -292,7 +292,7 @@ docker build -t tarzi-mcp-server .
    ```
 
 2. **JavaScript not executing**:
-   - Ensure you're using `mode: "browser_headless"` or `mode: "browser_headed"` in fetch_url
+   - Ensure you're using `mode: "browser_headless"` or `mode: "browser_headed"` in fetch
    - Browser configuration is handled automatically by tarzi
 
 3. **Memory issues**:

@@ -1,4 +1,4 @@
-use crate::{config::Config, error::TarziError, Result};
+use crate::{Result, config::Config, error::TarziError};
 use pulldown_cmark::{Event, HeadingLevel, Parser as MarkdownParser, Tag};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;

@@ -1,7 +1,7 @@
 use super::types::{SearchEngineType, SearchResult};
+use crate::Result;
 use crate::fetcher::WebFetcher;
 use crate::search::parser::ParserFactory;
-use crate::Result;
 use async_trait::async_trait;
 
 /// Provider configuration for web search only
@@ -60,7 +60,7 @@ macro_rules! impl_search_provider {
 
                 let search_page_content = self
                     .fetcher
-                    .fetch_url_raw(&search_url, crate::fetcher::FetchMode::BrowserHeadless)
+                    .fetch_raw(&search_url, crate::fetcher::FetchMode::BrowserHeadless)
                     .await?;
 
                 // Use the parser to extract results

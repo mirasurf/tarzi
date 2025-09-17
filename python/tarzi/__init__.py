@@ -9,7 +9,7 @@ from .tarzi import (
     SearchResult,
     WebFetcher,
     convert_html,
-    fetch_url,
+    fetch,
     search_web,
     search_with_content,
 )
@@ -47,7 +47,7 @@ __all__ = [
     "SearchEngine",
     "SearchResult",
     "convert_html",
-    "fetch_url",
+    "fetch",
     "search_web",
     "search_with_content",
     "TarziFetcher",

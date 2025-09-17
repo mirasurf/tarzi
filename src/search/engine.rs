@@ -2,9 +2,9 @@ use super::parser::ParserFactory;
 use super::types::{SearchEngineType, SearchResult};
 use crate::config::Config;
 use crate::{
+    Result,
     error::TarziError,
     fetcher::{FetchMode, WebFetcher},
-    Result,
 };
 use std::str::FromStr;
 
@@ -105,7 +105,7 @@ impl SearchEngine {
         const RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
 
         for attempt in 1..=MAX_RETRIES {
-            match self.fetcher.fetch_url_raw(url, fetch_mode).await {
+            match self.fetcher.fetch_raw(url, fetch_mode).await {
                 Ok(content) => {
                     if attempt > 1 {
                         info!("Successfully fetched content on attempt {}", attempt);

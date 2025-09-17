@@ -94,7 +94,7 @@ def main():
 
     # Test invalid format
     try:
-        content = tarzi.fetch_url("https://example.com", "plain_request", "invalid_format")
+        content = tarzi.fetch("https://example.com", "plain_request", "invalid_format")
         print("Unexpected: fetch with invalid format succeeded")
     except Exception as e:
         print(f"Expected error for invalid format: {e}")

@@ -166,7 +166,7 @@ Add to `claude_desktop_config.json`:
 - **Browser**: Uses browser automation for webquery mode
 - **Returns**: Structured search results
 
-### 2. fetch_url ⭐ **Enhanced with Browser Automation**
+### 2. fetch ⭐ **Enhanced with Browser Automation**
 - **Purpose**: Fetch content from web URLs
 - **Parameters**: url, format, mode (plain_request/**browser**)
 - **Browser Features**:
@@ -292,7 +292,7 @@ docker logs container_name 2>&1 | grep "🚀\|🦊\|🔧\|✅\|❌"
    ```
 
 4. **"JavaScript not executing":**
-   - Ensure using `mode: "browser"` in fetch_url
+   - Ensure using `mode: "browser"` in fetch
    - Check browser timeout settings
    - Verify Firefox profile configuration
 

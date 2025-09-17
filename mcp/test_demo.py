@@ -26,7 +26,7 @@ class MockTarzi:
         ]
     
     @staticmethod
-    def fetch_url(url: str, mode: str, format: str) -> str:
+    def fetch(url: str, mode: str, format: str) -> str:
         """Mock fetch function for demo."""
         if format == "markdown":
             return f"# Mock Content\n\nThis is mock content from {url}"
@@ -79,10 +79,10 @@ def demo_search_web(query: str, limit: int = 10) -> List[SearchResult]:
         raise ValueError(f"Demo search failed: {str(e)}")
 
 @mcp.tool()
-def demo_fetch_url(url: str, format: str = "html") -> str:
+def demo_fetch(url: str, format: str = "html") -> str:
     """Demo fetch URL tool."""
     try:
-        content = MockTarzi.fetch_url(url, "plain_request", format)
+        content = MockTarzi.fetch(url, "plain_request", format)
         logger.info(f"Demo fetch completed: {url} in {format} format")
         return content
     except Exception as e:
@@ -116,7 +116,7 @@ def demo_config() -> str:
     """Demo config resource."""
     return """Demo Tarzi Configuration:
 - Mode: Demo/Mock
-- Available tools: demo_search_web, demo_fetch_url, demo_convert_html
+- Available tools: demo_search_web, demo_fetch, demo_convert_html
 - Transport: streamable-http
 - This demonstrates the MCP server structure
 """
@@ -135,7 +135,7 @@ async def main():
         print(f"  - {result.title} ({result.url})")
     
     # Test fetch
-    fetch_result = demo_fetch_url("https://example.com", "markdown")
+    fetch_result = demo_fetch("https://example.com", "markdown")
     print(f"Fetch result: {fetch_result[:50]}...")
     
     # Test convert

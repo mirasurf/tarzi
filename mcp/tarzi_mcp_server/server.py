@@ -83,7 +83,7 @@ def search_web(
 
 
 @mcp.tool()
-def fetch_url(
+def fetch(
     url: str, 
     format: str = "html", 
     mode: str = "plain_request"
@@ -109,7 +109,7 @@ def fetch_url(
             raise ValueError("Mode must be 'plain_request', 'browser_headless', or 'browser_headed'")
             
         # Fetch content using tarzi
-        content = tarzi.fetch_url(url, mode, format)
+        content = tarzi.fetch(url, mode, format)
         
         logger.info(f"URL fetched successfully: {url} in {format} format using {mode} mode")
         return FetchResult(content=content, format=format)

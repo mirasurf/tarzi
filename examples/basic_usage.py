@@ -34,7 +34,7 @@ def main():
     print("3. Fetching web page with different modes:")
     try:
         # Plain request mode
-        content = tarzi.fetch_url("https://httpbin.org/html", "plain_request", "html")
+        content = tarzi.fetch("https://httpbin.org/html", "plain_request", "html")
         print(f"Plain request mode - Successfully fetched page ({len(content)} characters)")
 
         # Convert to markdown
@@ -99,7 +99,7 @@ def main():
         print(f"Plain request - Fetched content length: {len(content)}")
 
         # Raw fetch mode
-        raw_content = fetcher.fetch_url("https://httpbin.org/html", "plain_request")
+        raw_content = fetcher.fetch("https://httpbin.org/html", "plain_request")
         print(f"Raw fetch - Content length: {len(raw_content)}")
     except Exception as e:
         print(f"Fetch failed: {e}")

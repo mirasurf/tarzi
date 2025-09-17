@@ -71,7 +71,7 @@ class TarziMCPClient:
             logger.error(f"Search test failed: {e}")
     
     async def test_fetch_tool(self, url: str = "https://httpbin.org/html"):
-        """Test the fetch_url tool."""
+        """Test the fetch tool."""
         try:
             async with streamablehttp_client(self.server_url) as (read_stream, write_stream, _):
                 async with ClientSession(read_stream, write_stream) as session:
@@ -80,7 +80,7 @@ class TarziMCPClient:
                     logger.info(f"Testing fetch with URL: {url}")
                     
                     # Call fetch tool
-                    result = await session.call_tool("fetch_url", {
+                    result = await session.call_tool("fetch", {
                         "url": url,
                         "format": "markdown",
                         "mode": "plain_request"

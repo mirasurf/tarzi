@@ -17,7 +17,7 @@ fn tarzi(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PySearchResult>()?;
     m.add_class::<PyConfig>()?;
     m.add_function(wrap_pyfunction!(convert_html, m)?)?;
-    m.add_function(wrap_pyfunction!(fetch_url, m)?)?;
+    m.add_function(wrap_pyfunction!(fetch, m)?)?;
     m.add_function(wrap_pyfunction!(search_web, m)?)?;
     m.add_function(wrap_pyfunction!(search_with_content, m)?)?;
     Ok(())
@@ -209,7 +209,7 @@ impl PyWebFetcher {
     /// Raises:
     ///     ValueError: If mode is invalid
     ///     RuntimeError: If fetching fails
-    fn fetch_url(&mut self, url: &str, mode: &str) -> PyResult<String> {
+    fn fetch_raw(&mut self, url: &str, mode: &str) -> PyResult<String> {
         let mode = FetchMode::from_str(mode).map_err(|e| {
             PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Invalid fetch mode '{mode}': {e}"
@@ -222,7 +222,7 @@ impl PyWebFetcher {
             ))
         })?;
 
-        rt.block_on(async { self.inner.fetch_url_raw(url, mode).await })
+        rt.block_on(async { self.inner.fetch_raw(url, mode).await })
             .map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!(
                     "Failed to fetch raw content from '{url}': {e}"
@@ -674,7 +674,7 @@ fn convert_html(html: &str, format: &str) -> PyResult<String> {
 ///     ValueError: If mode or format is invalid
 ///     RuntimeError: If fetching fails
 #[pyfunction]
-fn fetch_url(url: &str, mode: &str, format: &str) -> PyResult<String> {
+fn fetch(url: &str, mode: &str, format: &str) -> PyResult<String> {
     let mut fetcher = PyWebFetcher::new();
     fetcher.fetch(url, mode, format)
 }
@@ -901,20 +901,22 @@ engine = "bing"
     }
 
     #[test]
-    fn test_fetch_url_function_invalid_mode() {
+    fn test_fetch_function_invalid_mode() {
         setup_python();
-        let result = fetch_url("https://example.com", "invalid", "html");
+        let result = fetch("https://example.com", "invalid", "html");
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Invalid fetch mode"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Invalid fetch mode")
+        );
     }
 
     #[test]
-    fn test_fetch_url_function_invalid_format() {
+    fn test_fetch_function_invalid_format() {
         setup_python();
-        let result = fetch_url("https://example.com", "plain_request", "invalid");
+        let result = fetch("https://example.com", "plain_request", "invalid");
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Invalid format"));
     }
@@ -924,10 +926,12 @@ engine = "bing"
         setup_python();
         let result = search_with_content("test", 5, "invalid", "html");
         assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("Invalid fetch mode"));
+        assert!(
+            result
+                .unwrap_err()
+                .to_string()
+                .contains("Invalid fetch mode")
+        );
     }
 
     #[test]

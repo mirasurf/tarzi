@@ -52,10 +52,10 @@ class TestWebFetcher:
             pytest.skip(f"Network request failed: {e}")
 
     @pytest.mark.network
-    def test_fetch_url(self, fetcher, test_url):
+    def test_fetch(self, fetcher, test_url):
         """Test raw fetching."""
         try:
-            result = fetcher.fetch_url(test_url, "plain_request")
+            result = fetcher.fetch(test_url, "plain_request")
             assert isinstance(result, str)
             assert len(result) > 0
         except Exception as e:
@@ -80,10 +80,10 @@ class TestWebFetcher:
 
 @pytest.mark.integration
 @pytest.mark.network
-def test_fetch_url_function(test_url):
-    """Test fetch_url standalone function."""
+def test_fetch_function(test_url):
+    """Test fetch standalone function."""
     try:
-        result = tarzi.fetch_url(test_url, "plain_request", "html")
+        result = tarzi.fetch(test_url, "plain_request", "html")
         assert isinstance(result, str)
         assert len(result) > 0
     except Exception as e:
@@ -91,14 +91,14 @@ def test_fetch_url_function(test_url):
 
 
 @pytest.mark.integration
-def test_fetch_url_invalid_mode(test_url):
-    """Test fetch_url with invalid mode."""
+def test_fetch_invalid_mode(test_url):
+    """Test fetch with invalid mode."""
     with pytest.raises(ValueError, match="Invalid fetch mode"):
-        tarzi.fetch_url(test_url, "invalid_mode", "html")
+        tarzi.fetch(test_url, "invalid_mode", "html")
 
 
 @pytest.mark.integration
-def test_fetch_url_invalid_format(test_url):
-    """Test fetch_url with invalid format."""
+def test_fetch_invalid_format(test_url):
+    """Test fetch with invalid format."""
     with pytest.raises(ValueError, match="Invalid format"):
-        tarzi.fetch_url(test_url, "plain_request", "invalid_format")
+        tarzi.fetch(test_url, "plain_request", "invalid_format")
