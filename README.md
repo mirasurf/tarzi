@@ -16,6 +16,9 @@
   <a href="https://github.com/mirasurf/tarzi/actions/workflows/python-ci.yml">
     <img src="https://github.com/mirasurf/tarzi/actions/workflows/python-ci.yml/badge.svg" alt="Python CI" />
   </a>
+  <a href="https://pypi.python.org/pypi/tarzi">
+    <img src="https://img.shields.io/pypi/pyversions/tarzi.svg" alt="PyV" />
+  </a>
 </p>
 <p align="center">
   <!-- License -->

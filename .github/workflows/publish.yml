@@ -113,6 +113,11 @@ jobs:
           apk update
           apk add openssl-dev
           apk add openssl-libs-static
+          export OPENSSL_ROOT_DIR=/usr
+          export OPENSSL_DIR=/usr
+          export OPENSSL_LIB_DIR=/usr/lib
+          export OPENSSL_INCLUDE_DIR=/usr/include/openssl
+          export PKG_CONFIG_PATH=/usr/lib/pkgconfig
           # Install Rust
           echo "=== Installing Rust ==="
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
