@@ -102,15 +102,15 @@ jobs:
         CIBW_ENVIRONMENT: >
           OPENSSL_ROOT_DIR=/usr
           OPENSSL_DIR=/usr
-          OPENSSL_LIB_DIR=/usr/lib64
+          OPENSSL_LIB_DIR=/usr/lib
           OPENSSL_INCLUDE_DIR=/usr/include
-          PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
+          PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/lib/pkgconfig
           RUSTFLAGS="-C target-feature=-crt-static"
           PATH=/root/.cargo/bin:$PATH
           CARGO_HOME=/root/.cargo
         CIBW_BEFORE_ALL: |
           echo "=== Installing OpenSSL dependencies (musllinux) ==="
-          apk update && apk add openssl-dev openssl-libs-static
+          apk update && apk add pkgconf openssl-dev openssl-libs-static
           export OPENSSL_ROOT_DIR=/usr
           export OPENSSL_DIR=/usr
           export OPENSSL_LIB_DIR=/usr/lib
