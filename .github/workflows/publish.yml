@@ -43,8 +43,26 @@ jobs:
       uses: pypa/cibuildwheel@v3.1.4
       env:
         CIBW_SOME_OPTION: value
+        CIBW_ENVIRONMENT: >
+          # OPENSSL_ROOT_DIR=/usr
+          # OPENSSL_DIR=/usr
+          # OPENSSL_LIB_DIR=/usr/lib64
+          # OPENSSL_INCLUDE_DIR=/usr/include/openssl
+          # PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
+          #RUSTFLAGS="-C target-feature=-crt-static"
+          # PATH=/root/.cargo/bin:$PATH
+          # CARGO_HOME=/root/.cargo
         CIBW_BEFORE_ALL: |
-          # Install Rust
+          echo "=== Installing OpenSSL dependencies ==="
+          if yum > /dev/null 2>&1; then
+            yum update -y
+            yum install -y openssl-devel
+            export RUSTFLAGS="-C target-feature=-crt-static"
+            export OPENSSL_DIR=/usr
+            export OPENSSL_LIB_DIR=/usr/lib64
+            export OPENSSL_INCLUDE_DIR=/usr/include/openssl
+            export PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
+          fi
           echo "=== Installing Rust ==="
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
           source $HOME/.cargo/env
@@ -53,8 +71,6 @@ jobs:
           echo "=== Rust Installation Check ==="
           cargo --version
           rustc --version
-          which cargo
-          which rustc
       with:
         package-dir: .
         output-dir: wheelhouse
