@@ -1,6 +1,6 @@
 [package]
 name = "tarzi"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Xiaming Chen <chenxm35@gmail.com>"]
 description = "Rust-native lite search for AI applications"

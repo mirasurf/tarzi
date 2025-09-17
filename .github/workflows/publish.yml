@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         os: [macos-latest]
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
         arch: [x64, arm64]
         include:
           # macOS runners - use macos-13 for x64, macos-latest for arm64
@@ -89,7 +89,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13']
         arch: [x86_64, aarch64]
 
     steps:
@@ -121,6 +121,7 @@ jobs:
           "3.10") echo "PYTHON_TAG=310" >> $GITHUB_ENV ;;
           "3.11") echo "PYTHON_TAG=311" >> $GITHUB_ENV ;;
           "3.12") echo "PYTHON_TAG=312" >> $GITHUB_ENV ;;
+          "3.13") echo "PYTHON_TAG=313" >> $GITHUB_ENV ;;
         esac
 
     - name: Build wheels
