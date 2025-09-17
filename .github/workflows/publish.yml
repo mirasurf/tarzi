@@ -20,70 +20,17 @@ on:
         type: boolean
 
 jobs:
-  build-macos-wheels:
-    name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }}) for Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.runner }}
+  build-wheels:
+    name: Build wheels for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest]
-        python-version: ['3.10', '3.11', '3.12']
-        arch: [x64, arm64]
-        include:
-          # macOS runners - use macos-13 for x64, macos-latest for arm64
-          - os: macos-latest
-            arch: x64
-            runner: macos-13
-          - os: macos-latest
-            arch: arm64
-            runner: macos-latest
+        # macos-13 is an intel runner, macos-14 is apple silicon
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-13, macos-14]
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }} (${{ matrix.arch }})
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.arch }}
-
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v3
-    - name: Install python dependencies
-      run: make install-uv-env
-
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
-    - name: Cache Rust dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ matrix.runner }}-${{ matrix.arch }}-cargo-${{ hashFiles('Cargo.lock') }}
-        restore-keys: |
-          ${{ matrix.runner }}-${{ matrix.arch }}-cargo-
-    
-    - name: Build wheels
-      run: uv run maturin build --release --out dist --interpreter python${{ matrix.python-version }}
-    - name: Upload wheels
-      uses: actions/upload-artifact@v4
-      with:
-        name: wheels-${{ matrix.os }}-${{ matrix.arch }}-py${{ matrix.python-version }}
-        path: dist
-
-  build-linux-wheels:
-    name: Build wheels for Python ${{ matrix.python-version }}-${{ matrix.arch }}
-    runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
-    strategy:
-      matrix:
-        python-version: ['3.10', '3.11', '3.12']
-        arch: [x86_64, aarch64]
-        os: [musllinux]
-    steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Install Python
       uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
 
     - name: Set up uv
       uses: astral-sh/setup-uv@v3
@@ -93,29 +40,10 @@ jobs:
         uv run pip install cibuildwheel==2.21.2
 
     - name: Build wheels
-      run: uv run python -m cibuildwheel --output-dir wheelhouse
+      uses: pypa/cibuildwheel@v3.1.4
       env:
-        CIBW_BUILD: cp${{ matrix.python-version == '3.10' && '310' || matrix.python-version == '3.11' && '311' || '312' }}-*
-        CIBW_ARCHS: ${{ matrix.arch }}
-        CIBW_MUSLLINUX_X86_64_IMAGE: musllinux_1_1
-        CIBW_MUSLLINUX_AARCH64_IMAGE: musllinux_1_1
-        CIBW_ENVIRONMENT: >
-          OPENSSL_ROOT_DIR=/usr
-          OPENSSL_DIR=/usr
-          OPENSSL_LIB_DIR=/usr/lib
-          OPENSSL_INCLUDE_DIR=/usr/include
-          PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/lib/pkgconfig
-          RUSTFLAGS="-C target-feature=-crt-static"
-          PATH=/root/.cargo/bin:$PATH
-          CARGO_HOME=/root/.cargo
+        CIBW_SOME_OPTION: value
         CIBW_BEFORE_ALL: |
-          echo "=== Installing OpenSSL dependencies (musllinux) ==="
-          apk update && apk add pkgconf openssl-dev openssl-libs-static
-          export OPENSSL_ROOT_DIR=/usr
-          export OPENSSL_DIR=/usr
-          export OPENSSL_LIB_DIR=/usr/lib
-          export OPENSSL_INCLUDE_DIR=/usr/include
-          export PKG_CONFIG_PATH=/usr/lib/pkgconfig
           # Install Rust
           echo "=== Installing Rust ==="
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
@@ -127,12 +55,15 @@ jobs:
           rustc --version
           which cargo
           which rustc
-
-    - name: Upload wheels
-      uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.os }}-wheels-${{ matrix.arch }}-py${{ matrix.python-version }}
-        path: wheelhouse/*.whl
+        package-dir: .
+        output-dir: wheelhouse
+        config-file: "{package}/pyproject.toml"
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+        path: ./wheelhouse/*.whl
 
   publish-python:
     name: Publish Python Package
