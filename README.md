@@ -16,9 +16,8 @@
   <a href="https://github.com/mirasurf/tarzi/actions/workflows/python-ci.yml">
     <img src="https://github.com/mirasurf/tarzi/actions/workflows/python-ci.yml/badge.svg" alt="Python CI" />
   </a>
-  <a href="https://tarzirs.readthedocs.io/en/latest/">
-    <img src="https://app.readthedocs.org/projects/tarzirs/badge/?version=latest&style=flat" alt="Docs" />
-  </a>
+</p>
+<p align="center">
   <!-- License -->
   <a href="https://www.apache.org/licenses/LICENSE-2.0">
     <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square" alt="License" />

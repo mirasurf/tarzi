@@ -147,7 +147,6 @@ jobs:
           which cargo
           which rustc
         CIBW_BEFORE_BUILD: |
-          echo "=== Installing maturin ==="
           uv run pip install maturin
 
     - name: Upload wheels
