@@ -20,68 +20,69 @@ on:
         type: boolean
 
 jobs:
-  build-macos-wheels:
-    name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }}) for Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      matrix:
-        os: [macos-latest]
-        python-version: ['3.10', '3.11', '3.12', '3.13']
-        arch: [x64, arm64]
-        include:
-          # macOS runners - use macos-13 for x64, macos-latest for arm64
-          - os: macos-latest
-            arch: x64
-            runner: macos-13
-          - os: macos-latest
-            arch: arm64
-            runner: macos-latest
+  # build-macos-wheels:
+  #   name: Build wheels on ${{ matrix.os }} (${{ matrix.arch }}) for Python ${{ matrix.python-version }}
+  #   runs-on: ${{ matrix.runner }}
+  #   strategy:
+  #     matrix:
+  #       os: [macos-latest]
+  #       python-version: ['3.10', '3.11', '3.12', '3.13']
+  #       arch: [x64, arm64]
+  #       include:
+  #         # macOS runners - use macos-13 for x64, macos-latest for arm64
+  #         - os: macos-latest
+  #           arch: x64
+  #           runner: macos-13
+  #         - os: macos-latest
+  #           arch: arm64
+  #           runner: macos-latest
     
-    steps:
-    - uses: actions/checkout@v4
+  #   steps:
+  #   - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }} (${{ matrix.arch }})
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: ${{ matrix.arch }}
+  #   - name: Set up Python ${{ matrix.python-version }} (${{ matrix.arch }})
+  #     uses: actions/setup-python@v5
+  #     with:
+  #       python-version: ${{ matrix.python-version }}
+  #       architecture: ${{ matrix.arch }}
 
-    - name: Set up uv
-      uses: astral-sh/setup-uv@v3
+  #   - name: Set up uv
+  #     uses: astral-sh/setup-uv@v3
 
-    - name: Install python dependencies
-      run: make install-uv-env
+  #   - name: Install python dependencies
+  #     run: make install-uv-env
 
-    - name: Set up Rust
-      uses: dtolnay/rust-toolchain@stable
+  #   - name: Set up Rust
+  #     uses: dtolnay/rust-toolchain@stable
     
-    - name: Cache Rust dependencies
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ matrix.runner }}-${{ matrix.arch }}-cargo-${{ hashFiles('Cargo.lock') }}
-        restore-keys: |
-          ${{ matrix.runner }}-${{ matrix.arch }}-cargo-
+  #   - name: Cache Rust dependencies
+  #     uses: actions/cache@v4
+  #     with:
+  #       path: |
+  #         ~/.cargo/registry
+  #         ~/.cargo/git
+  #         target
+  #       key: ${{ matrix.runner }}-${{ matrix.arch }}-cargo-${{ hashFiles('Cargo.lock') }}
+  #       restore-keys: |
+  #         ${{ matrix.runner }}-${{ matrix.arch }}-cargo-
     
-    - name: Build wheels
-      run: uv run maturin build --release --out dist --interpreter python${{ matrix.python-version }}
+  #   - name: Build wheels
+  #     run: uv run maturin build --release --out dist --interpreter python${{ matrix.python-version }}
     
-    - name: Upload wheels
-      uses: actions/upload-artifact@v4
-      with:
-        name: wheels-${{ matrix.os }}-${{ matrix.arch }}-py${{ matrix.python-version }}
-        path: dist
+  #   - name: Upload wheels
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: wheels-${{ matrix.os }}-${{ matrix.arch }}-py${{ matrix.python-version }}
+  #       path: dist
 
   build-linux-wheels:
-    name: Build manylinux wheels for Python ${{ matrix.python-version }}-${{ matrix.arch }}
+    name: Build wheels for Python ${{ matrix.python-version }}-${{ matrix.arch }}
     runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.12']
         arch: [x86_64, aarch64]
+        os: [musllinux]
 
     steps:
     - uses: actions/checkout@v4
@@ -105,10 +106,10 @@ jobs:
     - name: Build wheels
       run: uv run python -m cibuildwheel --output-dir wheelhouse
       env:
-        CIBW_BUILD: cp${{ matrix.python-version == '3.10' && '310' || matrix.python-version == '3.11' && '311' || '312' }}-manylinux_${{ matrix.arch }}
-        CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-        CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
+        CIBW_BUILD: cp${{ matrix.python-version == '3.10' && '310' || matrix.python-version == '3.11' && '311' || '312' }}-*
         CIBW_ARCHS: ${{ matrix.arch }}
+        CIBW_MUSLLINUX_X86_64_IMAGE: musllinux_1_1
+        CIBW_MUSLLINUX_AARCH64_IMAGE: musllinux_1_1
         CIBW_ENVIRONMENT: >
           OPENSSL_ROOT_DIR=/usr
           OPENSSL_DIR=/usr
@@ -119,14 +120,10 @@ jobs:
           PATH=/root/.cargo/bin:$PATH
           CARGO_HOME=/root/.cargo
         CIBW_BEFORE_ALL: |
-          echo "=== Installing OpenSSL dependencies ==="
-          yum update -y
-          yum install -y openssl-devel
-          # Set environment variables for OpenSSL
-          export OPENSSL_DIR=/usr
-          export OPENSSL_LIB_DIR=/usr/lib64
-          export OPENSSL_INCLUDE_DIR=/usr/include/openssl
-          export PKG_CONFIG_PATH=/usr/lib64/pkgconfig:/usr/lib/pkgconfig
+          echo "=== Installing OpenSSL dependencies (musllinux) ==="
+          apk update
+          apk add openssl-dev
+          apk add openssl-libs-static
           # Install Rust
           echo "=== Installing Rust ==="
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable
@@ -142,7 +139,7 @@ jobs:
     - name: Upload wheels
       uses: actions/upload-artifact@v4
       with:
-        name: manylinux-wheels-${{ matrix.arch }}-py${{ matrix.python-version }}
+        name: ${{ matrix.os }}-wheels-${{ matrix.arch }}-py${{ matrix.python-version }}
         path: wheelhouse/*.whl
 
   publish-python:
@@ -198,34 +195,3 @@ jobs:
       env:
         CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
       run: cargo publish
-
-  dry-run-summary:
-    name: Dry Run Summary
-    runs-on: ubuntu-latest
-    needs: [build-macos-wheels, build-linux-wheels]
-    if: ${{ github.event.inputs.dry_run == 'true' }}
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Download all wheels
-      uses: actions/download-artifact@v4
-      with:
-        path: artifacts
-    
-    - name: Show built artifacts
-      run: |
-        echo "=== DRY RUN SUMMARY ==="
-        echo "Built wheels and source distributions:"
-        find artifacts -name "*.whl" -o -name "*.tar.gz" | sort
-        echo ""
-        echo "Total artifacts:"
-        find artifacts -name "*.whl" -o -name "*.tar.gz" | wc -l
-        echo ""
-        echo "Wheel types:"
-        echo "- manylinux wheels: Compatible with most Linux distributions"
-        echo "- macOS wheels: Compatible with macOS Intel and Apple Silicon"
-        echo "- Source distributions: Universal compatibility"
-        echo ""
-        echo "This was a dry run - no packages were published."
-        echo "To publish, run the workflow again with dry_run=false" 
