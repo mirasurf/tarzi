@@ -65,13 +65,17 @@ def main():
     print("\n3. Search engine configuration:")
 
     try:
-        # Create a search engine with custom configuration
-        config = tarzi.Config()
-        config.search.engine = "bing"
-        config.search.limit = 2
-        config.fetcher.user_agent = "Custom Tarzi Bot/1.0"
-        config.fetcher.web_driver = "chromedriver"  # Use Chrome driver by default
+        # Create a search engine with custom configuration using TOML string
+        config_toml = """
+[search]
+engine = "bing"
+limit = 2
 
+[fetcher]
+user_agent = "Custom Tarzi Bot/1.0"
+web_driver = "chromedriver"
+"""
+        config = tarzi.Config.from_str(config_toml)
         search_engine = tarzi.SearchEngine.from_config(config)
         results = search_engine.search("blockchain technology", 2)
         print(f"Custom config search found {len(results)} results")

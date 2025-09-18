@@ -603,34 +603,6 @@ impl PyConfig {
         Ok(Self { inner: config })
     }
 
-    /// Save configuration to default location
-    ///
-    /// Returns:
-    ///     None
-    ///     
-    /// Raises:
-    ///     ValueError: If save fails
-    fn save(&self) -> PyResult<()> {
-        self.inner.save_dev().map_err(|e| {
-            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("Failed to save config: {e}"))
-        })
-    }
-
-    /// Save configuration to development location
-    ///
-    /// Returns:
-    ///     None
-    ///     
-    /// Raises:
-    ///     ValueError: If save fails
-    fn save_dev(&self) -> PyResult<()> {
-        self.inner.save_dev().map_err(|e| {
-            PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "Failed to save dev config: {e}"
-            ))
-        })
-    }
-
     fn __repr__(&self) -> String {
         "Config()".to_string()
     }
