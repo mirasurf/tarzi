@@ -5,10 +5,6 @@ from .tarzi import (
     SearchEngine,
     SearchResult,
     WebFetcher,
-    convert_html,
-    fetch,
-    search_web,
-    search_with_content,
 )
 
 # Get version dynamically
@@ -43,8 +39,4 @@ __all__ = [
     "WebFetcher",
     "SearchEngine",
     "SearchResult",
-    "convert_html",
-    "fetch",
-    "search_web",
-    "search_with_content",
 ]
