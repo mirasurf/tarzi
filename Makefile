@@ -260,7 +260,7 @@ run-examples: run-examples-rust run-examples-python ## Run all examples (Rust + 
 .PHONY: run-examples-rust
 run-examples-rust: ## Run all Rust examples
 	@echo "$(BLUE)Running Rust examples...$(RESET)"
-	@for example in basic_usage browser_driver_usage search_engines sogou_weixin_search simple_usage; do \
+	@for example in basic_usage browser_driver_usage sogou_weixin_search simple_usage; do \
 		echo "$(GREEN)Running example: $$example$(RESET)"; \
 		$(CARGO) run --example $$example || echo "$(RED)Example $$example failed$(RESET)"; \
 		echo ""; \
@@ -270,10 +270,10 @@ run-examples-rust: ## Run all Rust examples
 .PHONY: run-examples-python
 run-examples-python: install-dev ## Run all Python examples
 	@echo "$(BLUE)Running Python examples...$(RESET)"
-	@for example in examples/basic_usage.py examples/search_engines.py; do \
-		if [ -f "$$example" ]; then \
+	@for example in basic_usage.py sogou_weixin_search.py; do \
+		if [ -f "examples/$$example" ]; then \
 			echo "$(GREEN)Running example: $$example$(RESET)"; \
-			uv run python "$$example" || echo "$(RED)Example $$example failed$(RESET)"; \
+			uv run python "examples/$$example" || echo "$(RED)Example $$example failed$(RESET)"; \
 			echo ""; \
 		fi; \
 	done

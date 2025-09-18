@@ -4,7 +4,6 @@ use crate::config::Config;
 use crate::{Converter, FetchMode, Format, SearchEngine, WebFetcher};
 use pyo3::prelude::*;
 use pyo3::types::PyType;
-use pyo3::wrap_pyfunction;
 use std::str::FromStr;
 use toml;
 
@@ -16,10 +15,6 @@ fn tarzi(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PySearchEngine>()?;
     m.add_class::<PySearchResult>()?;
     m.add_class::<PyConfig>()?;
-    m.add_function(wrap_pyfunction!(convert_html, m)?)?;
-    m.add_function(wrap_pyfunction!(fetch, m)?)?;
-    m.add_function(wrap_pyfunction!(search_web, m)?)?;
-    m.add_function(wrap_pyfunction!(search_with_content, m)?)?;
     Ok(())
 }
 
@@ -612,87 +607,6 @@ impl PyConfig {
     }
 }
 
-// Helper functions for direct Python usage
-
-/// Convert HTML to specified format
-///
-/// Args:
-///     html (str): Input HTML content
-///     format (str): Output format ("html", "markdown", "json", "yaml")
-///     
-/// Returns:
-///     str: Converted content
-///     
-/// Raises:
-///     ValueError: If format is invalid
-///     RuntimeError: If conversion fails
-#[pyfunction]
-fn convert_html(html: &str, format: &str) -> PyResult<String> {
-    let converter = PyConverter::new();
-    converter.convert(html, format)
-}
-
-/// Fetch URL and convert to specified format
-///
-/// Args:
-///     url (str): URL to fetch
-///     mode (str): Fetch mode ("plain_request", "browser_head", "browser_headless")
-///     format (str): Output format ("html", "markdown", "json", "yaml")
-///     
-/// Returns:
-///     str: Fetched and converted content
-///     
-/// Raises:
-///     ValueError: If mode or format is invalid
-///     RuntimeError: If fetching fails
-#[pyfunction]
-fn fetch(url: &str, mode: &str, format: &str) -> PyResult<String> {
-    let mut fetcher = PyWebFetcher::new();
-    fetcher.fetch(url, mode, format)
-}
-
-/// Search the web using the configured search engine
-///
-/// Args:
-///     query (str): Search query
-///     limit (int): Maximum number of results
-///     
-/// Returns:
-///     List[SearchResult]: List of search results
-///     
-/// Raises:
-///     RuntimeError: If search fails
-#[pyfunction]
-fn search_web(query: &str, limit: usize) -> PyResult<Vec<PySearchResult>> {
-    let mut engine = PySearchEngine::new();
-    engine.search(query, limit)
-}
-
-/// Search web and fetch content
-///
-/// Args:
-///     query (str): Search query
-///     limit (int): Maximum number of results
-///     fetch_mode (str): Fetch mode ("plain_request", "browser_head", "browser_headless")
-///     format (str): Output format ("html", "markdown", "json", "yaml")
-///     
-/// Returns:
-///     List[Tuple[SearchResult, str]]: List of (result, content) pairs
-///     
-/// Raises:
-///     ValueError: If fetch_mode or format is invalid
-///     RuntimeError: If search or fetch fails
-#[pyfunction]
-fn search_with_content(
-    query: &str,
-    limit: usize,
-    fetch_mode: &str,
-    format: &str,
-) -> PyResult<Vec<(PySearchResult, String)>> {
-    let mut engine = PySearchEngine::new();
-    engine.search_with_content(query, limit, fetch_mode, format)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -827,6 +741,21 @@ mod tests {
     }
 
     #[test]
+    fn test_py_search_result_clone() {
+        let result = PySearchResult {
+            title: "Test Title".to_string(),
+            url: "https://example.com".to_string(),
+            snippet: "Test snippet".to_string(),
+            rank: 1,
+        };
+        let cloned = result.clone();
+        assert_eq!(result.title, cloned.title);
+        assert_eq!(result.url, cloned.url);
+        assert_eq!(result.snippet, cloned.snippet);
+        assert_eq!(result.rank, cloned.rank);
+    }
+
+    #[test]
     fn test_py_config_new() {
         let _config = PyConfig::new();
         // Just test that it can be created without panicking
@@ -854,78 +783,5 @@ engine = "bing"
         let config_str = "invalid toml content";
         let result = toml::from_str::<Config>(config_str);
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_convert_html_function() {
-        let html = "<h1>Test</h1>";
-        let result = convert_html(html, "html").unwrap();
-        assert_eq!(result, html);
-    }
-
-    #[test]
-    fn test_convert_html_function_invalid_format() {
-        setup_python();
-        let html = "<h1>Test</h1>";
-        let result = convert_html(html, "invalid");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid format"));
-    }
-
-    #[test]
-    fn test_fetch_function_invalid_mode() {
-        setup_python();
-        let result = fetch("https://example.com", "invalid", "html");
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("Invalid fetch mode")
-        );
-    }
-
-    #[test]
-    fn test_fetch_function_invalid_format() {
-        setup_python();
-        let result = fetch("https://example.com", "plain_request", "invalid");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid format"));
-    }
-
-    #[test]
-    fn test_search_with_content_function_invalid_mode() {
-        setup_python();
-        let result = search_with_content("test", 5, "invalid", "html");
-        assert!(result.is_err());
-        assert!(
-            result
-                .unwrap_err()
-                .to_string()
-                .contains("Invalid fetch mode")
-        );
-    }
-
-    #[test]
-    fn test_search_with_content_function_invalid_format() {
-        setup_python();
-        let result = search_with_content("test", 5, "plain_request", "invalid");
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Invalid format"));
-    }
-
-    #[test]
-    fn test_py_search_result_clone() {
-        let result = PySearchResult {
-            title: "Test Title".to_string(),
-            url: "https://example.com".to_string(),
-            snippet: "Test snippet".to_string(),
-            rank: 1,
-        };
-        let cloned = result.clone();
-        assert_eq!(result.title, cloned.title);
-        assert_eq!(result.url, cloned.url);
-        assert_eq!(result.snippet, cloned.snippet);
-        assert_eq!(result.rank, cloned.rank);
     }
 }

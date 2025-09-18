@@ -134,8 +134,11 @@ pub const FORMAT_HTML: &str = "html";
 
 // Default fetcher modes
 pub const FETCHER_MODE_BROWSER_HEADLESS: &str = "browser_headless";
+pub const FETCHER_MODE_BROWSER_HEAD: &str = "browser_head";
 pub const FETCHER_MODE_PLAIN_REQUEST: &str = "plain_request";
 pub const FETCHER_MODE_HEAD: &str = "head";
+pub const FETCHER_MODE_HEADLESS: &str = "headless";
+pub const FETCHER_MODE_PLAIN: &str = "plain";
 
 // Default search engines
 pub const SEARCH_ENGINE_DUCKDUCKGO: &str = "duckduckgo";

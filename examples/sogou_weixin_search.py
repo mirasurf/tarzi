@@ -19,8 +19,7 @@ limit = 10
 
 [fetcher]
 web_driver = "chromedriver"
-mode = "browser_head"
-timeout = 60
+mode = "head"
 format = "markdown"
 """
 
