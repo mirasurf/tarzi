@@ -1,7 +1,4 @@
 # Re-export everything from the Rust module
-# High-level Python API imports
-from .fetcher import ContentMode, TarziFetcher
-from .searcher import SearchWithContentResult, TarziSearcher
 from .tarzi import (
     Config,
     Converter,
@@ -50,8 +47,4 @@ __all__ = [
     "fetch",
     "search_web",
     "search_with_content",
-    "TarziFetcher",
-    "TarziSearcher",
-    "ContentMode",
-    "SearchWithContentResult",
 ]
